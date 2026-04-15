@@ -10,24 +10,25 @@
     <style>
         /* ========== RESET & BASE ========== */
         :root {
-            --primary: #4A6CF7;
-            --primary-dark: #3651d4;
-            --primary-light: #EEF2FF;
-            --accent: #F97316;
-            --accent-dark: #ea6c00;
-            --accent-light: #FFF7ED;
-            --text: #1e293b;
-            --text-mid: #475569;
-            --text-light: #94a3b8;
-            --bg: #ffffff;
-            --bg-alt: #f8fafc;
-            --bg-card: #ffffff;
-            --border: #e2e8f0;
-            --success: #10b981;
-            --danger: #ef4444;
-            --shadow-sm: 0 1px 3px rgba(0,0,0,0.06), 0 1px 2px rgba(0,0,0,0.04);
-            --shadow-md: 0 4px 12px rgba(0,0,0,0.08), 0 2px 4px rgba(0,0,0,0.04);
-            --shadow-lg: 0 10px 30px rgba(0,0,0,0.1);
+            /* 品牌色 - 鼠尾草绿 + 金色 + 香槟金 */
+            --primary: #9CAF88;
+            --primary-dark: #7A8B6E;
+            --primary-light: #F7F9F5;
+            --accent: #D4AF37;
+            --accent-dark: #B8960F;
+            --accent-light: #F7E7CE;
+            --text: #7A8B6E;
+            --text-mid: #6B7A5E;
+            --text-light: #8A9A7A;
+            --bg: #F7F9F5;
+            --bg-alt: #EEF2EB;
+            --bg-card: #FFFFFF;
+            --border: #D9E0D1;
+            --success: #6B8F71;
+            --danger: #C0392B;
+            --shadow-sm: 0 1px 3px rgba(122,139,110,0.06), 0 1px 2px rgba(122,139,110,0.04);
+            --shadow-md: 0 4px 12px rgba(122,139,110,0.08), 0 2px 4px rgba(122,139,110,0.04);
+            --shadow-lg: 0 10px 30px rgba(122,139,110,0.12);
             --radius: 10px;
             --radius-sm: 6px;
         }
@@ -57,12 +58,12 @@
 
         /* ========== HEADER ========== */
         header {
-            background: white;
+            background: rgba(255,255,255,0.96);
             border-bottom: 1px solid var(--border);
             position: sticky;
             top: 0;
             z-index: 100;
-            box-shadow: var(--shadow-sm);
+            backdrop-filter: blur(12px);
         }
         .header-inner {
             max-width: 1400px;
@@ -75,14 +76,14 @@
         .logo {
             font-size: 1.4rem;
             font-weight: 700;
-            color: var(--text);
+            color: var(--primary-dark);
             text-decoration: none;
             flex-shrink: 0;
             letter-spacing: -0.02em;
         }
         .logo em {
             font-style: normal;
-            color: var(--primary);
+            color: var(--accent);
         }
 
         /* Search */
@@ -381,6 +382,44 @@
         .breadcrumb span { cursor: pointer; transition: color 0.15s; }
         .breadcrumb span:hover { color: var(--primary); }
         .breadcrumb .sep { font-size: 0.7rem; }
+
+        /* Theme quick pills */
+        .theme-pills {
+            display: flex;
+            gap: 0.5rem;
+            flex-wrap: wrap;
+            margin-bottom: 1.25rem;
+        }
+        .theme-pill {
+            padding: 0.35rem 0.85rem;
+            border-radius: 20px;
+            font-size: 0.78rem;
+            font-weight: 600;
+            cursor: pointer;
+            border: 1.5px solid var(--border);
+            background: var(--bg-card);
+            color: var(--text-mid);
+            transition: all 0.2s;
+            white-space: nowrap;
+        }
+        .theme-pill:hover {
+            border-color: var(--accent);
+            color: var(--accent);
+        }
+        .theme-pill.active {
+            background: var(--accent);
+            border-color: var(--accent);
+            color: white;
+        }
+        .theme-pill.ramadan {
+            border-color: var(--accent);
+            color: var(--accent-dark);
+        }
+        .theme-pill.ramadan.active {
+            background: var(--accent);
+            border-color: var(--accent);
+            color: white;
+        }
         .section-title {
             font-size: 1.2rem;
             font-weight: 700;
@@ -411,7 +450,7 @@
         .product-card:hover {
             transform: translateY(-3px);
             box-shadow: var(--shadow-lg);
-            border-color: #c7d2fe;
+            border-color: var(--accent);
         }
         .product-card.in-cart {
             border-color: var(--accent);
@@ -1043,8 +1082,8 @@
 
         /* ========== FOOTER ========== */
         footer {
-            background: var(--text);
-            color: #94a3b8;
+            background: var(--primary-dark);
+            color: var(--accent-light);
             padding: 2rem;
             margin-top: 3rem;
             font-size: 0.85rem;
@@ -1063,44 +1102,44 @@
             font-weight: 700;
             color: white;
         }
-        .footer-brand em { font-style: normal; color: var(--primary); }
-        .footer-brand small { display: block; font-size: 0.75rem; color: #64748b; margin-top: 0.2rem; font-weight: 400; }
+        .footer-brand em { font-style: normal; color: var(--accent); }
+        .footer-brand small { display: block; font-size: 0.75rem; color: #C5D5B5; margin-top: 0.2rem; font-weight: 400; }
         .footer-links { display: flex; gap: 0.25rem; }
         .footer-links a {
-            color: #94a3b8;
+            color: var(--accent-light);
             text-decoration: none;
             padding: 0.3rem 0.75rem;
             border-radius: 4px;
             font-size: 0.85rem;
             transition: color 0.2s;
         }
-        .footer-links a:hover { color: white; }
+        .footer-links a:hover { color: var(--accent); }
         .footer-social { display: flex; gap: 0.4rem; }
         .footer-social a {
             width: 32px;
             height: 32px;
             border-radius: 50%;
-            background: rgba(255,255,255,0.08);
+            background: rgba(255,255,255,0.1);
             display: flex;
             align-items: center;
             justify-content: center;
             text-decoration: none;
-            color: #94a3b8;
+            color: var(--accent-light);
             transition: all 0.2s;
         }
-        .footer-social a:hover { background: var(--primary); color: white; }
+        .footer-social a:hover { background: var(--accent); color: white; }
         .footer-social svg { width: 14px; height: 14px; }
         .footer-copy {
             max-width: 1400px;
             margin: 1.5rem auto 0;
             padding-top: 1.5rem;
-            border-top: 1px solid rgba(255,255,255,0.06);
+            border-top: 1px solid rgba(255,255,255,0.1);
             text-align: center;
             font-size: 0.78rem;
-            color: #64748b;
+            color: #A8B89A;
         }
-        .footer-copy a { color: #94a3b8; text-decoration: none; }
-        .footer-copy a:hover { color: white; }
+        .footer-copy a { color: var(--accent-light); text-decoration: none; }
+        .footer-copy a:hover { color: var(--accent); }
 
         /* ========== RESPONSIVE ========== */
         @media (max-width: 900px) {
@@ -1249,6 +1288,8 @@
             </div>
             <span class="products-count" id="productsCount">0 products</span>
         </div>
+        <!-- Theme quick pills -->
+        <div id="themePills" class="theme-pills"></div>
         <div class="products-grid" id="productsGrid"></div>
     </main>
 </div>
@@ -1523,7 +1564,22 @@
         });
 
         const total = allProducts.length;
-        const themes = Object.keys(structure).sort();
+        // Ramadan first, then alphabetical
+        const themes = Object.keys(structure).sort((a,b) => {
+            if (a === 'Ramadan') return -1;
+            if (b === 'Ramadan') return 1;
+            return a.localeCompare(b);
+        });
+
+        // Theme quick pills
+        const pillsContainer = document.getElementById('themePills');
+        if (pillsContainer) {
+            pillsContainer.innerHTML = themes.map(t => {
+                const isRamadan = t === 'Ramadan';
+                const count = Object.values(structure[t]).reduce((a,b)=>a+b,0);
+                return `<button class="theme-pill ${isRamadan ? 'ramadan' : ''}" onclick="setCategory('${t.replace(/'/g,"\\'")}','all');scrollToTop()">${t} (${count})</button>`;
+            }).join('');
+        }
 
         // Desktop
         const list = document.getElementById('categoryList');
@@ -1609,8 +1665,16 @@
         document.querySelectorAll('.subcat-list a').forEach(a => {
             a.classList.toggle('active', a.dataset.theme === theme && a.dataset.subcat === currentSubcat);
         });
+        // Update pill active state
+        document.querySelectorAll('.theme-pill').forEach(p => {
+            p.classList.toggle('active', p.textContent.includes(theme));
+        });
         updateSectionTitle();
         filterAndRender();
+    }
+
+    function scrollToTop() {
+        window.scrollTo({ top: 0, behavior: 'smooth' });
     }
 
     function updateSectionTitle() {
