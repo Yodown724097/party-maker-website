@@ -210,7 +210,7 @@ export async function onRequestPost(context) {
       },
       body: JSON.stringify({
         from: 'Party Maker <onboarding@resend.dev>',
-        to: ['724097@qq.com'],
+        to: ['info@partymaker.cn'],
         subject: `📩 New Inquiry from ${contact.name} - ${cart.length} products`,
         html: emailHtml,
         text: emailText,
