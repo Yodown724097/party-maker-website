@@ -687,8 +687,7 @@ export async function onRequestPost(context) {
 
     // Build XLSX with images
     const { blob: xlsxBlob, piNo } = await buildXlsxWithImages(contact, cart, r2Endpoint);
-    const xlsxBuffer = await xlsxBlob.arrayBuffer();
-    const xlsxBase64 = arrayBufferToBase64(xlsxBuffer);
+    const xlsxBase64 = arrayBufferToBase64(xlsxBlob);
 
     const emailHtml = buildEmailHtml(contact, cart);
 
