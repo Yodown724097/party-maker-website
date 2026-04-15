@@ -545,19 +545,7 @@ ${imgRels}
   // End of central directory
   const cdOffset = offset;
   const cdTotal = cdEntries.reduce((a, e) => a + e.length, 0);
-  let eocd = new Uint8Array(22);
-  const eocdv = new DataView(eocd.buffer);
-  eocdv.setUint32(0, 0x06054b50, true);
-  eocdv.setUint16(4, 0, true);
-  eocdv.setUint16(6, 0, true);
-  eocdv.setUint16(8, 0, true);
-  eocdv.setUint16(10, 0, true);
-  eocdv.setUint32(12, cdTotal, true);
-  eocdv.setUint32(16, cdTotal, true);
-  eocdv.setUint32(20, cdOffset, true);
-  // byte 20 is a UINT32 but buffer is only 22 bytes, so byte 24 would overflow
-  // byte 20 is actually [comment_length(2)] in EOCD spec
-  // use a larger buffer for eocdv writes but clip to 22 bytes for final
+  // Use 24-byte temp buffer to avoid DataView overflow at byte 20, then clip to 22
   let eocdFull = new Uint8Array(24);
   const eocdvFull = new DataView(eocdFull.buffer);
   eocdvFull.setUint32(0, 0x06054b50, true);
@@ -568,7 +556,7 @@ ${imgRels}
   eocdvFull.setUint32(12, cdTotal, true);
   eocdvFull.setUint32(16, cdTotal, true);
   eocdvFull.setUint32(20, cdOffset, true);
-  eocd = eocdFull.slice(0, 22);
+  const eocd = eocdFull.slice(0, 22);
 
   const allParts = [...parts, ...cdEntries, eocd];
   const totalLen = allParts.reduce((a, b) => a + b.length, 0);
