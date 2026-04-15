@@ -555,7 +555,20 @@ ${imgRels}
   eocdv.setUint32(12, cdTotal, true);
   eocdv.setUint32(16, cdTotal, true);
   eocdv.setUint32(20, cdOffset, true);
-  eocdv.setUint16(24, 0, true);
+  // byte 20 is a UINT32 but buffer is only 22 bytes, so byte 24 would overflow
+  // byte 20 is actually [comment_length(2)] in EOCD spec
+  // use a larger buffer for eocdv writes but clip to 22 bytes for final
+  let eocdFull = new Uint8Array(24);
+  const eocdvFull = new DataView(eocdFull.buffer);
+  eocdvFull.setUint32(0, 0x06054b50, true);
+  eocdvFull.setUint16(4, 0, true);
+  eocdvFull.setUint16(6, 0, true);
+  eocdvFull.setUint16(8, 0, true);
+  eocdvFull.setUint16(10, 0, true);
+  eocdvFull.setUint32(12, cdTotal, true);
+  eocdvFull.setUint32(16, cdTotal, true);
+  eocdvFull.setUint32(20, cdOffset, true);
+  eocd = eocdFull.slice(0, 22);
 
   const allParts = [...parts, ...cdEntries, eocd];
   const totalLen = allParts.reduce((a, b) => a + b.length, 0);
