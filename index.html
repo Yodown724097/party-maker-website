@@ -825,7 +825,9 @@
 
     <script>
         // ============ CONFIG ============
-        const R2_PRODUCTS_URL = 'https://pub-17f9ea67296f4adf84a0970bcbd70942.r2.dev/products.json';
+        // Load products from same domain (served by Cloudflare Pages)
+        const R2_PRODUCTS_URL = '/products.json';
+        // Worker URL for sending inquiries
         const WORKER_URL = 'https://party-maker-worker.yodown724097.workers.dev';
 
         // ============ STATE ============
