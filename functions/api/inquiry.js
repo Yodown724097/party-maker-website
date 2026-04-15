@@ -151,6 +151,16 @@ function arrayBufferToBase64(buffer) {
   return btoa(binary);
 }
 
+// Custom btoa that handles Unicode (for CSV content)
+function base64Encode(str) {
+  const bytes = new TextEncoder().encode(str);
+  let binary = '';
+  for (let i = 0; i < bytes.length; i++) {
+    binary += String.fromCharCode(bytes[i]);
+  }
+  return btoa(binary);
+}
+
 export async function onRequestPost(context) {
   const corsHeaders = {
     'Access-Control-Allow-Origin': '*',
@@ -186,7 +196,7 @@ export async function onRequestPost(context) {
 
     // Generate CSV (more reliable than XLSX)
     const csvContent = await generateExcelCsv(cart);
-    const csvBase64 = btoa(csvContent);
+    const csvBase64 = base64Encode(csvContent);
 
     const emailHtml = buildEmailHtml(contact, cart);
     const emailText = buildEmailText(contact, cart);
