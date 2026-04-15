@@ -577,8 +577,8 @@ const CRC_TABLE = (function() {
 })();
 function crc32(data) {
   let crc = 0xFFFFFFFF;
-  const buf = data instanceof Uint8Array ? data : new Uint8Array(data.buffer || data, data.byteOffset || 0, data.byteLength || data.length);
-  for (let i = 0; i < buf.length; i++) crc = CRC_TABLE[(crc ^ buf[i]) & 0xFF] ^ (crc >>> 8);
+  const bytes = data instanceof Uint8Array ? data : new TextEncoder().encode(String(data));
+  for (let i = 0; i < bytes.length; i++) crc = CRC_TABLE[(crc ^ bytes[i]) & 0xFF] ^ (crc >>> 8);
   return (crc ^ 0xFFFFFFFF) >>> 0;
 }
 
