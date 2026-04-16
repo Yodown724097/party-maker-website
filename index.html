@@ -1498,6 +1498,10 @@
                             <label>Country <span class="required">*</span></label>
                             <input type="text" id="buyerCountry" required>
                         </div>
+                        <div class="form-group">
+                            <label>Phone</label>
+                            <input type="tel" id="buyerPhone">
+                        </div>
                         <div class="form-group full">
                             <label>Additional Notes</label>
                             <textarea id="buyerNotes" placeholder="Target market, preferred shipping terms, questions..."></textarea>
@@ -1998,6 +2002,7 @@
                 company: document.getElementById('buyerCompany').value.trim(),
                 email: document.getElementById('buyerEmail').value.trim(),
                 country: document.getElementById('buyerCountry').value.trim(),
+                phone: document.getElementById('buyerPhone').value.trim(),
                 message: document.getElementById('buyerNotes').value.trim()
             },
             cart: cart.map(c => ({
