@@ -68,17 +68,47 @@ function escapeHtml(text) {
     .replace(/"/g, '&quot;');
 }
 
+// CRC32 table (pre-computed, avoids JS bitwise overflow issues)
+const CRC32_TABLE = new Uint32Array([
+  0x00000000,0x77073096,0xee0e612c,0x990951ba,0x076dc419,0x706af48f,0xe963a535,0x9e6495a3,
+  0x0edb8832,0x79dcb8a4,0xe0d5e91e,0x97d2d988,0x09b64c2b,0x7eb17cbd,0xe7b82d07,0x90bf1d91,
+  0x1db71064,0x6ab020f2,0xf3b97148,0x84be41de,0x1adad47d,0x6ddde4eb,0xf4d4b551,0x83d385c7,
+  0x136c9856,0x646ba8c0,0xfd62f97a,0x8a65c9ec,0x14015c4f,0x63066cd9,0xfa0f3d63,0x8d080df5,
+  0x3b6e20c8,0x4c69105e,0xd56041e4,0xa2677172,0x3c03e4d1,0x4b04d447,0xd20d85fd,0xa50ab56b,
+  0x35b5a8fa,0x42b2986c,0xdbbbc9d6,0xacbcf940,0x32d86ce3,0x45df5c75,0xdcd60dcf,0xabd13d59,
+  0x26d930ac,0x51de003a,0xc8d75180,0xbfd06116,0x21b4f4b5,0x56b3c423,0xcfba9599,0xb8bda50f,
+  0x2802b89e,0x5f058808,0xc60cd9b2,0xb10be924,0x2f6f7c87,0x58684c11,0xc1611dab,0xb6662d3d,
+  0x76dc4190,0x01db7106,0x98d220bc,0xefd5102a,0x71b18589,0x06b6b51f,0x9fbfe4a5,0xe8b8d433,
+  0x7807c9a2,0x0f00f934,0x9609a88e,0xe10e9818,0x7f6a0dbb,0x086d3d2d,0x91646c97,0xe6635c01,
+  0x6b6b51f4,0x1c6c6162,0x856530d8,0xf262004e,0x6c0695ed,0x1b01a57b,0x8208f4c1,0xf50fc457,
+  0x65b0d9c6,0x12b7e950,0x8bbeb8ea,0xfcb9887c,0x62dd1ddf,0x15da2d49,0x8cd37cf3,0xfb244c65,
+  0x4d426158,0x3a4571ce,0xa34c2074,0xd44b10e2,0x4a2f8541,0x3d28b5d7,0xa421e46d,0xd326d4fb,
+  0x4399c96a,0x349ef9fc,0xad97a846,0xda9098d0,0x44f40d73,0x33f33de5,0xaa6a6c5f,0xdd6d5cc9,
+  0x5065513c,0x276261aa,0xbe6b3010,0xc96c0086,0x57089525,0x200fa5b3,0xb906f409,0xce01c49f,
+  0x5ebed90e,0x29b9e998,0xb0b0b822,0xc7b788b4,0x59d31d17,0x2ed42d81,0xb7dd7c3b,0xc0da4cad,
+  0xedb88320,0x9abfb3b6,0x03b6e20c,0x74b1d29a,0xead54739,0x9dd277af,0x04db2615,0x73dc1683,
+  0xe3630b12,0x94643b84,0x0d6d6a3e,0x7a6a5aa8,0xe40ecf0b,0x9309ff9d,0x0a00ae27,0x7d079eb1,
+  0xf00f9344,0x8708a3d2,0x1e01f268,0x6906c2fe,0xf762575d,0x806567cb,0x196c3671,0x6e6b06e7,
+  0xfed41b76,0x89d32be0,0x10da7a5a,0x67dd4acc,0xf9b9df6f,0x8ebeeff9,0x17b7be43,0x60b08ed5,
+  0xd6d6a3e8,0xa1d1937e,0x38d8c2c4,0x4fdff252,0xd1bb67f1,0xa6bc5767,0x3fb506dd,0x48b2364b,
+  0xd80d2bda,0xaf0a1b4c,0x36034af6,0x41047a60,0xdf60efc3,0xa867df55,0x316e8eef,0x4669be79,
+  0xcb61b38c,0xbc66831a,0x256fd2a0,0x5268e236,0xcc0c7795,0xbb0b4703,0x220216b9,0x5505262f,
+  0xc5ba3bbe,0xb2bd0b28,0x2bb45a92,0x5cb36a04,0xc2d7ffa7,0xb5d0cf31,0x2cd99e8b,0x5bdeae1d,
+  0x9b64c2b0,0xec63f226,0x756aa39c,0x026d930a,0x9c0906a9,0xeb0e363f,0x72076785,0x05005713,
+  0x95bf4a82,0xe2b87a14,0x7bb12bae,0x0cb61b38,0x92d28e9b,0xe5d5be0d,0x7cdcefb7,0x0bdbdf21,
+  0x86d3d2d4,0xf1d4e242,0x68ddb3f8,0x1fda836e,0x81be16cd,0xf6b9265b,0x6fb077e1,0x18b74777,
+  0x88085ae6,0xff0f6a70,0x66063bca,0x11010b5c,0x8f659eff,0xf862ae69,0x616bffd3,0x166ccf45,
+  0xa00ae278,0xd70dd2ee,0x4e048354,0x3903b3c2,0xa7672661,0xd06016f7,0x4969474d,0x3e6e77db,
+  0xaed16a4a,0xd9d65adc,0x40df0b66,0x37d83bf0,0xa9bcae53,0xdebb9ec5,0x47b2cf7f,0x30b5ffe9,
+  0xbdbdf21c,0xcabac28a,0x53b39330,0x24b4a3a6,0xbad03605,0xcdd706b3,0x54de5709,0x23d9679f,
+  0xb3667a0e,0xc4614a98,0x5d681b22,0x2a6f2bb4,0xb40bbe17,0xc30c8e81,0x5a05df3b,0x2d02efad
+]);
+
 function crc32_update(data) {
-  const table = new Uint32Array(256);
-  for (let i = 0; i < 256; i++) {
-    let c = i;
-    for (let j = 0; j < 8; j++) c = (c & 1) ? (0xEDB88320 ^ (c >>> 1)) : (c >>> 1);
-    table[i] = c >>> 0;
-  }
-  let crc = 0xFFFFFFFF;
   const bytes = data instanceof Uint8Array ? data : new TextEncoder().encode(String(data));
+  let crc = 0xFFFFFFFF >>> 0;
   for (let i = 0; i < bytes.length; i++) {
-    crc = table[(crc ^ bytes[i]) & 0xFF] ^ (crc >>> 8);
+    crc = CRC32_TABLE[(crc ^ bytes[i]) & 0xFF] ^ (crc >>> 8);
   }
   return (crc ^ 0xFFFFFFFF) >>> 0;
 }
@@ -216,7 +246,7 @@ async function buildXlsx(contact, cart) {
 
   files['xl/_rels/workbook.xml.rels'] = xh+`<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/worksheet" Target="worksheets/sheet1.xml"/><Relationship Id="rId2" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/sharedStrings" Target="sharedStrings.xml"/><Relationship Id="rId3" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/styles" Target="styles.xml"/></Relationships>`;
 
-  files['xl/workbook.xml'] = xh+`<workbook xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main"><sheets><sheet name="PI" sheetId="1" r:id="rId1"/></sheets></workbook>`;
+  files['xl/workbook.xml'] = xh+`<workbook xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships"><sheets><sheet name="PI" sheetId="1" r:id="rId1"/></sheets></workbook>`;
 
   files['xl/styles.xml'] = xh+`<styleSheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main"><fonts count="2"><font><sz val="11"/><name val="Arial"/></font><font><sz val="16"/><b/><name val="Arial"/></font></fonts><fills count="3"><fill><patternFill patternType="none"/></fill><fill><patternFill patternType="gray125"/></fill><fill><patternFill patternType="solid"><fgColor rgb="FF9CAF88"/></patternFill></fill></fills><borders count="2"><border><left/><right/><top/><bottom/><diagonal/></border><border><left style="thin"><color auto="1"/></left><right style="thin"><color auto="1"/></right><top style="thin"><color auto="1"/></top><bottom style="thin"><color auto="1"/></bottom></border></borders><cellStyleXfs count="1"><xf numFmtId="0" fontId="0" fillId="0" borderId="0"/></cellStyleXfs><cellXfs count="5"><xf numFmtId="0" fontId="0" fillId="0" borderId="0" xfId="0"/><xf numFmtId="0" fontId="1" fillId="0" borderId="0" xfId="0"/><xf numFmtId="0" fontId="1" fillId="2" borderId="0" xfId="0"><alignment horizontal="center"/></xf><xf numFmtId="2" fontId="0" fillId="0" borderId="1" xfId="0"><alignment horizontal="center"/></xf><xf numFmtId="2" fontId="0" fillId="0" borderId="1" xfId="0"><alignment horizontal="right"/></xf></cellXfs></styleSheet>`;
 
@@ -229,7 +259,7 @@ async function buildXlsx(contact, cart) {
 
   files['xl/worksheets/_rels/sheet1.xml.rels'] = xh+`<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"/>`;
 
-  function col(c) { return String.fromCharCode(64 + c); }
+  function col(c) { return String.fromCharCode(64 + c); }  // 1-indexed: col(1)='A'
   function sc(r, c, v) { return `<c r="${col(c)}${r}" s="0" t="s"><is><t>${escapeHtml(String(v))}</t></is></c>`; }
   function hc(r, c, v) { return `<c r="${col(c)}${r}" s="2" t="s"><is><t>${escapeHtml(String(v))}</t></is></c>`; }
   function bc(r, c, v) { return `<c r="${col(c)}${r}" s="0" t="s"><is><t>${escapeHtml(String(v))}</t></is></c>`; }
@@ -242,14 +272,14 @@ async function buildXlsx(contact, cart) {
   rows.push(`<row r="${row}"><c r="A${row}" s="1" t="s"><is><t>PROFORMA INVOICE</t></is></c><c r="G${row}" s="1" t="s"><is><t>${escapeHtml(piNo)}</t></is></c></row>`);
   rows.push(`<row r="${++row}"><c r="A${row}" t="s"><is><t></t></is></c></row>`); row++;
 
-  rows.push(`<row r="${row}">${sc(row,0,'TO:')}${bc(row,1,contact.name||'')}${sc(row,3,'From:')}${bc(row,4,'PARTY MAKER')}</row>`); row++;
-  rows.push(`<row r="${row}">${sc(row,0,'ATTN:')}${bc(row,1,contact.name||'')}${sc(row,3,'Email:')}${bc(row,4,contact.email||'')}</row>`); row++;
-  rows.push(`<row r="${row}">${sc(row,0,'TEL:')}${bc(row,1,contact.phone||'')}${sc(row,3,'Date:')}${bc(row,4,now.toISOString().slice(0,10))}</row>`); row++;
-  rows.push(`<row r="${row}">${sc(row,0,'COMPANY:')}${bc(row,1,contact.company||'')}${sc(row,3,'Port:')}${bc(row,4,'FOB Ningbo/Shanghai')}</row>`); row++;
-  rows.push(`<row r="${row}">${sc(row,0,'REMARK:')}${bc(row,1,contact.country||'')}</row>`); row++;
+  rows.push(`<row r="${row}">${sc(row,1,'TO:')}${bc(row,2,contact.name||'')}${sc(row,4,'From:')}${bc(row,5,'PARTY MAKER')}</row>`); row++;
+  rows.push(`<row r="${row}">${sc(row,1,'ATTN:')}${bc(row,2,contact.name||'')}${sc(row,4,'Email:')}${bc(row,5,contact.email||'')}</row>`); row++;
+  rows.push(`<row r="${row}">${sc(row,1,'TEL:')}${bc(row,2,contact.phone||'')}${sc(row,4,'Date:')}${bc(row,5,now.toISOString().slice(0,10))}</row>`); row++;
+  rows.push(`<row r="${row}">${sc(row,1,'COMPANY:')}${bc(row,2,contact.company||'')}${sc(row,4,'Port:')}${bc(row,5,'FOB Ningbo/Shanghai')}</row>`); row++;
+  rows.push(`<row r="${row}">${sc(row,1,'REMARK:')}${bc(row,2,contact.country||'')}</row>`); row++;
   rows.push(`<row r="${row}"><c r="A${row}" t="s"><is><t></t></is></c></row>`); row++;
 
-  rows.push(`<row r="${row}">${hc(row,0,'No.')}${hc(row,1,'Item No.')}${hc(row,2,'Product Name')}${hc(row,3,'Description')}${hc(row,4,'USD Price')}${hc(row,5,'Qty')}${hc(row,6,'Amount')}${hc(row,7,'Image URL')}</row>`); row++;
+  rows.push(`<row r="${row}">${hc(row,1,'No.')}${hc(row,2,'Item No.')}${hc(row,3,'Product Name')}${hc(row,4,'Description')}${hc(row,5,'USD Price')}${hc(row,6,'Qty')}${hc(row,7,'Amount')}${hc(row,8,'Image URL')}</row>`); row++;
 
   let totalAmt = 0;
   cart.forEach((item, i) => {
@@ -258,25 +288,25 @@ async function buildXlsx(contact, cart) {
     const amt = qty * price;
     totalAmt += amt;
     const imgUrl = (item.images && item.images[0]) ? item.images[0] : '';
-    rows.push(`<row r="${row}">${nc(row,0,i+1)}${bc(row,1,item.sku||'-')}${bc(row,2,item.name||'')}${bc(row,3,item.description||'')}${rc(row,4,price)}${nc(row,5,qty)}${rc(row,6,amt)}${bc(row,7,imgUrl)}</row>`);
+    rows.push(`<row r="${row}">${nc(row,1,i+1)}${bc(row,2,item.sku||'-')}${bc(row,3,item.name||'')}${bc(row,4,item.description||'')}${rc(row,5,price)}${nc(row,6,qty)}${rc(row,7,amt)}${bc(row,8,imgUrl)}</row>`);
     row++;
   });
 
-  rows.push(`<row r="${row}">${sc(row,5,'TOTAL:')}${rc(row,6,totalAmt)}</row>`); row++;
+  rows.push(`<row r="${row}">${sc(row,6,'TOTAL:')}${rc(row,7,totalAmt)}</row>`); row++;
   rows.push(`<row r="${row}"><c r="A${row}" t="s"><is><t></t></is></c></row>`); row++;
-  rows.push(`<row r="${row}">${sc(row,0,'TERMS & CONDITIONS')}</row>`); row++;
-  rows.push(`<row r="${row}">${sc(row,0,'1. FOB Ningbo/Shanghai.')}</row>`); row++;
-  rows.push(`<row r="${row}">${sc(row,0,'2. The price does not include any testing, inspection and auditing costs.')}</row>`); row++;
-  rows.push(`<row r="${row}">${sc(row,0,'3. Production time: 45 days after deposit is received.')}</row>`); row++;
-  rows.push(`<row r="${row}">${sc(row,0,'4. Payment method: 30% deposit, 70% balance to be paid before goods leave factory.')}</row>`); row++;
+  rows.push(`<row r="${row}">${sc(row,1,'TERMS & CONDITIONS')}</row>`); row++;
+  rows.push(`<row r="${row}">${sc(row,1,'1. FOB Ningbo/Shanghai.')}</row>`); row++;
+  rows.push(`<row r="${row}">${sc(row,1,'2. The price does not include any testing, inspection and auditing costs.')}</row>`); row++;
+  rows.push(`<row r="${row}">${sc(row,1,'3. Production time: 45 days after deposit is received.')}</row>`); row++;
+  rows.push(`<row r="${row}">${sc(row,1,'4. Payment method: 30% deposit, 70% balance to be paid before goods leave factory.')}</row>`); row++;
   rows.push(`<row r="${row}"><c r="A${row}" t="s"><is><t></t></is></c></row>`); row++;
-  rows.push(`<row r="${row}">${sc(row,0,'Bank Information:')}</row>`); row++;
-  rows.push(`<row r="${row}">${sc(row,0,'BENEFICIARY:')}${bc(row,1,'JIATAO INDUSTRY (SHANGHAI) CO.,LTD')}</row>`); row++;
-  rows.push(`<row r="${row}">${sc(row,0,'BANK OF NAME:')}${bc(row,1,'AGRICULTURAL BANK OF CHINA SHANGHAI YANGPU BRANCH')}</row>`); row++;
-  rows.push(`<row r="${row}">${sc(row,0,'BANK ADDRESS:')}${bc(row,1,'NO. 1128, XIANGYIN ROAD, YANGPU DISTRICT, SHANGHAI CHINA')}</row>`); row++;
-  rows.push(`<row r="${row}">${sc(row,0,'POST CODE:')}${bc(row,1,'200433')}</row>`); row++;
-  rows.push(`<row r="${row}">${sc(row,0,'A/C NO.:')}${bc(row,1,'09421014040006209')}</row>`); row++;
-  rows.push(`<row r="${row}">${sc(row,0,'SWIFT CODE:')}${bc(row,1,'ABOCCNBJ090')}</row>`); row++;
+  rows.push(`<row r="${row}">${sc(row,1,'Bank Information:')}</row>`); row++;
+  rows.push(`<row r="${row}">${sc(row,1,'BENEFICIARY:')}${bc(row,2,'JIATAO INDUSTRY (SHANGHAI) CO.,LTD')}</row>`); row++;
+  rows.push(`<row r="${row}">${sc(row,1,'BANK OF NAME:')}${bc(row,2,'AGRICULTURAL BANK OF CHINA SHANGHAI YANGPU BRANCH')}</row>`); row++;
+  rows.push(`<row r="${row}">${sc(row,1,'BANK ADDRESS:')}${bc(row,2,'NO. 1128, XIANGYIN ROAD, YANGPU DISTRICT, SHANGHAI CHINA')}</row>`); row++;
+  rows.push(`<row r="${row}">${sc(row,1,'POST CODE:')}${bc(row,2,'200433')}</row>`); row++;
+  rows.push(`<row r="${row}">${sc(row,1,'A/C NO.:')}${bc(row,2,'09421014040006209')}</row>`); row++;
+  rows.push(`<row r="${row}">${sc(row,1,'SWIFT CODE:')}${bc(row,2,'ABOCCNBJ090')}</row>`); row++;
 
   const colW = '<cols><col min="1" max="1" width="5" customWidth="1"/><col min="2" max="2" width="12" customWidth="1"/><col min="3" max="3" width="28" customWidth="1"/><col min="4" max="4" width="35" customWidth="1"/><col min="5" max="5" width="10" customWidth="1"/><col min="6" max="6" width="8" customWidth="1"/><col min="7" max="7" width="12" customWidth="1"/><col min="8" max="8" width="50" customWidth="1"/></cols>';
 
@@ -307,14 +337,23 @@ function b64Encode(data) {
   const bytes = data instanceof Uint8Array ? data : new Uint8Array(data);
   let result = '';
   let i = 0;
-  while (i < bytes.length) {
-    const b1 = bytes[i++] || 0;
-    const b2 = bytes[i++] || 0;
-    const b3 = bytes[i++] || 0;
+  const len = bytes.length;
+  while (i < len) {
+    const b1 = bytes[i++];
+    const b2 = i < len ? bytes[i++] : 0;
+    const b3 = i < len ? bytes[i++] : 0;
     result += chars[b1 >> 2];
     result += chars[((b1 & 3) << 4) | (b2 >> 4)];
-    result += i - 1 > bytes.length ? '=' : chars[((b2 & 15) << 2) | (b3 >> 6)];
-    result += i > bytes.length ? '=' : chars[b3 & 63];
+    if (i - 1 > len) {
+      result += '=';
+    } else {
+      result += chars[((b2 & 15) << 2) | (b3 >> 6)];
+    }
+    if (i > len) {
+      result += '=';
+    } else {
+      result += chars[b3 & 63];
+    }
   }
   return result;
 }
