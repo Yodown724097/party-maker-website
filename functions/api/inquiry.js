@@ -301,48 +301,50 @@ function buildEmailHtml(contact, cart) {
   return `<!DOCTYPE html><html><head><meta charset="utf-8"></head><body style="font-family:Arial,sans-serif;max-width:720px;margin:0 auto;padding:20px;background:#F7F9F5;"><div style="background:#9CAF88;color:white;padding:28px 24px;border-radius:12px 12px 0 0;"><h1 style="margin:0;font-size:1.5rem;font-weight:700;">New Product Inquiry</h1><p style="margin:6px 0 0;opacity:0.9;font-size:0.9rem;">From Party Maker Website</p></div><div style="background:white;padding:20px 24px;border:1px solid #D9E0D1;border-top:none;"><h2 style="font-size:0.9rem;color:#7A8B6E;margin:0 0 12px;font-weight:600;border-bottom:1px solid #D9E0D1;padding-bottom:8px;">Contact Information</h2><div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;font-size:0.88rem;color:#333;"><div><strong>Name:</strong> ${escapeHtml(contact.name||'-')}</div><div><strong>Email:</strong> <a href="mailto:${escapeHtml(contact.email||'')}" style="color:#9CAF88;">${escapeHtml(contact.email||'-')}</a></div><div><strong>Company:</strong> ${escapeHtml(contact.company||'-')}</div><div><strong>Country:</strong> ${escapeHtml(contact.country||'-')}</div>${phoneRow}</div>${contact.message ? `<div style="margin-top:12px;font-size:0.88rem;color:#333;background:#F7F9F5;padding:10px;border-radius:6px;"><strong>Message:</strong> ${escapeHtml(contact.message)}</div>` : ''}</div><div style="background:white;padding:20px 24px;border:1px solid #D9E0D1;border-top:none;border-radius:0 0 12px 12px;margin-bottom:20px;"><h2 style="font-size:0.9rem;color:#7A8B6E;margin:0 0 12px;font-weight:600;">Selected Products (${cart.length} items)</h2><table style="width:100%;border-collapse:collapse;font-size:0.88rem;background:white;border:1px solid #D9E0D1;border-radius:8px;overflow:hidden;"><thead><tr style="background:#9CAF88;color:white;"><th style="padding:10px 8px;text-align:center;">#</th><th style="padding:10px 8px;text-align:center;">SKU</th><th style="padding:10px 8px;text-align:center;">Image</th><th style="padding:10px 8px;text-align:left;">Product</th><th style="padding:10px 8px;text-align:center;">Qty</th><th style="padding:10px 8px;text-align:right;">Price</th><th style="padding:10px 8px;text-align:right;">Subtotal</th></tr></thead><tbody>${rows}</tbody><tfoot><tr style="background:#F7F9F5;"><td colspan="5" style="padding:10px 8px;"></td><td style="padding:10px 8px;text-align:right;font-weight:700;color:#7A8B6E;">TOTAL:</td><td style="padding:10px 8px;text-align:right;font-weight:700;color:#7A8B6E;">$${total.toFixed(2)}</td></tr></tfoot></table><p style="font-size:0.78rem;color:#8A9A7A;margin:12px 0 0;">* An Excel PI sheet is attached to this email for your reference.</p></div><div style="text-align:center;font-size:0.75rem;color:#8A9A7A;margin-top:16px;">Sent via <a href="https://party-maker-website.pages.dev" style="color:#9CAF88;">Party Maker Website</a></div></body></html>`;
 }
 
+// Base64 encode (RFC 4648 standard alphabet)
+function b64Encode(data) {
+  const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/';
+  const bytes = data instanceof Uint8Array ? data : new Uint8Array(data);
+  let result = '';
+  let i = 0;
+  while (i < bytes.length) {
+    const b1 = bytes[i++] || 0;
+    const b2 = bytes[i++] || 0;
+    const b3 = bytes[i++] || 0;
+    result += chars[b1 >> 2];
+    result += chars[((b1 & 3) << 4) | (b2 >> 4)];
+    result += i - 1 > bytes.length ? '=' : chars[((b2 & 15) << 2) | (b3 >> 6)];
+    result += i > bytes.length ? '=' : chars[b3 & 63];
+  }
+  return result;
+}
+
 async function buildAndSend(resendKey, contact, cart) {
   const { buffer, piNo } = await buildXlsx(contact, cart);
   const html = buildEmailHtml(contact, cart);
 
-  // Manual multipart/form-data construction (avoids FormData File issues)
-  const boundary = '----FormBoundary' + Math.random().toString(36).slice(2);
-
-  // Encode string fields
-  const fields = [
-    { name: 'from', value: 'Party Maker <onboarding@resend.dev>' },
-    { name: 'to', value: '724097@qq.com' },
-    { name: 'subject', value: `New Inquiry from ${contact.name} - ${piNo}` },
-    { name: 'html', value: html },
-  ];
-
-  const parts = [];
-  for (const f of fields) {
-    const header = `--${boundary}\r\nContent-Disposition: form-data; name="${f.name}"\r\n\r\n`;
-    parts.push(new TextEncoder().encode(header), new TextEncoder().encode(f.value));
-  }
-
-  // Attachment (XLSX)
+  // Resend API: JSON body with base64-encoded attachment
   const xlsxBytes = new Uint8Array(buffer);
-  const attachHeader = new TextEncoder().encode(
-    `--${boundary}\r\nContent-Disposition: form-data; name="attachments"; filename="${piNo}.xlsx"\r\nContent-Type: application/vnd.openxmlformats-officedocument.spreadsheetml.sheet\r\n\r\n`
-  );
-  parts.push(attachHeader, xlsxBytes);
-  parts.push(new TextEncoder().encode(`\r\n--${boundary}--\r\n`));
+  const xlsxB64 = b64Encode(xlsxBytes);
 
-  // Flatten all parts into one Uint8Array
-  const totalLen = parts.reduce((a, p) => a + p.length, 0);
-  const body = new Uint8Array(totalLen);
-  let pos = 0;
-  for (const p of parts) { body.set(p, pos); pos += p.length; }
+  const payload = {
+    from: 'Party Maker <onboarding@resend.dev>',
+    to: ['724097@qq.com'],
+    subject: `New Inquiry from ${contact.name} - ${piNo}`,
+    html: html,
+    attachments: [{
+      filename: `${piNo}.xlsx`,
+      content: xlsxB64,
+    }],
+  };
 
   const resendRes = await fetch('https://api.resend.com/emails', {
     method: 'POST',
     headers: {
       'Authorization': `Bearer ${resendKey}`,
-      'Content-Type': `multipart/form-data; boundary=${boundary}`,
+      'Content-Type': 'application/json',
     },
-    body: body,
+    body: JSON.stringify(payload),
   });
 
   if (!resendRes.ok) {
