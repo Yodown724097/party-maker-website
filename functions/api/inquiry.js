@@ -31,7 +31,7 @@ export async function onRequestPost(context) {
   }
 
   // Forward to Python Worker
-  const pythonWorkerUrl = 'http://49.234.48.68:5000/generate';
+  const pythonWorkerUrl = 'http://49.234.48.68/api/generate';
 
   try {
     const response = await fetch(pythonWorkerUrl, {
