@@ -305,19 +305,44 @@ async function buildAndSend(resendKey, contact, cart) {
   const { buffer, piNo } = await buildXlsx(contact, cart);
   const html = buildEmailHtml(contact, cart);
 
-  const formData = new FormData();
-  formData.append('from', 'Party Maker <onboarding@resend.dev>');
-  formData.append('to', '724097@qq.com');
-  formData.append('subject', `New Inquiry from ${contact.name} - ${piNo}`);
-  formData.append('html', html);
-  formData.append('attachments', new File([buffer], `${piNo}.xlsx`, {
-    type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
-  }));
+  // Manual multipart/form-data construction (avoids FormData File issues)
+  const boundary = '----FormBoundary' + Math.random().toString(36).slice(2);
+
+  // Encode string fields
+  const fields = [
+    { name: 'from', value: 'Party Maker <onboarding@resend.dev>' },
+    { name: 'to', value: '724097@qq.com' },
+    { name: 'subject', value: `New Inquiry from ${contact.name} - ${piNo}` },
+    { name: 'html', value: html },
+  ];
+
+  const parts = [];
+  for (const f of fields) {
+    const header = `--${boundary}\r\nContent-Disposition: form-data; name="${f.name}"\r\n\r\n`;
+    parts.push(new TextEncoder().encode(header), new TextEncoder().encode(f.value));
+  }
+
+  // Attachment (XLSX)
+  const xlsxBytes = new Uint8Array(buffer);
+  const attachHeader = new TextEncoder().encode(
+    `--${boundary}\r\nContent-Disposition: form-data; name="attachments"; filename="${piNo}.xlsx"\r\nContent-Type: application/vnd.openxmlformats-officedocument.spreadsheetml.sheet\r\n\r\n`
+  );
+  parts.push(attachHeader, xlsxBytes);
+  parts.push(new TextEncoder().encode(`\r\n--${boundary}--\r\n`));
+
+  // Flatten all parts into one Uint8Array
+  const totalLen = parts.reduce((a, p) => a + p.length, 0);
+  const body = new Uint8Array(totalLen);
+  let pos = 0;
+  for (const p of parts) { body.set(p, pos); pos += p.length; }
 
   const resendRes = await fetch('https://api.resend.com/emails', {
     method: 'POST',
-    headers: { 'Authorization': `Bearer ${resendKey}` },
-    body: formData,
+    headers: {
+      'Authorization': `Bearer ${resendKey}`,
+      'Content-Type': `multipart/form-data; boundary=${boundary}`,
+    },
+    body: body,
   });
 
   if (!resendRes.ok) {
