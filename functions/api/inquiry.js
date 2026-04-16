@@ -1,9 +1,7 @@
 /**
  * Cloudflare Pages Function - Inquiry Handler
- * Calls Python Excel Generator on Tencent Cloud Server
+ * Forwards request to Python Worker for Excel generation + email
  */
-
-const EXCEL_SERVER_URL = 'http://49.234.48.68:5000/api/generate-excel';
 
 export async function onRequestPost(context) {
   const { request, env } = context;
@@ -32,77 +30,41 @@ export async function onRequestPost(context) {
     });
   }
 
-  const resendKey = env.RESEND_API_KEY;
-  if (!resendKey) {
-    return new Response(JSON.stringify({error:'RESEND_API_KEY not configured'}), {
-      status: 500,
-      headers: {'Content-Type':'application/json'}
-    });
-  }
+  // Forward to Python Worker
+  const pythonWorkerUrl = 'http://49.234.48.68:5000/generate';
 
   try {
-    // Step 1: Call Python Excel Generator on Tencent Cloud
-    console.log('Calling Excel generator...');
-    const excelRes = await fetch(EXCEL_SERVER_URL, {
+    const response = await fetch(pythonWorkerUrl, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ contact, cart })
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ contact, cart }),
     });
 
-    if (!excelRes.ok) {
-      const err = await excelRes.text();
-      throw new Error(`Excel generator error: ${err}`);
+    if (!response.ok) {
+      const error = await response.text();
+      console.error('Python Worker error:', error);
+      return new Response(JSON.stringify({error: 'Email service error', details: error}), {
+        status: 500,
+        headers: {'Content-Type':'application/json'}
+      });
     }
 
-    const excelData = await excelRes.json();
-    console.log('Excel generated, piNo:', excelData.piNo);
-
-    // Step 2: Send email via Resend with the Excel attachment
-    const emailResult = await sendEmail(resendKey, excelData, contact);
-
+    const result = await response.json();
     return new Response(JSON.stringify({
       success: true,
-      piNo: excelData.piNo,
-      emailId: emailResult.id
+      piNo: result.piNo,
+      message: result.message
     }), {
       headers: {'Content-Type':'application/json'}
     });
 
   } catch(e) {
-    console.error('Inquiry error:', e.message, e.stack);
-    return new Response(JSON.stringify({error: e.message}), {
+    console.error('Request to Python Worker failed:', e.message);
+    return new Response(JSON.stringify({error: 'Service unavailable: ' + e.message}), {
       status: 500,
       headers: {'Content-Type':'application/json'}
     });
   }
-}
-
-async function sendEmail(resendKey, excelData, contact) {
-  const payload = {
-    from: 'Party Maker <onboarding@resend.dev>',
-    to: ['724097@qq.com'],
-    subject: `New Inquiry from ${contact.name} - ${excelData.piNo}`,
-    html: excelData.html,
-    attachments: [{
-      filename: `${excelData.piNo}.xlsx`,
-      content: excelData.excelBase64
-    }]
-  };
-
-  const res = await fetch('https://api.resend.com/emails', {
-    method: 'POST',
-    headers: {
-      'Authorization': `Bearer ${resendKey}`,
-      'Content-Type': 'application/json'
-    },
-    body: JSON.stringify(payload)
-  });
-
-  if (!res.ok) {
-    const err = await res.text();
-    throw new Error(`Resend error: ${err}`);
-  }
-
-  const result = await res.json();
-  return result;
 }
