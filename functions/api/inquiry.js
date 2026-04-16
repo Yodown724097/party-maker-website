@@ -41,12 +41,16 @@ export async function onRequestPost(context) {
 
   // Build Excel + send email
   try {
+    const xlsxResult = await buildXlsx(contact, cart);
+    console.log('XLSX built, piNo:', xlsxResult.piNo, 'buffer len:', xlsxResult.buffer.byteLength);
     const result = await buildAndSend(resendKey, contact, cart);
+    console.log('Email sent:', result.emailId);
     return new Response(JSON.stringify({success:true, ...result}), {
       headers: {'Content-Type':'application/json'}
     });
   } catch(e) {
-    return new Response(JSON.stringify({error: e.message || 'Internal error'}), {
+    console.error('Inquiry error:', e.message, e.stack);
+    return new Response(JSON.stringify({error: e.message || 'Internal error', stack: e.stack}), {
       status: 500, 
       headers: {'Content-Type':'application/json'}
     });
