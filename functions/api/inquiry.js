@@ -105,21 +105,31 @@ function makeZip(files) {
   const cdLen = infos.reduce((a, i) => a + i.cenSize, 0);
   offset += cdLen + 22;
 
-  // Pass 2: write everything into a single buffer
+  // Pass 2: write everything into a single buffer (Uint8Array only, no DataView)
   const buf = new Uint8Array(offset);
-  const dv = new DataView(buf.buffer);
+
+  function u32(pos, val) {
+    buf[pos]   = val & 0xff;
+    buf[pos+1] = (val >>> 8) & 0xff;
+    buf[pos+2] = (val >>> 16) & 0xff;
+    buf[pos+3] = (val >>> 24) & 0xff;
+  }
+  function u16(pos, val) {
+    buf[pos]   = val & 0xff;
+    buf[pos+1] = (val >>> 8) & 0xff;
+  }
 
   // Local file headers + data
   for (const info of infos) {
     const pos = info.myOffset;
-    dv.setUint32(pos,       0x04034b50, true);  // signature
-    dv.setUint16(pos + 4,   20,           true);  // version
-    dv.setUint16(pos + 6,   0,            true);  // flags
-    dv.setUint16(pos + 8,   0,            true);  // compression
-    dv.setUint32(pos + 14,  info.crc,      true);  // crc32
-    dv.setUint32(pos + 18,  info.data.length, true); // compressed size
-    dv.setUint32(pos + 22,  info.data.length, true); // uncompressed size
-    dv.setUint16(pos + 26,  info.name.length, true); // filename len
+    u32(pos,      0x04034b50);  // signature
+    u16(pos + 4,  20);           // version needed
+    u16(pos + 6,  0);            // general purpose bit flag
+    u16(pos + 8,  0);            // compression method (store)
+    u32(pos + 14, info.crc);    // crc-32
+    u32(pos + 18, info.data.length); // compressed size
+    u32(pos + 22, info.data.length); // uncompressed size
+    u16(pos + 26, info.name.length); // filename length
     buf.set(info.name, pos + 30);
     buf.set(info.data, pos + 30 + info.name.length);
   }
@@ -127,32 +137,32 @@ function makeZip(files) {
   // Central directory
   let cp = cdOffset;
   for (const info of infos) {
-    dv.setUint32(cp,       0x02014b50,   true);  // signature
-    dv.setUint16(cp + 4,   20,             true);  // version
-    dv.setUint16(cp + 6,   0,              true);  // flags
-    dv.setUint16(cp + 8,   0,              true);  // compression
-    dv.setUint32(cp + 12,  0,              true);  // file time
-    dv.setUint32(cp + 16,  info.crc,      true);  // crc32
-    dv.setUint32(cp + 20,  info.data.length, true); // compressed size
-    dv.setUint32(cp + 24,  info.data.length, true); // uncompressed size
-    dv.setUint16(cp + 28,  info.name.length, true); // filename len
-    dv.setUint16(cp + 30,  0,              true);  // extra field
-    dv.setUint16(cp + 32,  0,              true);  // comment
-    dv.setUint16(cp + 34,  0,              true);  // start disk
-    dv.setUint32(cp + 38,  info.myOffset,  true);  // local header offset
+    u32(cp,      0x02014b50);   // signature
+    u16(cp + 4,  20);            // version made by
+    u16(cp + 6,  0);             // flags
+    u16(cp + 8,  0);             // compression
+    u32(cp + 12, 0);             // file time
+    u32(cp + 16, info.crc);     // crc-32
+    u32(cp + 20, info.data.length); // compressed size
+    u32(cp + 24, info.data.length); // uncompressed size
+    u16(cp + 28, info.name.length); // filename length
+    u16(cp + 30, 0);            // extra field length
+    u16(cp + 32, 0);            // file comment length
+    u16(cp + 34, 0);            // disk number start
+    u32(cp + 38, info.myOffset); // relative offset of local header
     buf.set(info.name, cp + 46);
     cp += info.cenSize;
   }
 
-  // End of central directory
-  dv.setUint32(cp,     0x06054b50, true);
-  dv.setUint16(cp + 4, 0,          true);
-  dv.setUint16(cp + 6, 0,          true);
-  dv.setUint16(cp + 8, 0,          true);
-  dv.setUint16(cp + 10, 0,         true);
-  dv.setUint32(cp + 12, infos.length, true);
-  dv.setUint32(cp + 16, cdLen,      true);
-  dv.setUint32(cp + 20, cdOffset,   true);
+  // End of central directory (22 bytes)
+  u32(cp,      0x06054b50);   // signature
+  u16(cp + 4,  0);            // number of this disk
+  u16(cp + 6,  0);            // disk where central directory starts
+  u16(cp + 8,  0);            // number of central directory records on this disk
+  u16(cp + 10, infos.length); // total number of central directory records
+  u32(cp + 12, cdLen);        // size of central directory
+  u32(cp + 16, cdOffset);     // offset of start of central directory
+  // (no comment, 2 zero bytes already default)
 
   return buf;
 }
