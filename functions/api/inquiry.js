@@ -31,7 +31,7 @@ export async function onRequestPost(context) {
   }
 
   // Forward to Python Worker
-  const pythonWorkerUrl = 'http://49.234.48.68/api/generate';
+  const pythonWorkerUrl = 'https://api.partymaker.cn/api/generate';
 
   try {
     const response = await fetch(pythonWorkerUrl, {
