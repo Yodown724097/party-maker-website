@@ -3,7 +3,7 @@
  * Calls Python Excel Generator on Tencent Cloud Server
  */
 
-const EXCEL_SERVER_URL = 'http://49.234.48.68:5000/generate';
+const EXCEL_SERVER_URL = 'http://49.234.48.68:5000/api/generate-excel';
 
 export async function onRequestPost(context) {
   const { request, env } = context;
