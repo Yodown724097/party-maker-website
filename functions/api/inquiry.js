@@ -84,82 +84,96 @@ function crc32_update(data) {
 }
 
 function makeZip(files) {
-  const fileData = [];
-  const cdEntries = [];
+  // Calculate total size first
+  let totalSize = 0;
+  const fileInfos = [];
   for (const [path, rawData] of Object.entries(files)) {
-    const bytes = rawData instanceof Uint8Array ? rawData
-      : new TextEncoder().encode(rawData);
+    let dataBytes;
+    if (rawData instanceof Uint8Array) {
+      dataBytes = rawData;
+    } else if (rawData instanceof ArrayBuffer) {
+      dataBytes = new Uint8Array(rawData);
+    } else {
+      dataBytes = new TextEncoder().encode(String(rawData));
+    }
     const nameBytes = new TextEncoder().encode(path);
-    const crc = crc32_update(bytes);
-    const size = bytes.length;
-
-    // Local file header
-    const lh = new Uint8Array(30 + nameBytes.length);
-    const lv = new DataView(lh.buffer);
-    lv.setUint32(0, 0x04034b50, true);
-    lv.setUint16(4, 20, true);
-    lv.setUint16(6, 0, true);
-    lv.setUint16(8, 0, true);
-    lv.setUint32(14, crc, true);
-    lv.setUint32(18, size, true);
-    lv.setUint32(22, size, true);
-    lv.setUint16(26, nameBytes.length, true);
-    lh.set(nameBytes, 30);
-    fileData.push(lh, bytes);
-
-    // Central directory entry
-    const cd = new Uint8Array(46 + nameBytes.length);
-    const dv = new DataView(cd.buffer);
-    dv.setUint32(0, 0x02014b50, true);
-    dv.setUint16(4, 20, true);
-    dv.setUint16(6, 0, true);
-    dv.setUint16(8, 0, true);
-    dv.setUint32(12, 0, true);
-    dv.setUint32(16, crc, true);
-    dv.setUint32(20, size, true);
-    dv.setUint32(24, size, true);
-    dv.setUint16(28, nameBytes.length, true);
-    dv.setUint16(30, 0, true);
-    dv.setUint16(32, 0, true);
-    dv.setUint16(34, 0, true);
-    dv.setUint16(36, 0, true);
-    // cdOffset = cdOffset (set below)
-    cdEntries.push(cd);
+    const crc = crc32_update(dataBytes);
+    const fsize = dataBytes.length;
+    const nhdr = 30 + nameBytes.length;
+    const centDirSize = 46 + nameBytes.length;
+    const offset = totalSize;
+    totalSize += nhdr + fsize;
+    fileInfos.push({ offset, nameBytes, crc, fsize, nhdr, centDirSize });
   }
 
-  // Calculate CD offset: sum of all fileData lengths
-  let cdOffset = 0;
-  for (const fd of fileData) cdOffset += fd.length;
+  // Add central directory + EOCD to total
+  const cdOffset = totalSize;
+  const cdSize = fileInfos.reduce((a, f) => a + f.centDirSize, 0);
+  totalSize += cdSize + 22; // +22 for EOCD
 
-  // Now set cdOffset in each CD entry
-  let pos2 = 0;
-  for (let i = 0; i < cdEntries.length; i++) {
-    const dv = new DataView(cdEntries[i].buffer);
-    dv.setUint32(38, pos2, true);
-    pos2 += cdEntries[i].length;
+  const buf = new Uint8Array(totalSize);
+  const view = new DataView(buf.buffer);
+
+  // Write local file headers + data
+  for (let i = 0; i < fileInfos.length; i++) {
+    const fi = fileInfos[i];
+    const dataEntry = Object.entries(files)[i];
+    let dataBytes;
+    const rawData = dataEntry[1];
+    if (rawData instanceof Uint8Array) {
+      dataBytes = rawData;
+    } else if (rawData instanceof ArrayBuffer) {
+      dataBytes = new Uint8Array(rawData);
+    } else {
+      dataBytes = new TextEncoder().encode(String(rawData));
+    }
+
+    const pos = fi.offset;
+    view.setUint32(pos, 0x04034b50, true);
+    view.setUint16(pos + 4, 20, true);
+    view.setUint16(pos + 6, 0, true);
+    view.setUint16(pos + 8, 0, true);
+    view.setUint32(pos + 14, fi.crc, true);
+    view.setUint32(pos + 18, fi.fsize, true);
+    view.setUint32(pos + 22, fi.fsize, true);
+    view.setUint16(pos + 26, fi.nameBytes.length, true);
+    buf.set(fi.nameBytes, pos + 30);
+    buf.set(dataBytes, pos + 30 + fi.nameBytes.length);
   }
 
-  const cdLen = cdEntries.reduce((a, e) => a + e.length, 0);
+  // Write central directory
+  let cdPos = cdOffset;
+  for (let i = 0; i < fileInfos.length; i++) {
+    const fi = fileInfos[i];
+    view.setUint32(cdPos, 0x02014b50, true);
+    view.setUint16(cdPos + 4, 20, true);
+    view.setUint16(cdPos + 6, 0, true);
+    view.setUint16(cdPos + 8, 0, true);
+    view.setUint32(cdPos + 12, 0, true);
+    view.setUint32(cdPos + 16, fi.crc, true);
+    view.setUint32(cdPos + 20, fi.fsize, true);
+    view.setUint32(cdPos + 24, fi.fsize, true);
+    view.setUint16(cdPos + 28, fi.nameBytes.length, true);
+    view.setUint16(cdPos + 30, 0, true);
+    view.setUint16(cdPos + 32, 0, true);
+    view.setUint16(cdPos + 34, 0, true);
+    view.setUint16(cdPos + 36, 0, true);
+    view.setUint32(cdPos + 38, fi.offset, true);
+    buf.set(fi.nameBytes, cdPos + 46);
+    cdPos += fi.centDirSize;
+  }
 
-  // End of central directory
-  const eocd = new Uint8Array(22);
-  const eocdv = new DataView(eocd.buffer);
-  eocdv.setUint32(0, 0x06054b50, true);
-  eocdv.setUint16(4, 0, true);
-  eocdv.setUint16(6, 0, true);
-  eocdv.setUint16(8, 0, true);
-  eocdv.setUint16(10, 0, true);
-  eocdv.setUint32(12, cdEntries.length, true);
-  eocdv.setUint32(16, cdLen, true);
-  eocdv.setUint32(20, cdOffset, true);
+  // Write EOCD
+  view.setUint32(cdPos, 0x06054b50, true);
+  view.setUint16(cdPos + 4, 0, true);
+  view.setUint16(cdPos + 6, 0, true);
+  view.setUint16(cdPos + 8, 0, true);
+  view.setUint16(cdPos + 10, 0, true);
+  view.setUint32(cdPos + 12, fileInfos.length, true);
+  view.setUint32(cdPos + 16, cdSize, true);
+  view.setUint32(cdPos + 20, cdOffset, true);
 
-  // Assemble final buffer
-  const allParts = [...fileData, ...cdEntries, eocd];
-  const totalSize = allParts.reduce((a, b) => a + b.length, 0);
-  const result = new Uint8Array(totalSize);
-  let pos = 0;
-  for (const p of allParts) { result.set(p, pos); pos += p.length; }
-  return result;
+  return buf;
 }
 
 async function buildXlsx(contact, cart) {
