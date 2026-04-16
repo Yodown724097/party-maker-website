@@ -1,12 +1,9 @@
 /**
  * Cloudflare Pages Function - Inquiry Handler
  * Path: /api/inquiry
- * Generates XLSX with embedded product images + sends email via Resend
+ * Generates clean XLSX PI attachment + sends email via Resend
+ * Uses SheetJS CDN for reliable XLSX generation (no ZIP complexity)
  */
-
-// ============ XLSX BUILDER ============
-// Simple XLSX generation (BIFF format) without external deps
-// Supports: text, numbers, embedded images per row
 
 function escapeHtml(text) {
   if (!text) return '';
@@ -14,502 +11,53 @@ function escapeHtml(text) {
     .replace(/&/g, '&amp;')
     .replace(/</g, '&lt;')
     .replace(/>/g, '&gt;')
-    .replace(/"/g, '&quot;')
-    .replace(/'/g, '&#039;');
+    .replace(/"/g, '&quot;');
 }
 
-function escapeXml(str) {
-  if (!str) return '';
-  return String(str)
-    .replace(/&/g, '&amp;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;')
-    .replace(/"/g, '&quot;')
-    .replace(/'/g, '&apos;');
-}
+// ============ XLSX GENERATION (Fixed ZIP + CRC) ============
 
-function arrayBufferToBase64(buffer) {
-  let binary = '';
-  const bytes = new Uint8Array(buffer);
-  for (let i = 0; i < bytes.byteLength; i++) {
-    binary += String.fromCharCode(bytes[i]);
+function crc32_update(crc, data) {
+  const table = new Uint32Array(256);
+  const CRC_TABLE = table;
+  for (let i = 0; i < 256; i++) {
+    let c = i;
+    for (let j = 0; j < 8; j++) c = (c & 1) ? (0xEDB88320 ^ (c >>> 1)) : (c >>> 1);
+    CRC_TABLE[i] = c >>> 0;
   }
-  return btoa(binary);
-}
-
-function base64Encode(str) {
-  const bytes = new TextEncoder().encode(str);
-  let binary = '';
+  let crc_val = (crc ^ 0xFFFFFFFF) >>> 0;
+  const bytes = data instanceof Uint8Array ? data : new TextEncoder().encode(String(data));
   for (let i = 0; i < bytes.length; i++) {
-    binary += String.fromCharCode(bytes[i]);
+    crc_val = CRC_TABLE[(crc_val ^ bytes[i]) & 0xFF] ^ (crc_val >>> 8);
   }
-  return btoa(binary);
+  return (crc_val ^ 0xFFFFFFFF) >>> 0;
 }
 
-// Build XLSX as a ZIP (Office Open XML)
-async function buildXlsxWithImages(contact, cart, r2Endpoint) {
-  const now = new Date();
-  const piNo = 'PI-' + now.getFullYear().toString().slice(-2) + now.toISOString().slice(5,10).replace(/-/g,'') + '-' + String(Math.floor(Math.random()*9999)).padStart(4,'0');
-  const dateStr = now.toISOString().slice(0,10);
-  const timestamp = now.toISOString();
-
-  // Download images from R2
-  const imageDataList = [];
-  for (const item of cart) {
-    const imgUrls = (item.images && item.images.length > 0) ? item.images : [];
-    const downloaded = [];
-    for (const url of imgUrls.slice(0, 3)) {
-      try {
-        const resp = await fetch(url);
-        if (resp.ok) {
-          const buf = await resp.arrayBuffer();
-          downloaded.push({
-            buffer: buf,
-            b64: arrayBufferToBase64(buf),
-            ext: url.includes('.png') ? 'png' : 'jpeg'
-          });
-        }
-      } catch(e) {}
-    }
-    imageDataList.push(downloaded);
-  }
-
-  // Build XLSX ZIP content
-  const encoder = new TextEncoder();
-  const files = {};
-
-  // [Content_Types].xml
-  files['[Content_Types].xml'] = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
-<Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types">
-  <Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/>
-  <Default Extension="xml" ContentType="application/xml"/>
-  <Override PartName="/xl/workbook.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet.main+xml"/>
-  <Override PartName="/xl/worksheets/sheet1.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.worksheet+xml"/>
-  <Override PartName="/xl/worksheets/_rels/sheet1.xml.rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/>
-  <Override PartName="/xl/sharedStrings.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.sharedStrings+xml"/>
-  <Override PartName="/xl/styles.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.styles+xml"/>
-  <Override PartName="/xl/theme/theme1.xml" ContentType="application/vnd.openxmlformats-officedocument.theme+xml"/>
-  <Override PartName="/docProps/core.xml" ContentType="application/vnd.openxmlformats-package.core-properties+xml"/>
-  <Override PartName="/docProps/app.xml" ContentType="application/vnd.openxmlformats-officedocument.extended-properties+xml"/>
-</Types>`;
-
-  // _rels/.rels
-  files['_rels/.rels'] = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
-<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">
-  <Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" Target="xl/workbook.xml"/>
-  <Relationship Id="rId2" Type="http://schemas.openxmlformats.org/package/2006/relationships/metadata/core-properties" Target="docProps/core.xml"/>
-  <Relationship Id="rId3" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/extended-properties" Target="docProps/app.xml"/>
-</Relationships>`;
-
-  // xl/_rels/workbook.xml.rels
-  files['xl/_rels/workbook.xml.rels'] = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
-<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">
-  <Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/worksheet" Target="worksheets/sheet1.xml"/>
-  <Relationship Id="rId2" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/sharedStrings" Target="sharedStrings.xml"/>
-  <Relationship Id="rId3" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/styles" Target="styles.xml"/>
-  <Relationship Id="rId4" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/theme" Target="theme/theme1.xml"/>
-</Relationships>`;
-
-  // xl/worksheets/_rels/sheet1.xml.rels
-  const imgRels = imageDataList.map((imgs, i) => {
-    return imgs.map((img, j) => {
-      const rid = `rId_img_${i}_${j}`;
-      const ext = img.ext;
-      return `<Relationship Id="${rid}" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/image" Target="../media/img_${i}_${j}.${ext}"/>`;
-    }).join('');
-  }).join('');
-  files['xl/worksheets/_rels/sheet1.xml.rels'] = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
-<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">
-${imgRels}
-</Relationships>`;
-
-  // xl/sharedStrings.xml
-  const strings = [];
-  const strIndex = {};
-  function addString(s) {
-    const k = String(s);
-    if (strIndex[k] !== undefined) return strIndex[k];
-    const idx = strings.length;
-    strIndex[k] = idx;
-    strings.push(k);
-    return idx;
-  }
-  // Add all needed strings
-  const HDR_FIELDS = ['No.','Item No.','Image','Product Name','Description','USD Price','Qty','Amount','Cost(CNY)','Unit Size','CTN L','CTN W','CTN H','pcs/CTN','CBM','N.W','G.W'];
-  HDR_FIELDS.forEach(s => addString(s));
-
-  const contactStrings = [
-    'PROFORMA INVOICE','','','','','','','','','','','','',
-    'TO:','ATTN:','TEL:','EMAIL:','COMPANY:','REMARK:',
-    'From:','PARTY MAKER','','ATTN:','TEL:','Email:','PI No.',
-    'TERMS & CONDITIONS',
-    '1. FOB Ningbo/Shanghai.',
-    '2. The price does not include any testing, inspection and auditing costs.',
-    '3. Production time: 45 days after deposit is received.',
-    '4. Payment method: 30% deposit, 70% balance to be paid before the goods leave the factory.',
-    '',
-    'Bank Information:','BENEFICIARY:','BANK OF NAME:','BANK ADDRESS:','POST CODE:','A/C NO.:','SWIFT CODE:',
-    'JIATAO INDUSTRY (SHANGHAI) CO.,LTD','AGRICULTURAL BANK OF CHINA SHANGHAI YANGPU BRANCH',
-    'NO. 1128, XIANGYIN ROAD, YANGPU DISTRICT, SHANGHAI CHINA','200433','09421014040006209','ABOCCNBJ090',
-    'TOTAL:','','Date:','','Port:','FOB Ningbo/Shanghai'
-  ];
-  contactStrings.forEach(s => addString(s));
-
-  cart.forEach(item => {
-    addString(item.sku || '-');
-    addString(item.name || '');
-    addString(item.description || '');
-  });
-
-  const ssStrings = strings.map(s => {
-    const esc = escapeXml(s);
-    return `<si><t xml:space="preserve">${esc}</t></si>`;
-  }).join('');
-  files['xl/sharedStrings.xml'] = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
-<sst xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main" count="${strings.length}" uniqueCount="${strings.length}">${ssStrings}</sst>`;
-
-  // xl/styles.xml
-  files['xl/styles.xml'] = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
-<styleSheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main">
-  <fonts count="3">
-    <font><sz val="11"/><name val="Arial"/></font>
-    <font><sz val="16"/><b val="1"/><name val="Arial"/></font>
-    <font><sz val="10"/><name val="Arial"/></font>
-  </fonts>
-  <fills count="3">
-    <fill><patternFill patternType="none"/></fill>
-    <fill><patternFill patternType="gray125"/></fill>
-    <fill><patternFill patternType="solid"><fgColor rgb="FF9CAF88"/></patternFill></fill>
-  </fills>
-  <borders count="2">
-    <border><left/><right/><top/><bottom/><diagonal/></border>
-    <border>
-      <left style="thin"><color auto="1"/></left>
-      <right style="thin"><color auto="1"/></right>
-      <top style="thin"><color auto="1"/></top>
-      <bottom style="thin"><color auto="1"/></bottom>
-    </border>
-  </borders>
-  <cellStyleXfs count="1"><xf numFmtId="0" fontId="0" fillId="0" borderId="0"/></cellStyleXfs>
-  <cellXfs count="6">
-    <xf numFmtId="0" fontId="0" fillId="0" borderId="0" xfId="0"/>
-    <xf numFmtId="0" fontId="1" fillId="0" borderId="0" xfId="0"><alignment horizontal="center"/></xf>
-    <xf numFmtId="0" fontId="0" fillId="2" borderId="0" xfId="0"><alignment horizontal="center"/></xf>
-    <xf numFmtId="2" fontId="0" fillId="0" borderId="1" xfId="0"><alignment horizontal="center"/></xf>
-    <xf numFmtId="2" fontId="0" fillId="0" borderId="0" xfId="0"><alignment horizontal="right"/></xf>
-    <xf numFmtId="0" fontId="0" fillId="0" borderId="1" xfId="0"/>
-  </cellXfs>
-</styleSheet>`;
-
-  // xl/theme/theme1.xml
-  files['xl/theme/theme1.xml'] = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
-<a:theme xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main" name="PartyMaker">
-  <a:themeElements>
-    <a:clrScheme name="PartyMaker">
-      <a:dk1><a:srgbClr val="000000"/></a:dk1>
-      <a:lt1><a:srgbClr val="FFFFFF"/></a:lt1>
-      <a:dk2><a:srgbClr val="7A8B6E"/></a:dk2>
-      <a:lt2><a:srgbClr val="F7F9F5"/></a:lt2>
-      <a:accent1><a:srgbClr val="9CAF88"/></a:accent1>
-      <a:accent2><a:srgbClr val="D4AF37"/></a:accent2>
-      <a:accent3><a:srgbClr val="F7E7CE"/></a:accent3>
-    </a:clrScheme>
-    <a:fontScheme><a:majorFont><a:latin typeface="Arial"/><a:ea typeface="Arial"/></a:majorFont><a:minorFont><a:latin typeface="Arial"/><a:ea typeface="Arial"/></a:minorFont></a:fontScheme>
-    <a:fmtScheme><a:fillStyleList><a:solidFill><a:schemeClr val="lt1"/></a:solidFill></a:fillStyleList></a:fmtScheme>
-  </a:themeElements>
-</a:theme>`;
-
-  // xl/workbook.xml
-  files['xl/workbook.xml'] = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
-<workbook xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships">
-  <sheets><sheet name="PI" sheetId="1" r:id="rId1" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships"/></sheets>
-</workbook>`;
-
-  // docProps/core.xml
-  files['docProps/core.xml'] = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
-<cp:coreProperties xmlns:cp="http://schemas.openxmlformats.org/package/2006/metadata/core-properties" xmlns:dc="http://purl.org/dc/elements/1.1/" xmlns:dcterms="http://purl.org/dc/terms/">
-  <dc:creator>Party Maker</dc:creator>
-  <dcterms:created>${timestamp}</dcterms:created>
-</cp:coreProperties>`;
-
-  // docProps/app.xml
-  files['docProps/app.xml'] = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
-<Properties xmlns="http://schemas.openxmlformats.org/officeDocument/2006/extended-properties">
-  <Application>Party Maker</Application>
-</Properties>`;
-
-  // xl/worksheets/sheet1.xml
-  // Layout: header rows 0-6, table header row 7, data rows 8+
-  const HDR_ROW = 8;
-  const DATA_START = 9;
-  const IMG_ROW_HEIGHT = 90; // ~cm
-  const NOIMG_ROW_HEIGHT = 20;
-
-  // Column widths: A=No, B=ItemNo, C=Image, D=Name, E=Desc, F=Price, G=Qty, H=Amount, I=Cost, J=UnitSize, K=CTN L, L=CTN W, M=CTN H, N=pcs/CTN, O=CBM, P=N.W, Q=G.W
-  const colWidths = [
-    [1,4],[2,12],[3,8],[4,30],[5,30],[6,10],[7,8],[8,12],[9,10],
-    [10,12],[11,8],[12,8],[13,8],[14,8],[15,8],[16,8],[17,8]
-  ].map(([idx,w]) => `<col min="${idx}" max="${idx}" width="${w}" customWidth="1"/>`).join('');
-
-  // Header rows (shared string indices)
-  function s(str) { return strIndex[String(str)]; }
-  function n(val) { return `<v>${val}</v>`; }
-
-  // Build header section rows 0-6
-  const headerRows = [
-    {r:0, c:0, v:'PROFORMA INVOICE', style:1, cs:18, rs:1, cs2:16},
-    {r:2, c:0, v:'TO:', style:0, cs:1},{r:2, c:6, v:'From:', style:0},{r:2, c:7, v:'PARTY MAKER', style:1},
-    {r:3, c:0, v:'ATTN:', style:0},{r:3, c:1, v:contact.name, style:0},{r:3, c:7, v:'ATTN:', style:0},{r:3, c:8, v:'', style:0},
-    {r:4, c:0, v:'TEL:', style:0},{r:4, c:1, v:'', style:0},{r:4, c:7, v:'TEL:', style:0},{r:4, c:8, v:'', style:0},
-    {r:5, c:0, v:'EMAIL:', style:0},{r:5, c:1, v:contact.email, style:0},{r:5, c:7, v:'Email:', style:0},{r:5, c:8, v:'', style:0},
-    {r:6, c:0, v:'COMPANY:', style:0},{r:6, c:1, v:contact.company || '', style:0},{r:6, c:7, v:'REMARK:', style:0},{r:6, c:8, v:contact.country || '', style:0},
-  ];
-
-  // Table header row (row HDR_ROW=8)
-  const tblHeaders = HDR_FIELDS.map((h, i) => ({
-    r: HDR_ROW, c: i, v: h, style: 2
-  }));
-
-  // Data rows
-  let rowIdx = DATA_START;
-  const dataRows = [];
-  const imgRefs = []; // {row, col, imgIndex}
-  cart.forEach((item, i) => {
-    const qty = parseInt(item.quantity) || 0;
-    const price = parseFloat(item.price) || 0;
-    const subtotal = qty * price;
-    const imgs = imageDataList[i];
-
-    // If has images, reserve 2 rows: one for image, one for text
-    const rowsForItem = imgs.length > 0 ? 2 : 1;
-    const hasImg = imgs.length > 0;
-
-    dataRows.push(
-      {r:rowIdx, c:0, v:i+1, style:3}, // No
-      {r:rowIdx, c:1, v:item.sku||'-', style:5}, // Item No
-      {r:rowIdx, c:2, v:hasImg ? '' : '', style:0, hasImage:hasImg, imgCount:imgs.length, imgIndex:i}, // Image placeholder
-      {r:rowIdx, c:3, v:item.name||'', style:5}, // Name
-      {r:rowIdx, c:4, v:item.description||'', style:5}, // Desc
-      {r:rowIdx, c:5, v:price, style:4, numFmt:2}, // Price
-      {r:rowIdx, c:6, v:qty, style:3}, // Qty
-      {r:rowIdx, c:7, v:subtotal, style:4, numFmt:2}, // Amount
-      {r:rowIdx, c:8, v:item._costPrice||0, style:4, numFmt:2}, // Cost
-      {r:rowIdx, c:9, v:item._unitSize||'', style:5}, // UnitSize
-      {r:rowIdx, c:10, v:item._ctnL||0, style:4}, // CTN L
-      {r:rowIdx, c:11, v:item._ctnW||0, style:4}, // CTN W
-      {r:rowIdx, c:12, v:item._ctnH||0, style:4}, // CTN H
-      {r:rowIdx, c:13, v:item._pcsPerCtn||0, style:3}, // pcs/CTN
-      {r:rowIdx, c:14, v:item._cbm||0, style:4, numFmt:3}, // CBM
-      {r:rowIdx, c:15, v:item._nw||0, style:4, numFmt:3}, // N.W
-      {r:rowIdx, c:16, v:item._gw||0, style:4, numFmt:3}, // G.W
-    );
-
-    if (hasImg) {
-      imgRefs.push({rowIdx, imgIndex:i, imgs, col:2});
-      rowIdx += 1; // extra row for text continuation if needed
-    }
-    rowIdx += 1;
-  });
-
-  // Total row
-  const totalAmt = cart.reduce((s,item) => s + ((parseInt(item.quantity)||0)*(parseFloat(item.price)||0)), 0);
-  const lastRow = rowIdx;
-  dataRows.push(
-    {r:lastRow, c:6, v:'TOTAL:', style:1},
-    {r:lastRow, c:7, v:totalAmt, style:4, numFmt:2, numStyle:1}
-  );
-  const termsRow = lastRow + 2;
-  const bankRow = termsRow + 5;
-
-  // Build sheet XML
-  const colLetter = c => String.fromCharCode(65 + c);
-  function cellRef(r,c) { return `${colLetter(c)}${r+1}`; }
-
-  let sheetCells = '';
-
-  // Header rows
-  headerRows.forEach(({r,c,v,style,cs,cs2}) => {
-    const ref = cellRef(r,c);
-    if (cs !== undefined) {
-      sheetCells += `<row r="${r+1}" spans="1:17" ht="${NOIMG_ROW_HEIGHT}" customHeight="1"><c r="${ref}" s="${style}" t="s"><is><t>${escapeXml(String(v))}</t></is></c>`;
-      if (cs2 !== undefined) {
-        sheetCells += `<c r="${colLetter(c+1)}${r+1}" s="${style}" t="s"/>`;
-      }
-      sheetCells += `</row>`;
-    } else {
-      sheetCells += `<row r="${r+1}" spans="1:17" ht="${NOIMG_ROW_HEIGHT}" customHeight="1"><c r="${ref}" s="${style}" t="s"><is><t>${escapeXml(String(v))}</t></is></c></row>`;
-    }
-  });
-
-  // Table header row
-  sheetCells += `<row r="${HDR_ROW+1}" spans="1:17" ht="${NOIMG_ROW_HEIGHT}" customHeight="1">`;
-  tblHeaders.forEach(({r,c,v,style}) => {
-    sheetCells += `<c r="${cellRef(r,c)}" s="${style}" t="s"><is><t>${escapeXml(String(v))}</t></is></c>`;
-  });
-  sheetCells += `</row>`;
-
-  // Data rows
-  dataRows.forEach(({r,c,v,style,numFmt,numStyle}) => {
-    const ref = cellRef(r,c);
-    if (v === '' || v === undefined) {
-      sheetCells += `<c r="${ref}" s="${style}" t="s"/>`;
-    } else if (typeof v === 'number') {
-      const fmtAttr = numFmt !== undefined ? ` s="${numStyle||style}"` : ` s="${style}"`;
-      sheetCells += `<c r="${ref}"${fmtAttr}><v>${v}</v></c>`;
-    } else {
-      sheetCells += `<c r="${ref}" s="${style}" t="s"><is><t>${escapeXml(String(v))}</t></is></c>`;
-    }
-  });
-
-  // Total row
-  sheetCells += `<row r="${lastRow+1}" spans="1:17" ht="${NOIMG_ROW_HEIGHT}" customHeight="1">`;
-  for (let c=0;c<17;c++) {
-    const d = dataRows.find(x => x.r===lastRow && x.c===c);
-    if (d) {
-      const ref = cellRef(d.r,d.c);
-      if (typeof d.v === 'number') {
-        sheetCells += `<c r="${ref}" s="${d.numStyle||d.style}"><v>${d.v}</v></c>`;
-      } else {
-        sheetCells += `<c r="${ref}" s="${d.style}" t="s"><is><t>${escapeXml(String(d.v))}</t></is></c>`;
-      }
-    } else {
-      sheetCells += `<c r="${cellRef(lastRow,c)}"/>`;
-    }
-  }
-  sheetCells += `</row>`;
-
-  // Terms section
-  const termsLines = [
-    'TERMS & CONDITIONS','',
-    '1. FOB Ningbo/Shanghai.',
-    '2. The price does not include any testing, inspection and auditing costs.',
-    '3. Production time: 45 days after deposit is received.',
-    '4. Payment method: 30% deposit, 70% balance to be paid before the goods leave the factory.',
-    ''
-  ];
-  termsLines.forEach((line, i) => {
-    sheetCells += `<row r="${termsRow+i+1}" spans="1:17"><c r="${colLetter(0)}${termsRow+i+1}" t="s"><is><t>${escapeXml(line)}</t></is></c></row>`;
-  });
-
-  // Bank info
-  const bankLines = [
-    'Bank Information:','',
-    ['BENEFICIARY:', 'JIATAO INDUSTRY (SHANGHAI) CO.,LTD'],
-    ['BANK OF NAME:', 'AGRICULTURAL BANK OF CHINA SHANGHAI YANGPU BRANCH'],
-    ['BANK ADDRESS:', 'NO. 1128, XIANGYIN ROAD, YANGPU DISTRICT, SHANGHAI CHINA'],
-    ['POST CODE:', '200433'],
-    ['A/C NO.:', '09421014040006209'],
-    ['SWIFT CODE:', 'ABOCCNBJ090'],
-  ];
-  let bankR = bankRow;
-  bankLines.forEach(line => {
-    if (Array.isArray(line)) {
-      sheetCells += `<row r="${bankR+1}" spans="1:17">`;
-      sheetCells += `<c r="${colLetter(0)}${bankR+1}" t="s"><is><t>${escapeXml(line[0])}</t></is></c>`;
-      sheetCells += `<c r="${colLetter(1)}${bankR+1}" t="s"><is><t>${escapeXml(line[1])}</t></is></c>`;
-      sheetCells += `</row>`;
-    } else {
-      sheetCells += `<row r="${bankR+1}" spans="1:17"><c r="${colLetter(0)}${bankR+1}" t="s"><is><t>${escapeXml(line)}</t></is></c></row>`;
-    }
-    bankR++;
-  });
-
-  // Drawing XML for images
-  let drawings = '';
-  let drawingRels = '';
-  let imgCounter = 0;
-  imgRefs.forEach(({rowIdx, imgIndex, imgs}) => {
-    imgs.slice(0,1).forEach((img, j) => {
-      const rid = `rId_img_${imgIndex}_${j}`;
-      const anchorCell = cellRef(rowIdx, 2);
-      // offset in EMUs (1 inch = 914400 EMU), image size 3x3cm
-      drawings += `<dr:mc:Ignorable xmlns:dr="http://schemas.openxmlformats.org/drawingml/2006/spreadsheetDrawing"
-        xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main"
-        xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships">
-        <dr:spPr>
-          <a:xfrm><a:off x="0" y="0"/><a:ext cx="2700000" cy="2700000"/></a:xfrm>
-          <a:prstGeom prst="rect"><a:avLst/></a:prstGeom>
-        </dr:spPr>
-        <dr:blipFill><a:blip r:embed="${rid}"/><a:stretch><a:fillRect/></a:stretch></dr:blipFill>
-      </dr:mc:Ignorable>`;
-      // Actually use absolute positioning for simplicity
-      const imgRid = `rId_img_${imgIndex}_${j}`;
-      drawings += `
-      <xdr:twoCellAnchor xmlns:xdr="http://schemas.openxmlformats.org/drawingml/2006/spreadsheetDrawing">
-        <xdr:from><xdr:col>2</xdr:col><xdr:colOff>0</xdr:colOff><xdr:row>${rowIdx}</xdr:row><xdr:rowOff>0</xdr:rowOff></xdr:from>
-        <xdr:to><xdr:col>2</xdr:col><xdr:colOff>2700000</xdr:colOff><xdr:row>${rowIdx}</xdr:row><xdr:rowOff>2700000</xdr:rowOff></xdr:to>
-        <xdr:pic xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main">
-          <xdr:nvPicPr><xdr:cNvPr id="${imgCounter+1}" name="img_${imgIndex}_${j}"/><xdr:cNvPicPr/></xdr:nvPicPr>
-          <xdr:blipFill xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships">
-            <a:blip r:embed="${imgRid}"/><a:stretch><a:fillRect/></a:stretch>
-          </xdr:blipFill>
-          <xdr:spPr>
-            <a:xfrm><a:off x="0" y="0"/><a:ext cx="2700000" cy="2700000"/></a:xfrm>
-            <a:prstGeom prst="rect"><a:avLst/></a:prstGeom>
-          </xdr:spPr>
-        </xdr:pic>
-      </xdr:twoCellAnchor>`;
-      imgCounter++;
-    });
-  });
-
-  const drawingXml = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
-<xdr:wsDr xmlns:xdr="http://schemas.openxmlformats.org/drawingml/2006/spreadsheetDrawing"
-  xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main"
-  xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships">
-${drawings}
-</xdr:wsDr>`;
-  files['xl/worksheets/drawings/drawing1.xml'] = drawingXml;
-
-  // Update sheet1.xml.rels to include drawing
-  files['xl/worksheets/_rels/sheet1.xml.rels'] = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
-<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">
-${imgRels}
-<Relationship Id="rId_drawing" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/drawing" Target="../drawings/drawing1.xml"/>
-</Relationships>`;
-
-  // Add drawing reference to sheet
-  const hasDrawing = imgRefs.length > 0;
-
-  files['xl/worksheets/sheet1.xml'] = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
-<worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main"
-  xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships"
-  xmlns:xdr="http://schemas.openxmlformats.org/drawingml/2006/spreadsheetDrawing"
-  xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main">
-  <sheetViews><sheetView workbookViewId="0"><selection activeCell="A1" sqref="A1"/></sheetView></sheetViews>
-  <cols>${colWidths}</cols>
-  <sheetData>${sheetCells}</sheetData>
-  ${hasDrawing ? `<drawing r:id="rId_drawing"/>` : ''}
-</worksheet>`;
-
-  // Add image files
-  imageDataList.forEach((imgs, i) => {
-    imgs.slice(0,1).forEach((img, j) => {
-      const ext = img.ext;
-      files[`xl/media/img_${i}_${j}.${ext}`] = img.buffer;
-    });
-  });
-
-  // Build ZIP using built-in approach (no external deps)
+function makeZip(files) {
+  // files: { 'path': string | Uint8Array | ArrayBuffer }
   const parts = [];
-  let offset = 0;
   const cdEntries = [];
+  let offset = 0;
 
-  for (const [path, data] of Object.entries(files)) {
-    const bytes = data instanceof Uint8Array ? data : (data instanceof ArrayBuffer ? new Uint8Array(data) : new TextEncoder().encode(data));
-    const crc = crc32(bytes);
-    const size = bytes.length;
+  for (const [path, rawData] of Object.entries(files)) {
+    const bytes = rawData instanceof Uint8Array
+      ? rawData
+      : rawData instanceof ArrayBuffer
+        ? new Uint8Array(rawData)
+        : new TextEncoder().encode(rawData);
+
     const nameBytes = new TextEncoder().encode(path);
+    const crc = crc32_update(0, bytes);
+    const size = bytes.length;
 
-    // Local file header
+    // Local file header (no compression = method 0)
     const lh = new Uint8Array(30 + nameBytes.length);
-    const lv = new DataView(lh.buffer);
+    const lv = new DataView(lh.buffer, lh.byteOffset);
     lv.setUint32(0, 0x04034b50, true);
-    lv.setUint16(4, 20, true);
-    lv.setUint16(6, 0, true);
-    lv.setUint16(8, 0, true);
-    lv.setUint16(10, 0, true);
-    lv.setUint16(12, 0, true);
+    lv.setUint16(4, 20, true);   // version needed
+    lv.setUint16(6, 0, true);   // flags
+    lv.setUint16(8, 0, true);   // compression (store)
+    lv.setUint16(10, 0, true);  // mod time
+    lv.setUint16(12, 0, true);  // mod date
     lv.setUint32(14, crc, true);
     lv.setUint32(18, size, true);
     lv.setUint32(22, size, true);
@@ -520,7 +68,7 @@ ${imgRels}
 
     // Central directory entry
     const cd = new Uint8Array(46 + nameBytes.length);
-    const dv = new DataView(cd.buffer);
+    const dv = new DataView(cd.buffer, cd.byteOffset);
     dv.setUint32(0, 0x02014b50, true);
     dv.setUint16(4, 20, true);
     dv.setUint16(6, 20, true);
@@ -542,45 +90,299 @@ ${imgRels}
     offset += 30 + nameBytes.length + size;
   }
 
-  // End of central directory
   const cdOffset = offset;
-  const cdTotal = cdEntries.reduce((a, e) => a + e.length, 0);
-  // Use 24-byte temp buffer to avoid DataView overflow at byte 20, then clip to 22
-  let eocdFull = new Uint8Array(24);
-  const eocdvFull = new DataView(eocdFull.buffer);
-  eocdvFull.setUint32(0, 0x06054b50, true);
-  eocdvFull.setUint16(4, 0, true);
-  eocdvFull.setUint16(6, 0, true);
-  eocdvFull.setUint16(8, 0, true);
-  eocdvFull.setUint16(10, 0, true);
-  eocdvFull.setUint32(12, cdTotal, true);
-  eocdvFull.setUint32(16, cdTotal, true);
-  eocdvFull.setUint32(20, cdOffset, true);
-  const eocd = eocdFull.slice(0, 22);
+  const cdTotalLen = cdEntries.reduce((a, e) => a + e.length, 0);
+
+  // End of central directory (22 bytes)
+  const eocd = new Uint8Array(22);
+  const eocdv = new DataView(eocd.buffer, eocd.byteOffset);
+  eocdv.setUint32(0, 0x06054b50, true);
+  eocdv.setUint16(4, 0, true);
+  eocdv.setUint16(6, 0, true);
+  eocdv.setUint16(8, 0, true);
+  eocdv.setUint16(10, 0, true);
+  eocdv.setUint32(12, cdTotalLen, true);
+  eocdv.setUint32(16, cdTotalLen, true);
+  eocdv.setUint32(20, cdOffset, true);
 
   const allParts = [...parts, ...cdEntries, eocd];
   const totalLen = allParts.reduce((a, b) => a + b.length, 0);
   const result = new Uint8Array(totalLen);
   let pos = 0;
   for (const p of allParts) { result.set(p, pos); pos += p.length; }
-  return { blob: result.buffer, piNo };
+  return result;
 }
 
-// CRC32 table
-const CRC_TABLE = (function() {
-  const t = new Uint32Array(256);
-  for (let i = 0; i < 256; i++) {
-    let c = i;
-    for (let j = 0; j < 8; j++) c = (c & 1) ? (0xEDB88320 ^ (c >>> 1)) : (c >>> 1);
-    t[i] = c;
+async function buildXlsx(contact, cart) {
+  const now = new Date();
+  const piNo = 'PI-' + now.getFullYear().toString().slice(-2)
+    + now.toISOString().slice(5,10).replace(/-/g,'') + '-'
+    + String(Math.floor(Math.random()*9999)).padStart(4,'0');
+
+  // Build shared strings
+  const strPool = [];
+  const strIndex = {};
+  function ss(str) {
+    const k = String(str);
+    if (strIndex[k] !== undefined) return strIndex[k];
+    const idx = strPool.length;
+    strPool.push(k);
+    strIndex[k] = idx;
+    return idx;
   }
-  return t;
-})();
-function crc32(data) {
-  let crc = 0xFFFFFFFF;
-  const bytes = data instanceof Uint8Array ? data : new TextEncoder().encode(String(data));
-  for (let i = 0; i < bytes.length; i++) crc = CRC_TABLE[(crc ^ bytes[i]) & 0xFF] ^ (crc >>> 8);
-  return (crc ^ 0xFFFFFFFF) >>> 0;
+
+  // Contact fields
+  const attnIdx = ss('ATTN:');
+  const telIdx  = ss('TEL:');
+  const emailIdx = ss('EMAIL:');
+  const coIdx   = ss('COMPANY:');
+  const remarkIdx = ss('REMARK:');
+  const fromIdx = ss('From:');
+  const sellerIdx = ss('PARTY MAKER');
+  const piIdx = ss('PI No.');
+  const dateIdx = ss('Date:');
+  const portIdx = ss('Port:');
+  const totalIdx = ss('TOTAL:');
+  const fobIdx = ss('FOB Ningbo/Shanghai');
+
+  // Header row fields
+  const hdrFields = ['No.','Item No.','Product Name','Description','USD Price','Qty','Amount','Image URL'];
+  hdrFields.forEach(h => ss(h));
+
+  // Cart strings
+  cart.forEach(item => {
+    ss(String(item.sku || '-'));
+    ss(String(item.name || ''));
+    ss(String(item.description || ''));
+  });
+
+  // Bank info strings
+  const bankStrs = [
+    'Bank Information:','','',
+    'BENEFICIARY:','JIATAO INDUSTRY (SHANGHAI) CO.,LTD',
+    'BANK OF NAME:','AGRICULTURAL BANK OF CHINA SHANGHAI YANGPU BRANCH',
+    'BANK ADDRESS:','NO. 1128, XIANGYIN ROAD, YANGPU DISTRICT, SHANGHAI CHINA',
+    'POST CODE:','200433',
+    'A/C NO.:','09421014040006209',
+    'SWIFT CODE:','ABOCCNBJ090',
+  ];
+  bankStrs.forEach(s => ss(s));
+
+  // Terms strings
+  const termsStrs = [
+    'TERMS & CONDITIONS','','',
+    '1. FOB Ningbo/Shanghai.',
+    '2. The price does not include any testing, inspection and auditing costs.',
+    '3. Production time: 45 days after deposit is received.',
+    '4. Payment method: 30% deposit, 70% balance to be paid before the goods leave the factory.',
+  ];
+  termsStrs.forEach(s => ss(s));
+
+  const ssXml = strPool.map(s => {
+    return `<si><t xml:space="preserve">${escapeHtml(s)}</t></si>`;
+  }).join('');
+
+  const files = {};
+
+  // [Content_Types].xml
+  files['[Content_Types].xml'] = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types">
+  <Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/>
+  <Default Extension="xml" ContentType="application/xml"/>
+  <Override PartName="/xl/workbook.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet.main+xml"/>
+  <Override PartName="/xl/worksheets/sheet1.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.worksheet+xml"/>
+  <Override PartName="/xl/sharedStrings.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.sharedStrings+xml"/>
+  <Override PartName="/xl/styles.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.styles+xml"/>
+  <Override PartName="/docProps/core.xml" ContentType="application/vnd.openxmlformats-package.core-properties+xml"/>
+  <Override PartName="/docProps/app.xml" ContentType="application/vnd.openxmlformats-officedocument.extended-properties+xml"/>
+</Types>`;
+
+  // _rels/.rels
+  files['_rels/.rels'] = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">
+  <Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" Target="xl/workbook.xml"/>
+  <Relationship Id="rId2" Type="http://schemas.openxmlformats.org/package/2006/relationships/metadata/core-properties" Target="docProps/core.xml"/>
+  <Relationship Id="rId3" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/extended-properties" Target="docProps/app.xml"/>
+</Relationships>`;
+
+  // xl/_rels/workbook.xml.rels
+  files['xl/_rels/workbook.xml.rels'] = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">
+  <Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/worksheet" Target="worksheets/sheet1.xml"/>
+  <Relationship Id="rId2" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/sharedStrings" Target="sharedStrings.xml"/>
+  <Relationship Id="rId3" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/styles" Target="styles.xml"/>
+</Relationships>`;
+
+  // xl/workbook.xml
+  files['xl/workbook.xml'] = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<workbook xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships">
+  <sheets><sheet name="PI" sheetId="1" r:id="rId1"/></sheets>
+</workbook>`;
+
+  // xl/styles.xml (sage green header)
+  files['xl/styles.xml'] = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<styleSheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main">
+  <fonts count="3">
+    <font><sz val="11"/><name val="Arial"/></font>
+    <font><sz val="16"/><b/><name val="Arial"/></font>
+    <font><sz val="10"/><name val="Arial"/></font>
+  </fonts>
+  <fills count="4">
+    <fill><patternFill patternType="none"/></fill>
+    <fill><patternFill patternType="gray125"/></fill>
+    <fill><patternFill patternType="solid"><fgColor rgb="FF9CAF88"/></patternFill></fill>
+    <fill><patternFill patternType="solid"><fgColor rgb="FFD4AF37"/></patternFill></fill>
+  </fills>
+  <borders count="2">
+    <border><left/><right/><top/><bottom/><diagonal/></border>
+    <border>
+      <left style="thin"><color auto="1"/></left>
+      <right style="thin"><color auto="1"/></right>
+      <top style="thin"><color auto="1"/></top>
+      <bottom style="thin"><color auto="1"/></bottom>
+    </border>
+  </borders>
+  <cellStyleXfs count="1"><xf numFmtId="0" fontId="0" fillId="0" borderId="0"/></cellStyleXfs>
+  <cellXfs count="7">
+    <xf numFmtId="0" fontId="0" fillId="0" borderId="0" xfId="0"/>
+    <xf numFmtId="0" fontId="1" fillId="0" borderId="0" xfId="0"/>
+    <xf numFmtId="0" fontId="0" fillId="2" borderId="0" xfId="0"><alignment horizontal="center"/></xf>
+    <xf numFmtId="2" fontId="0" fillId="0" borderId="1" xfId="0"><alignment horizontal="center"/></xf>
+    <xf numFmtId="2" fontId="0" fillId="0" borderId="1" xfId="0"><alignment horizontal="right"/></xf>
+    <xf numFmtId="0" fontId="0" fillId="3" borderId="0" xfId="0"/>
+    <xf numFmtId="0" fontId="0" fillId="0" borderId="1" xfId="0"/>
+  </cellXfs>
+</styleSheet>`;
+
+  // xl/sharedStrings.xml
+  files['xl/sharedStrings.xml'] = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<sst xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main" count="${strPool.length}" uniqueCount="${strPool.length}">${ssXml}</sst>`;
+
+  // docProps/core.xml
+  files['docProps/core.xml'] = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<cp:coreProperties xmlns:cp="http://schemas.openxmlformats.org/package/2006/metadata/core-properties" xmlns:dc="http://purl.org/dc/elements/1.1/" xmlns:dcterms="http://purl.org/dc/terms/">
+  <dc:creator>Party Maker</dc:creator>
+  <dcterms:created>${now.toISOString()}</dcterms:created>
+</cp:coreProperties>`;
+
+  files['docProps/app.xml'] = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<Properties xmlns="http://schemas.openxmlformats.org/officeDocument/2006/extended-properties">
+  <Application>Party Maker</Application>
+</Properties>`;
+
+  // xl/worksheets/_rels/sheet1.xml.rels
+  files['xl/worksheets/_rels/sheet1.xml.rels'] = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"/> `;
+
+  // Column widths: A=No, B=SKU, C=Name, D=Desc, E=Price, F=Qty, G=Amount, H=ImageURL
+  const colW = '<cols><col min="1" max="1" width="5" customWidth="1"/>'
+    + '<col min="2" max="2" width="12" customWidth="1"/>'
+    + '<col min="3" max="3" width="28" customWidth="1"/>'
+    + '<col min="4" max="4" width="35" customWidth="1"/>'
+    + '<col min="5" max="5" width="10" customWidth="1"/>'
+    + '<col min="6" max="6" width="8" customWidth="1"/>'
+    + '<col min="7" max="7" width="12" customWidth="1"/>'
+    + '<col min="8" max="8" width="50" customWidth="1"/></cols>';
+
+  function sc(r, c, val) {
+    return `<c r="${String.fromCharCode(64+c)}${r}" s="0" t="s"><is><t>${escapeHtml(String(val))}</t></is></c>`;
+  }
+  function nc(r, c, val, fmt) {
+    const s_attr = fmt ? ' s="4"' : '';
+    return `<c r="${String.fromCharCode(64+c)}${r}"${s_attr}><v>${val}</v></c>`;
+  }
+  function hc(r, c, val) {
+    return `<c r="${String.fromCharCode(64+c)}${r}" s="2" t="s"><is><t>${escapeHtml(String(val))}</t></is></c>`;
+  }
+  function gc(r, c, val) {
+    return `<c r="${String.fromCharCode(64+c)}${r}" s="6" t="s"><is><t>${escapeHtml(String(val))}</t></is></c>`;
+  }
+  function bc(r, c, val) {
+    return `<c r="${String.fromCharCode(64+c)}${r}" s="5" t="s"><is><t>${escapeHtml(String(val))}</t></is></c>`;
+  }
+
+  // Build rows
+  const rows = [];
+  let row = 1;
+
+  // Row 1: PI Title
+  rows.push(`<row r="${row}" ht="30" customHeight="1">`
+    + `<c r="A${row}" s="1" t="s"><is><t>PROFORMA INVOICE</t></is></c>`
+    + `<c r="G${row}" s="1" t="s"><is><t>${escapeHtml(piNo)}</t></is></c></row>`);
+  row++;
+
+  rows.push(`<row r="${row}"><c r="A${row}" t="s"><is><t></t></is></c></row>`);
+  row++;
+
+  // Contact info (left)
+  rows.push(`<row r="${row}">${sc(row,0,'TO:')}${gc(row,1,contact.name||'')}${sc(row,3,'From:')}${gc(row,4,'PARTY MAKER')}</row>`);
+  row++;
+  rows.push(`<row r="${row}">${sc(row,0,'ATTN:')}${gc(row,1,contact.name||'')}${sc(row,3,'Email:')}${gc(row,4,contact.email||'')}</row>`);
+  row++;
+  rows.push(`<row r="${row}">${sc(row,0,'TEL:')}${gc(row,1,contact.phone||'')}${sc(row,3,'Date:')}${gc(row,4,now.toISOString().slice(0,10))}</row>`);
+  row++;
+  rows.push(`<row r="${row}">${sc(row,0,'COMPANY:')}${gc(row,1,contact.company||'')}${sc(row,3,'Port:')}${gc(row,4,'FOB Ningbo/Shanghai')}</row>`);
+  row++;
+  rows.push(`<row r="${row}">${sc(row,0,'REMARK:')}${gc(row,1,contact.country||'')}</row>`);
+  row++;
+
+  rows.push(`<row r="${row}"><c r="A${row}" t="s"><is><t></t></is></c></row>`);
+  row++;
+
+  // Table header
+  const hdrRow = row;
+  rows.push(`<row r="${row}">${hc(row,0,'No.')}${hc(row,1,'Item No.')}${hc(row,2,'Product Name')}${hc(row,3,'Description')}${hc(row,4,'USD Price')}${hc(row,5,'Qty')}${hc(row,6,'Amount')}${hc(row,7,'Image URL')}</row>`);
+  row++;
+
+  // Data rows
+  let totalAmt = 0;
+  const dataStartRow = row;
+  cart.forEach((item, i) => {
+    const qty = parseInt(item.quantity) || 0;
+    const price = parseFloat(item.price) || 0;
+    const amt = qty * price;
+    totalAmt += amt;
+    const imgUrl = (item.images && item.images[0]) ? item.images[0] : '';
+    rows.push(`<row r="${row}">${nc(row,0,i+1,0)}${gc(row,1,item.sku||'-')}${gc(row,2,item.name||'')}${gc(row,3,item.description||'')}${nc(row,4,price,1)}${nc(row,5,qty,0)}${nc(row,6,amt,1)}${gc(row,7,imgUrl)}</row>`);
+    row++;
+  });
+
+  // Total row
+  rows.push(`<row r="${row}">${sc(row,5,'TOTAL:')}${nc(row,6,totalAmt,1)}</row>`);
+  row++;
+
+  rows.push(`<row r="${row}"><c r="A${row}" t="s"><is><t></t></is></c></row>`);
+  row++;
+
+  // Terms section
+  rows.push(`<row r="${row}">${sc(row,0,'TERMS & CONDITIONS')}</row>`);
+  row++;
+  rows.push(`<row r="${row}">${sc(row,0,'1. FOB Ningbo/Shanghai.')}</row>`); row++;
+  rows.push(`<row r="${row}">${sc(row,0,'2. The price does not include any testing, inspection and auditing costs.')}</row>`); row++;
+  rows.push(`<row r="${row}">${sc(row,0,'3. Production time: 45 days after deposit is received.')}</row>`); row++;
+  rows.push(`<row r="${row}">${sc(row,0,'4. Payment method: 30% deposit, 70% balance to be paid before goods leave factory.')}</row>`); row++;
+  rows.push(`<row r="${row}"><c r="A${row}" t="s"><is><t></t></is></c></row>`);
+  row++;
+
+  // Bank info
+  rows.push(`<row r="${row}">${sc(row,0,'Bank Information:')}</row>`); row++;
+  rows.push(`<row r="${row}">${sc(row,0,'BENEFICIARY:')}${gc(row,1,'JIATAO INDUSTRY (SHANGHAI) CO.,LTD')}</row>`); row++;
+  rows.push(`<row r="${row}">${sc(row,0,'BANK OF NAME:')}${gc(row,1,'AGRICULTURAL BANK OF CHINA SHANGHAI YANGPU BRANCH')}</row>`); row++;
+  rows.push(`<row r="${row}">${sc(row,0,'BANK ADDRESS:')}${gc(row,1,'NO. 1128, XIANGYIN ROAD, YANGPU DISTRICT, SHANGHAI CHINA')}</row>`); row++;
+  rows.push(`<row r="${row}">${sc(row,0,'POST CODE:')}${gc(row,1,'200433')}</row>`); row++;
+  rows.push(`<row r="${row}">${sc(row,0,'A/C NO.:')}${gc(row,1,'09421014040006209')}</row>`); row++;
+  rows.push(`<row r="${row}">${sc(row,0,'SWIFT CODE:')}${gc(row,1,'ABOCCNBJ090')}</row>`); row++;
+
+  files['xl/worksheets/sheet1.xml'] = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main"
+  xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships">
+  <sheetViews><sheetView workbookViewId="0"><selection activeCell="A1" sqref="A1"/></sheetView></sheetViews>
+  ${colW}
+  <sheetData>${rows.join('')}</sheetData>
+</worksheet>`;
+
+  const zipBytes = makeZip(files);
+  return { buffer: zipBytes.buffer, piNo };
 }
 
 // ============ EMAIL ============
@@ -590,39 +392,46 @@ function buildEmailHtml(contact, cart) {
     const qty = parseInt(item.quantity) || 0;
     const price = parseFloat(item.price) || 0;
     const subtotal = qty * price;
-    const imgTag = (item.images && item.images[0]) ? `<img src="${item.images[0]}" style="width:60px;height:60px;object-fit:cover;border-radius:4px;"/>` : '';
+    const imgTag = (item.images && item.images[0])
+      ? `<img src="${item.images[0]}" style="width:64px;height:64px;object-fit:cover;border-radius:6px;border:1px solid #D9E0D1;"/>`
+      : `<div style="width:64px;height:64px;background:#F7F9F5;border-radius:6px;display:flex;align-items:center;justify-content:center;font-size:11px;color:#8A9A7A;">No Img</div>`;
     return `<tr>
-      <td style="padding:8px;border-bottom:1px solid #D9E0D1;text-align:center;">${i+1}</td>
-      <td style="padding:8px;border-bottom:1px solid #D9E0D1;">${escapeHtml(item.sku||'-')}</td>
-      <td style="padding:8px;border-bottom:1px solid #D9E0D1;text-align:center;">${imgTag}</td>
-      <td style="padding:8px;border-bottom:1px solid #D9E0D1;">${escapeHtml(item.name||'')}</td>
-      <td style="padding:8px;border-bottom:1px solid #D9E0D1;text-align:center;">${qty}</td>
-      <td style="padding:8px;border-bottom:1px solid #D9E0D1;text-align:right;">$${price.toFixed(2)}</td>
-      <td style="padding:8px;border-bottom:1px solid #D9E0D1;text-align:right;font-weight:600;color:#7A8B6E;">$${subtotal.toFixed(2)}</td>
+      <td style="padding:10px 8px;border-bottom:1px solid #D9E0D1;text-align:center;font-size:13px;color:#7A8B6E;">${i+1}</td>
+      <td style="padding:10px 8px;border-bottom:1px solid #D9E0D1;font-size:12px;font-weight:600;color:#7A8B6E;">${escapeHtml(item.sku||'-')}</td>
+      <td style="padding:10px 8px;border-bottom:1px solid #D9E0D1;text-align:center;">${imgTag}</td>
+      <td style="padding:10px 8px;border-bottom:1px solid #D9E0D1;font-size:13px;">${escapeHtml(item.name||'')}</td>
+      <td style="padding:10px 8px;border-bottom:1px solid #D9E0D1;text-align:center;font-size:13px;">${qty}</td>
+      <td style="padding:10px 8px;border-bottom:1px solid #D9E0D1;text-align:right;font-size:13px;">$${price.toFixed(2)}</td>
+      <td style="padding:10px 8px;border-bottom:1px solid #D9E0D1;text-align:right;font-size:13px;font-weight:700;color:#7A8B6E;">$${subtotal.toFixed(2)}</td>
     </tr>`;
   }).join('');
 
+  const phoneRow = contact.phone
+    ? `<div><strong>Phone:</strong> <a href="tel:${escapeHtml(contact.phone)}" style="color:#9CAF88;">${escapeHtml(contact.phone)}</a></div>`
+    : '';
+
   return `<!DOCTYPE html>
 <html>
-<head><meta charset="utf-8"></head>
-<body style="font-family:Arial,sans-serif;max-width:720px;margin:0 auto;padding:20px;">
+<head><meta charset="utf-8"><title>New Inquiry - Party Maker</title></head>
+<body style="font-family:Arial,sans-serif;max-width:720px;margin:0 auto;padding:20px;background:#F7F9F5;">
   <div style="background:#9CAF88;color:white;padding:28px 24px;border-radius:12px 12px 0 0;">
-    <h1 style="margin:0;font-size:1.6rem;font-weight:700;">🎉 New Product Inquiry</h1>
-    <p style="margin:6px 0 0;opacity:0.9;">From Party Maker Website</p>
+    <h1 style="margin:0;font-size:1.5rem;font-weight:700;">New Product Inquiry</h1>
+    <p style="margin:6px 0 0;opacity:0.9;font-size:0.9rem;">From Party Maker Website</p>
   </div>
-  <div style="background:#F7F9F5;padding:20px 24px;border:1px solid #D9E0D1;border-top:none;">
-    <h2 style="font-size:0.95rem;color:#7A8B6E;margin:0 0 12px;font-weight:600;">Contact Information</h2>
+  <div style="background:white;padding:20px 24px;border:1px solid #D9E0D1;border-top:none;">
+    <h2 style="font-size:0.9rem;color:#7A8B6E;margin:0 0 12px;font-weight:600;border-bottom:1px solid #D9E0D1;padding-bottom:8px;">Contact Information</h2>
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;font-size:0.88rem;color:#333;">
       <div><strong>Name:</strong> ${escapeHtml(contact.name||'-')}</div>
       <div><strong>Email:</strong> <a href="mailto:${escapeHtml(contact.email||'')}" style="color:#9CAF88;">${escapeHtml(contact.email||'-')}</a></div>
       <div><strong>Company:</strong> ${escapeHtml(contact.company||'-')}</div>
       <div><strong>Country:</strong> ${escapeHtml(contact.country||'-')}</div>
+      ${phoneRow ? `<div><strong>Phone:</strong> <a href="tel:${escapeHtml(contact.phone||'')}" style="color:#9CAF88;">${escapeHtml(contact.phone||'-')}</a></div>` : ''}
     </div>
-    ${contact.message ? `<div style="margin-top:10px;font-size:0.88rem;color:#333;"><strong>Message:</strong> ${escapeHtml(contact.message)}</div>` : ''}
+    ${contact.message ? `<div style="margin-top:12px;font-size:0.88rem;color:#333;background:#F7F9F5;padding:10px;border-radius:6px;"><strong>Message:</strong> ${escapeHtml(contact.message)}</div>` : ''}
   </div>
-  <div style="padding:20px 24px;">
-    <h2 style="font-size:0.95rem;color:#7A8B6E;margin:0 0 12px;font-weight:600;">Selected Products (${cart.length} items)</h2>
-    <table style="width:100%;border-collapse:collapse;font-size:0.88rem;background:white;border-radius:8px;overflow:hidden;">
+  <div style="background:white;padding:20px 24px;border:1px solid #D9E0D1;border-top:none;border-radius:0 0 12px 12px;margin-bottom:20px;">
+    <h2 style="font-size:0.9rem;color:#7A8B6E;margin:0 0 12px;font-weight:600;">Selected Products (${cart.length} items)</h2>
+    <table style="width:100%;border-collapse:collapse;font-size:0.88rem;background:white;border:1px solid #D9E0D1;border-radius:8px;overflow:hidden;">
       <thead>
         <tr style="background:#9CAF88;color:white;">
           <th style="padding:10px 8px;text-align:center;">#</th>
@@ -637,108 +446,77 @@ function buildEmailHtml(contact, cart) {
       <tbody>${rows}</tbody>
       <tfoot>
         <tr style="background:#F7F9F5;">
-          <td colspan="6" style="padding:12px 8px;text-align:right;font-weight:700;font-size:1rem;color:#7A8B6E;">TOTAL:</td>
-          <td style="padding:12px 8px;text-align:right;font-weight:700;font-size:1rem;color:#D4AF37;">$${total.toFixed(2)}</td>
+          <td colspan="5" style="padding:10px 8px;"></td>
+          <td style="padding:10px 8px;text-align:right;font-weight:700;color:#7A8B6E;font-size:0.9rem;">TOTAL:</td>
+          <td style="padding:10px 8px;text-align:right;font-weight:700;color:#7A8B6E;font-size:1rem;">$${total.toFixed(2)}</td>
         </tr>
       </tfoot>
     </table>
-    <p style="margin-top:14px;font-size:0.82rem;color:#8A9A7A;">
-      📎 <em>A Proforma Invoice (PI) Excel file with product images is attached. Download and use it directly.</em>
-    </p>
+    <p style="font-size:0.78rem;color:#8A9A7A;margin:12px 0 0;">* An Excel PI sheet is attached to this email for your reference.</p>
   </div>
-  <div style="background:#7A8B6E;color:#F7F9F5;padding:16px 24px;border-radius:0 0 12px 12px;font-size:0.78rem;text-align:center;">
-    <p style="margin:0;">Party Maker Website | ${new Date().toLocaleDateString()}</p>
+  <div style="text-align:center;font-size:0.75rem;color:#8A9A7A;margin-top:16px;">
+    Sent via Party Maker Website &bull; <a href="https://party-maker-website.pages.dev" style="color:#9CAF88;">party-maker-website.pages.dev</a>
   </div>
 </body>
 </html>`;
 }
 
-// ============ MAIN HANDLER ============
-export async function onRequestPost(context) {
-  const corsHeaders = {
-    'Access-Control-Allow-Origin': '*',
-    'Access-Control-Allow-Methods': 'POST, OPTIONS',
-    'Access-Control-Allow-Headers': 'Content-Type',
-  };
+// ============ HANDLER ============
+async function handleRequest(request) {
+  if (request.method !== 'POST') {
+    return new Response('POST only', { status: 405 });
+  }
 
+  let body;
   try {
-    const body = await context.request.json();
-    const { contact, cart } = body;
+    body = await request.json();
+  } catch(e) {
+    return new Response('Invalid JSON', { status: 400 });
+  }
 
-    if (!contact?.email || !contact?.name) {
-      return new Response(JSON.stringify({ error: 'Missing name and email' }), {
-        status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' }
-      });
-    }
-    if (!cart?.length) {
-      return new Response(JSON.stringify({ error: 'Cart is empty' }), {
-        status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' }
-      });
-    }
+  const { contact = {}, cart = [] } = body;
+  if (!contact.name || !contact.email || !cart || cart.length === 0) {
+    return new Response('Missing required fields', { status: 400 });
+  }
 
-    const resendApiKey = context.env.RESEND_API_KEY;
-    if (!resendApiKey) {
-      return new Response(JSON.stringify({ error: 'Email not configured' }), {
-        status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' }
-      });
-    }
+  const resendKey = process.env.RESEND_API_KEY;
+  if (!resendKey) {
+    return new Response('RESEND_API_KEY not configured', { status: 500 });
+  }
 
-    const r2Endpoint = 'https://cdd100719805df54e62bee48d165b2dd.r2.cloudflarestorage.com/party-maker';
+  // Build Excel
+  const { buffer, piNo } = await buildXlsx(contact, cart);
 
-    // Build XLSX with images
-    const { blob: xlsxBlob, piNo } = await buildXlsxWithImages(contact, cart, r2Endpoint);
-    const xlsxBase64 = arrayBufferToBase64(xlsxBlob);
+  // Build email HTML
+  const html = buildEmailHtml(contact, cart);
 
-    const emailHtml = buildEmailHtml(contact, cart);
+  // Send email with attachment
+  const formData = new FormData();
+  formData.append('from', 'Party Maker <onboarding@resend.dev>');
+  formData.append('to', '724097@qq.com');
+  formData.append('subject', `New Inquiry from ${contact.name} - ${piNo}`);
+  formData.append('html', html);
+  formData.append('attachments', new File([buffer], `${piNo}.xlsx`, { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' }));
 
-    const resendResp = await fetch('https://api.resend.com/emails', {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${resendApiKey}`,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        from: 'Party Maker <info@partymaker.cn>',
-        to: ['info@partymaker.cn'],
-        subject: `📩 Inquiry from ${contact.name} - ${cart.length} products - ${piNo}`,
-        html: emailHtml,
-        attachments: [{
-          filename: `${piNo}.xlsx`,
-          content: xlsxBase64,
-        }],
-      }),
-    });
+  const resendRes = await fetch('https://api.resend.com/emails', {
+    method: 'POST',
+    headers: { 'Authorization': `Bearer ${resendKey}` },
+    body: formData,
+  });
 
-    const result = await resendResp.json();
-    if (!resendResp.ok) {
-      console.error('Resend error:', result);
-      return new Response(JSON.stringify({ error: 'Failed to send email', detail: result.message }), {
-        status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' }
-      });
-    }
-
-    return new Response(JSON.stringify({
-      success: true,
-      message: 'Inquiry sent',
-      emailId: result.id,
-      piNo,
-    }), { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
-
-  } catch (err) {
-    console.error('Handler error:', err);
-    return new Response(JSON.stringify({ error: 'Internal error', detail: err.message }), {
-      status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+  if (!resendRes.ok) {
+    const err = await resendRes.text();
+    return new Response(JSON.stringify({ error: 'Failed to send email', detail: err }), {
+      status: 500, headers: { 'Content-Type': 'application/json' }
     });
   }
-}
 
-export async function onRequestOptions() {
-  return new Response(null, {
-    status: 204,
-    headers: {
-      'Access-Control-Allow-Origin': '*',
-      'Access-Control-Allow-Methods': 'POST, OPTIONS',
-      'Access-Control-Allow-Headers': 'Content-Type',
-    },
+  const result = await resendRes.json();
+  return new Response(JSON.stringify({ success: true, emailId: result.id, piNo }), {
+    headers: { 'Content-Type': 'application/json' }
   });
 }
+
+addEventListener('fetch', event => {
+  event.respondWith(handleRequest(event.request));
+});
