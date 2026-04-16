@@ -80,17 +80,18 @@ function crc32_update(data) {
 }
 
 function makeZip(files) {
-  const parts = [];
+  const fileData = [];
   const cdEntries = [];
-  let offset = 0;
   for (const [path, rawData] of Object.entries(files)) {
     const bytes = rawData instanceof Uint8Array ? rawData
       : new TextEncoder().encode(rawData);
     const nameBytes = new TextEncoder().encode(path);
     const crc = crc32_update(bytes);
     const size = bytes.length;
+
+    // Local file header
     const lh = new Uint8Array(30 + nameBytes.length);
-    const lv = new DataView(lh.buffer, lh.byteOffset);
+    const lv = new DataView(lh.buffer);
     lv.setUint32(0, 0x04034b50, true);
     lv.setUint16(4, 20, true);
     lv.setUint16(6, 0, true);
@@ -100,33 +101,60 @@ function makeZip(files) {
     lv.setUint32(22, size, true);
     lv.setUint16(26, nameBytes.length, true);
     lh.set(nameBytes, 30);
-    parts.push(lh, bytes);
+    fileData.push(lh, bytes);
+
+    // Central directory entry
     const cd = new Uint8Array(46 + nameBytes.length);
-    const dv = new DataView(cd.buffer, cd.byteOffset);
+    const dv = new DataView(cd.buffer);
     dv.setUint32(0, 0x02014b50, true);
     dv.setUint16(4, 20, true);
+    dv.setUint16(6, 0, true);
+    dv.setUint16(8, 0, true);
+    dv.setUint32(12, 0, true);
     dv.setUint32(16, crc, true);
     dv.setUint32(20, size, true);
     dv.setUint32(24, size, true);
     dv.setUint16(28, nameBytes.length, true);
-    dv.setUint32(38, offset, true);
-    cd.set(nameBytes, 46);
+    dv.setUint16(30, 0, true);
+    dv.setUint16(32, 0, true);
+    dv.setUint16(34, 0, true);
+    dv.setUint16(36, 0, true);
+    // cdOffset = cdOffset (set below)
     cdEntries.push(cd);
-    offset += 30 + nameBytes.length + size;
   }
-  const cdOffset = offset;
+
+  // Calculate CD offset: sum of all fileData lengths
+  let cdOffset = 0;
+  for (const fd of fileData) cdOffset += fd.length;
+
+  // Now set cdOffset in each CD entry
+  let pos2 = 0;
+  for (let i = 0; i < cdEntries.length; i++) {
+    const dv = new DataView(cdEntries[i].buffer);
+    dv.setUint32(38, pos2, true);
+    pos2 += cdEntries[i].length;
+  }
+
   const cdLen = cdEntries.reduce((a, e) => a + e.length, 0);
+
+  // End of central directory
   const eocd = new Uint8Array(22);
-  const eocdv = new DataView(eocd.buffer, eocd.byteOffset);
+  const eocdv = new DataView(eocd.buffer);
   eocdv.setUint32(0, 0x06054b50, true);
-  eocdv.setUint32(12, cdLen, true);
+  eocdv.setUint16(4, 0, true);
+  eocdv.setUint16(6, 0, true);
+  eocdv.setUint16(8, 0, true);
+  eocdv.setUint16(10, 0, true);
+  eocdv.setUint32(12, cdEntries.length, true);
   eocdv.setUint32(16, cdLen, true);
   eocdv.setUint32(20, cdOffset, true);
-  const all = [...parts, ...cdEntries, eocd];
-  const total = all.reduce((a, b) => a + b.length, 0);
-  const result = new Uint8Array(total);
+
+  // Assemble final buffer
+  const allParts = [...fileData, ...cdEntries, eocd];
+  const totalSize = allParts.reduce((a, b) => a + b.length, 0);
+  const result = new Uint8Array(totalSize);
   let pos = 0;
-  for (const p of all) { result.set(p, pos); pos += p.length; }
+  for (const p of allParts) { result.set(p, pos); pos += p.length; }
   return result;
 }
 
