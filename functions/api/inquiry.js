@@ -84,94 +84,75 @@ function crc32_update(data) {
 }
 
 function makeZip(files) {
-  // Calculate total size first
-  let totalSize = 0;
-  const fileInfos = [];
-  for (const [path, rawData] of Object.entries(files)) {
-    let dataBytes;
-    if (rawData instanceof Uint8Array) {
-      dataBytes = rawData;
-    } else if (rawData instanceof ArrayBuffer) {
-      dataBytes = new Uint8Array(rawData);
-    } else {
-      dataBytes = new TextEncoder().encode(String(rawData));
-    }
-    const nameBytes = new TextEncoder().encode(path);
-    const crc = crc32_update(dataBytes);
-    const fsize = dataBytes.length;
-    const nhdr = 30 + nameBytes.length;
-    const centDirSize = 46 + nameBytes.length;
-    const offset = totalSize;
-    totalSize += nhdr + fsize;
-    fileInfos.push({ offset, nameBytes, crc, fsize, nhdr, centDirSize });
+  const entries = Object.entries(files);
+
+  // Pass 1: compute offsets and sizes
+  let offset = 0;
+  const infos = entries.map(([path, raw]) => {
+    let data;
+    if (raw instanceof Uint8Array) data = raw;
+    else if (raw instanceof ArrayBuffer) data = new Uint8Array(raw);
+    else data = new TextEncoder().encode(String(raw));
+    const name = new TextEncoder().encode(path);
+    const nhdr = 30 + name.length;
+    const cenSize = 46 + name.length;
+    const myOffset = offset;
+    offset += nhdr + data.length;
+    return { name, data, crc: crc32_update(data), nhdr, cenSize, myOffset };
+  });
+
+  const cdOffset = offset;
+  const cdLen = infos.reduce((a, i) => a + i.cenSize, 0);
+  offset += cdLen + 22;
+
+  // Pass 2: write everything into a single buffer
+  const buf = new Uint8Array(offset);
+  const dv = new DataView(buf.buffer);
+
+  // Local file headers + data
+  for (const info of infos) {
+    const pos = info.myOffset;
+    dv.setUint32(pos,       0x04034b50, true);  // signature
+    dv.setUint16(pos + 4,   20,           true);  // version
+    dv.setUint16(pos + 6,   0,            true);  // flags
+    dv.setUint16(pos + 8,   0,            true);  // compression
+    dv.setUint32(pos + 14,  info.crc,      true);  // crc32
+    dv.setUint32(pos + 18,  info.data.length, true); // compressed size
+    dv.setUint32(pos + 22,  info.data.length, true); // uncompressed size
+    dv.setUint16(pos + 26,  info.name.length, true); // filename len
+    buf.set(info.name, pos + 30);
+    buf.set(info.data, pos + 30 + info.name.length);
   }
 
-  // Add central directory + EOCD to total
-  const cdOffset = totalSize;
-  const cdSize = fileInfos.reduce((a, f) => a + f.centDirSize, 0);
-  totalSize += cdSize + 22; // +22 for EOCD
-
-  const buf = new Uint8Array(totalSize);
-  const view = new DataView(buf.buffer);
-
-  // Write local file headers + data
-  for (let i = 0; i < fileInfos.length; i++) {
-    const fi = fileInfos[i];
-    const dataEntry = Object.entries(files)[i];
-    let dataBytes;
-    const rawData = dataEntry[1];
-    if (rawData instanceof Uint8Array) {
-      dataBytes = rawData;
-    } else if (rawData instanceof ArrayBuffer) {
-      dataBytes = new Uint8Array(rawData);
-    } else {
-      dataBytes = new TextEncoder().encode(String(rawData));
-    }
-
-    const pos = fi.offset;
-    view.setUint32(pos, 0x04034b50, true);
-    view.setUint16(pos + 4, 20, true);
-    view.setUint16(pos + 6, 0, true);
-    view.setUint16(pos + 8, 0, true);
-    view.setUint32(pos + 14, fi.crc, true);
-    view.setUint32(pos + 18, fi.fsize, true);
-    view.setUint32(pos + 22, fi.fsize, true);
-    view.setUint16(pos + 26, fi.nameBytes.length, true);
-    buf.set(fi.nameBytes, pos + 30);
-    buf.set(dataBytes, pos + 30 + fi.nameBytes.length);
+  // Central directory
+  let cp = cdOffset;
+  for (const info of infos) {
+    dv.setUint32(cp,       0x02014b50,   true);  // signature
+    dv.setUint16(cp + 4,   20,             true);  // version
+    dv.setUint16(cp + 6,   0,              true);  // flags
+    dv.setUint16(cp + 8,   0,              true);  // compression
+    dv.setUint32(cp + 12,  0,              true);  // file time
+    dv.setUint32(cp + 16,  info.crc,      true);  // crc32
+    dv.setUint32(cp + 20,  info.data.length, true); // compressed size
+    dv.setUint32(cp + 24,  info.data.length, true); // uncompressed size
+    dv.setUint16(cp + 28,  info.name.length, true); // filename len
+    dv.setUint16(cp + 30,  0,              true);  // extra field
+    dv.setUint16(cp + 32,  0,              true);  // comment
+    dv.setUint16(cp + 34,  0,              true);  // start disk
+    dv.setUint32(cp + 38,  info.myOffset,  true);  // local header offset
+    buf.set(info.name, cp + 46);
+    cp += info.cenSize;
   }
 
-  // Write central directory
-  let cdPos = cdOffset;
-  for (let i = 0; i < fileInfos.length; i++) {
-    const fi = fileInfos[i];
-    view.setUint32(cdPos, 0x02014b50, true);
-    view.setUint16(cdPos + 4, 20, true);
-    view.setUint16(cdPos + 6, 0, true);
-    view.setUint16(cdPos + 8, 0, true);
-    view.setUint32(cdPos + 12, 0, true);
-    view.setUint32(cdPos + 16, fi.crc, true);
-    view.setUint32(cdPos + 20, fi.fsize, true);
-    view.setUint32(cdPos + 24, fi.fsize, true);
-    view.setUint16(cdPos + 28, fi.nameBytes.length, true);
-    view.setUint16(cdPos + 30, 0, true);
-    view.setUint16(cdPos + 32, 0, true);
-    view.setUint16(cdPos + 34, 0, true);
-    view.setUint16(cdPos + 36, 0, true);
-    view.setUint32(cdPos + 38, fi.offset, true);
-    buf.set(fi.nameBytes, cdPos + 46);
-    cdPos += fi.centDirSize;
-  }
-
-  // Write EOCD
-  view.setUint32(cdPos, 0x06054b50, true);
-  view.setUint16(cdPos + 4, 0, true);
-  view.setUint16(cdPos + 6, 0, true);
-  view.setUint16(cdPos + 8, 0, true);
-  view.setUint16(cdPos + 10, 0, true);
-  view.setUint32(cdPos + 12, fileInfos.length, true);
-  view.setUint32(cdPos + 16, cdSize, true);
-  view.setUint32(cdPos + 20, cdOffset, true);
+  // End of central directory
+  dv.setUint32(cp,     0x06054b50, true);
+  dv.setUint16(cp + 4, 0,          true);
+  dv.setUint16(cp + 6, 0,          true);
+  dv.setUint16(cp + 8, 0,          true);
+  dv.setUint16(cp + 10, 0,         true);
+  dv.setUint32(cp + 12, infos.length, true);
+  dv.setUint32(cp + 16, cdLen,      true);
+  dv.setUint32(cp + 20, cdOffset,   true);
 
   return buf;
 }
