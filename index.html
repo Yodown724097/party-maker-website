@@ -1565,8 +1565,8 @@
 <script>
     // ============ CONFIG ============
     const R2_PRODUCTS_URL = '/products.json';
-    // Direct to Python Worker on Tencent Cloud (bypass Cloudflare restriction)
-    const WORKER_URL = 'https://api.partymaker.cn/api/generate';
+    // Direct to Cloudflare Pages Function (no CORS issues, no VPS needed)
+    const WORKER_URL = '/api/generate';
     const QTY_STEP = 12;
 
     // ============ STATE ============
