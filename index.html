@@ -2027,17 +2027,11 @@
                 id: c.id, sku: c.sku, name: c.name, description: c.description || '',
                 quantity: c.qty, price: c.price || 0,
                 images: c.images || [],
-                // Excel PI 完整字段
+                // Excel PI 字段
                 _costPrice: c._costPrice || 0,
-                _unitSize: c._unitSize || '',
-                _pcsPerCtn: c._pcsPerCtn || '',
-                _ctnL: c._ctnL || '',
-                _ctnW: c._ctnW || '',
-                _ctnH: c._ctnH || '',
-                _cbm: c._cbm || '',
-                _nw: c._nw || '',
-                _gw: c._gw || ''
+                _unitSize: c._unitSize || ''
             })),
+            send_email: false,
             timestamp: new Date().toISOString()
         };
 
