@@ -492,6 +492,33 @@
             font-weight: 600;
             letter-spacing: 0.02em;
         }
+        /* Tags: hot/new badges */
+        .tag-badges {
+            position: absolute;
+            top: 8px;
+            right: 8px;
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+        .tag-hot, .tag-new {
+            padding: 0.2rem 0.5rem;
+            border-radius: 4px;
+            font-size: 0.6rem;
+            font-weight: 700;
+            letter-spacing: 0.05em;
+            text-transform: uppercase;
+        }
+        .tag-hot {
+            background: linear-gradient(135deg, #ff6b6b, #ee5a5a);
+            color: white;
+            box-shadow: 0 2px 8px rgba(255, 90, 90, 0.4);
+        }
+        .tag-new {
+            background: linear-gradient(135deg, #4CAF50, #45a049);
+            color: white;
+            box-shadow: 0 2px 8px rgba(76, 175, 80, 0.4);
+        }
         .product-info {
             padding: 0.85rem;
             flex: 1;
@@ -1788,6 +1815,20 @@
                 (p.description || '').toLowerCase().includes(q);
             return matchTheme && matchSubcat && matchSearch;
         });
+
+        // 排序：hot > new > 普通产品（按名称）
+        filteredProducts.sort((a, b) => {
+            const tagsA = a.tags || [];
+            const tagsB = b.tags || [];
+            const aHot = tagsA.includes('hot') ? 0 : 1;
+            const bHot = tagsB.includes('hot') ? 0 : 1;
+            if (aHot !== bHot) return aHot - bHot;  // hot优先
+            const aNew = tagsA.includes('new') ? 0 : 1;
+            const bNew = tagsB.includes('new') ? 0 : 1;
+            if (aNew !== bNew) return aNew - bNew;  // new次之
+            return (a.name || '').localeCompare(b.name || '');  // 按名称排序
+        });
+
         document.getElementById('productsCount').textContent = `${filteredProducts.length} products`;
         renderProducts();
     }
@@ -1809,6 +1850,13 @@
             const imagesJson = encodeURIComponent(JSON.stringify(p.images || []));
             const imgCount = p.images ? p.images.length : 0;
             const imgDots = imgCount > 1 ? `<div class="img-dots"><span class="img-dot active"></span><span class="img-dot-more">+${imgCount-1}</span></div>` : '';
+            // Tags徽章（hot/new）
+            const tags = p.tags || [];
+            const tagBadges = tags.map(t => {
+                if (t === 'hot') return '<span class="tag-hot">HOT</span>';
+                if (t === 'new') return '<span class="tag-new">NEW</span>';
+                return '';
+            }).join('');
             const badge = p.badge ? `<span class="product-badge">${p.badge}</span>` : '';
             const priceText = p.price ? `$${parseFloat(p.price).toFixed(2)} / unit` : (p.price_range || 'Price on request');
             const cartItem = cart.find(c => c.id === p.id);
@@ -1820,6 +1868,7 @@
                     ${imgUrl ? `<img src="${imgUrl}" alt="${p.name}" loading="lazy" onerror="this.parentElement.innerHTML='<div class=img-placeholder><svg width=40 height=40 style=\\'color:var(--text-light)\\'><use href=\\'#icon-package\\'></use></svg></div>'">` : `<div class="img-placeholder"><svg width="40" height="40" style="color:var(--text-light)"><use href="#icon-package"/></svg></div>`}
                     ${badge}
                     ${imgDots}
+                    ${tagBadges ? `<div class="tag-badges">${tagBadges}</div>` : ''}
                 </div>
                 <div class="product-info">
                     ${p.sku ? `<div class="product-sku">${p.sku}</div>` : ''}
