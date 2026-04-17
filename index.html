@@ -1878,16 +1878,19 @@
                 price: product.price || 0,
                 description: product.description || '',
                 images: product.images || [],
-                // Excel PI 完整字段（后端用下划线前缀）
+                // PI 完整字段（后端用下划线前缀）
                 _costPrice: product._costPrice || (product.price * 0.6),
+                _costNote: product._costNote || '',
+                _orderNo: product._orderNo || '',
+                _stockQty: product._stockQty || '-',
                 _unitSize: product._unitSize || '',
-                _pcsPerCtn: product._pcsPerCtn || '',
-                _ctnL: product._ctnL || '',
-                _ctnW: product._ctnW || '',
-                _ctnH: product._ctnH || '',
-                _cbm: product._cbm || '',
-                _nw: product._nw || '',
-                _gw: product._gw || ''
+                _pcsPerCtn: product._pcsPerCtn || '-',
+                _ctnL: product._ctnL || '-',
+                _ctnW: product._ctnW || '-',
+                _ctnH: product._ctnH || '-',
+                _cbm: product._cbm || '-',
+                _nw: product._nw || '-',
+                _gw: product._gw || '-'
             });
             showToast(`Added: ${product.name} × ${qty}`, 'success');
         }
