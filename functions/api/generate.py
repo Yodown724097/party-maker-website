@@ -1,6 +1,7 @@
-"""Cloudflare Pages Function - PI Excel Generator v2
-部署到: party-maker-website/pages/api/generate.js
-功能: 接收询盘数据 → 生成Excel → 通过Resend发送邮件
+"""
+Cloudflare Pages Function - PI Excel Generator
+流程: 生成Excel → 直接POST给VPS → VPS发邮件
+VPS只做SMTP转发（极简）
 """
 import json
 import base64
@@ -10,15 +11,14 @@ from datetime import datetime
 from openpyxl import Workbook
 from openpyxl.styles import Font, PatternFill, Alignment, Border, Side
 
-SMTP_SERVER = 'smtp.qiye.aliyun.com'
-SMTP_PORT = 465
-SMTP_USER = 'info@partymaker.cn'
-SMTP_PASS = 'JT.info1805'
-FROM_EMAIL = 'info@partymaker.cn'
+VPS_TRIGGER_URL = "https://api.partymaker.cn/trigger-mail"
+TRIGGER_KEY = "pm-trigger-2026"
+
 
 def generate_pi_no():
     now = datetime.now()
     return f'PI-{str(now.year)[-2:]}{now.strftime("%m%d")}-{random.randint(1000, 9999)}'
+
 
 def get_cell_letter(col_idx):
     result = ''
@@ -27,8 +27,8 @@ def get_cell_letter(col_idx):
         result = chr(65 + remainder) + result
     return result
 
+
 def on_request(request, env):
-    """Handle incoming requests"""
     if request.method == 'OPTIONS':
         return cors_response()
     if request.method != 'POST':
@@ -50,24 +50,109 @@ def on_request(request, env):
 
     now = datetime.now()
     pi_no = generate_pi_no()
-    excel_buffer = generate_excel(contact, cart, pi_no, now)
-    excel_b64 = base64.b64encode(excel_buffer.getvalue()).decode('utf-8')
 
-    email_result = None
+    # ===== 生成Excel =====
+    excel_buffer = generate_excel(contact, cart, pi_no, now)
+    excel_bytes = excel_buffer.getvalue()
+    excel_b64 = base64.b64encode(excel_bytes).decode('utf-8')
+
+    # ===== 直接发邮件触发到VPS（Excel数据内嵌在POST里，不经过R2） =====
+    mail_result = None
     if send_email_flag:
-        html = build_email_html(contact, cart, pi_no, now)
-        email_result = send_email_via_resend(env, contact, html, excel_b64, pi_no)
+        mail_payload = {
+            'pi_no': pi_no,
+            'excel_b64': excel_b64,
+            'contact': contact,
+            'cart': cart,
+            'total': sum((int(i.get('quantity', 0) or 0)) * (float(i.get('price', 0) or 0)) for i in cart)
+        }
+        mail_result = notify_vps(mail_payload)
 
     return json_response({
         'success': True,
         'piNo': pi_no,
-        'emailId': email_result.get('id', '') if email_result else None,
+        'emailSent': mail_result.get('sent') if mail_result else None,
+        'message': mail_result.get('error', 'Success') if mail_result else 'Email skipped',
         'excel': excel_b64,
-        'message': 'Email sent' if email_result else 'Email skipped'
     })
 
 
+def notify_vps(payload):
+    """POST Excel数据到VPS触发邮件发送"""
+    import urllib.request
+    import urllib.error
+
+    req = urllib.request.Request(
+        VPS_TRIGGER_URL,
+        data=json.dumps(payload).encode('utf-8'),
+        headers={
+            "Content-Type": "application/json",
+            "X-Trigger-Key": TRIGGER_KEY
+        },
+        method='POST'
+    )
+    try:
+        with urllib.request.urlopen(req, timeout=60) as resp:
+            result = json.loads(resp.read())
+            return {'sent': result.get('success', False), 'details': result}
+    except urllib.error.HTTPError as e:
+        return {'sent': False, 'error': f'HTTP {e.code}'}
+    except Exception as e:
+        return {'sent': False, 'error': str(e)}
+
+
+def upload_to_r2(api_token, key, data):
+    """Upload file to R2 using S3-compatible API"""
+    # R2 uses S3-compatible API
+    # endpoint: https://<account_id>.r2.dev
+    import urllib.request
+
+    endpoint = f"https://{R2_ACCOUNT_ID}.r2.dev/{key}"
+
+    # Use PUT request with R2 API token
+    req = urllib.request.Request(
+        endpoint,
+        data=data,
+        headers={
+            "Authorization": f"Bearer {api_token}",
+            "Content-Type": "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+        },
+        method="PUT"
+    )
+    try:
+        with urllib.request.urlopen(req, timeout=30) as resp:
+            return resp.status in (200, 201)
+    except Exception as e:
+        print(f"R2 upload error: {e}")
+        return False
+
+
+def notify_vps(payload):
+    """通知VPS下载Excel并发送邮件"""
+    import urllib.request
+    import urllib.error
+
+    req = urllib.request.Request(
+        VPS_TRIGGER_URL,
+        data=json.dumps(payload).encode('utf-8'),
+        headers={
+            "Content-Type": "application/json",
+            "X-Trigger-Key": "pm-trigger-2026"  # Simple auth
+        },
+        method="POST"
+    )
+    try:
+        with urllib.request.urlopen(req, timeout=30) as resp:
+            result = json.loads(resp.read())
+            return {'sent': True, 'details': result}
+    except urllib.error.HTTPError as e:
+        return {'sent': False, 'error': f'HTTP {e.code}'}
+    except Exception as e:
+        return {'sent': False, 'error': str(e)}
+
+
 def generate_excel(contact, cart, pi_no, now):
+    """Generate Proforma Invoice Excel"""
     wb = Workbook()
     ws = wb.active
     ws.title = "Proforma Invoice"
@@ -232,94 +317,52 @@ def generate_excel(contact, cart, pi_no, now):
     return buffer
 
 
-def build_email_html(contact, cart, pi_no, now):
-    total = sum((int(i.get('quantity', 0) or 0)) * (float(i.get('price', 0) or 0)) for i in cart)
+def build_email_html(contact, cart, pi_no, total):
+    """Build plain-text summary email"""
     rows = ""
-    for idx, item in enumerate(cart, 1):
+    for i, item in enumerate(cart, 1):
         qty = int(item.get('quantity', 0) or 0)
         price = float(item.get('price', 0) or 0)
         cost = float(item.get('_costPrice', 0) or 0)
         img = ((item.get('images') or [''])[0] or '') if item.get('images') else ''
-        sku = item.get('sku', item.get('id', '-'))
-        name = item.get('name', '')
-        rows += f"""<tr>
-            <td style="padding:10px;border-bottom:1px solid #ddd;text-align:center;">{idx}</td>
-            <td style="padding:10px;border-bottom:1px solid #ddd;text-align:center;font-weight:bold;">{sku}</td>
-            <td style="padding:10px;border-bottom:1px solid #ddd;"><a href="{img}" style="color:#0563C1;font-size:11px;">View Image</a></td>
-            <td style="padding:10px;border-bottom:1px solid #ddd;">{name}</td>
-            <td style="padding:10px;border-bottom:1px solid #ddd;text-align:center;">{qty}</td>
-            <td style="padding:10px;border-bottom:1px solid #ddd;text-align:right;">${price:.2f}</td>
-            <td style="padding:10px;border-bottom:1px solid #ddd;text-align:right;font-weight:bold;">${qty*price:.2f}</td>
-            <td style="padding:10px;border-bottom:1px solid #ddd;text-align:right;">{'¥'+str(cost) if cost else '-'}</td>
-        </tr>"""
+        unit_size = item.get('_unitSize', '')
+        if str(unit_size) in ['nan', None, '', 'None']:
+            unit_size = '-'
+        cbm = item.get('_cbm', '-')
+        nw = item.get('_nw', '-')
+        gw = item.get('_gw', '-')
 
-    return f"""<!DOCTYPE html><html><head><meta charset="utf-8"></head>
-<body style="font-family:Arial;max-width:720px;margin:0 auto;padding:20px;background:#f5f5f5;">
-    <div style="background:#9CAF88;color:white;padding:24px;border-radius:12px 12px 0 0;">
-        <h1 style="margin:0;">【询盘通知】New Product Inquiry</h1>
-        <p style="margin:8px 0 0;opacity:0.9;">PI No.: {pi_no} | {now.strftime('%Y-%m-%d %H:%M')}</p>
-    </div>
-    <div style="background:white;padding:20px;border:1px solid #ddd;">
-        <h2 style="margin:0 0 12px;color:#666;font-size:14px;border-bottom:1px solid #ddd;padding-bottom:8px;">Contact / 联系方式</h2>
-        <p><strong>Name:</strong> {contact.get('name', '-')}</p>
-        <p><strong>Email:</strong> <a href="mailto:{contact.get('email','')}">{contact.get('email', '-')}</a></p>
-        <p><strong>Company:</strong> {contact.get('company', '-')}</p>
-        <p><strong>Country:</strong> {contact.get('country', '-')}</p>
-        <p><strong>Phone:</strong> {contact.get('phone', '-')}</p>
-        {f"<p><strong>Remark:</strong> {contact.get('message','')}</p>" if contact.get('message') else ''}
-    </div>
-    <div style="background:white;padding:20px;border:1px solid #ddd;border-top:none;">
-        <h2 style="margin:0 0 12px;color:#666;font-size:14px;">Products / 产品清单 ({len(cart)} items)</h2>
-        <table style="width:100%;border-collapse:collapse;font-size:13px;">
-            <thead><tr style="background:#9CAF88;color:white;">
-                <th style="padding:10px;text-align:center;">#</th>
-                <th style="padding:10px;text-align:center;">SKU</th>
-                <th style="padding:10px;text-align:center;">Image</th>
-                <th style="padding:10px;text-align:left;">Product</th>
-                <th style="padding:10px;text-align:center;">Qty</th>
-                <th style="padding:10px;text-align:right;">Price</th>
-                <th style="padding:10px;text-align:right;">Subtotal</th>
-                <th style="padding:10px;text-align:right;">Cost</th>
-            </tr></thead>
-            <tbody>{rows}</tbody>
-            <tfoot><tr style="background:#F7F9F5;">
-                <td colspan="6"></td>
-                <td style="padding:10px;text-align:right;font-weight:bold;">TOTAL: ${total:.2f}</td>
-                <td></td>
-            </tr></tfoot>
-        </table>
-        <p style="font-size:12px;color:#666;margin-top:12px;">📎 Excel PI附件见邮件上方。</p>
-    </div>
-    <div style="text-align:center;font-size:12px;color:#999;margin-top:16px;">
-        Sent via <a href="https://party-maker-website.pages.dev" style="color:#9CAF88;">Party Maker</a>
-    </div>
-</body></html>"""
+        rows += f"""
+{i}. SKU: {item.get('sku', item.get('id', '-'))}
+   Product: {item.get('name', '')}
+   Qty: {qty} | Price: ${price:.2f} | Subtotal: ${qty*price:.2f}
+   Cost: {'¥' + str(cost) if cost else '-'} | Size: {unit_size}
+   CBM: {cbm} | N.W: {nw}kg | G.W: {gw}kg
+   Image: {img}
+"""
 
+    return f"""========== 询盘通知 / INQUIRY ==========
+PI No.: {pi_no}
+时间: {datetime.now().strftime('%Y-%m-%d %H:%M')}
 
-def send_email_via_resend(env, contact, html, excel_b64, pi_no):
-    url = "https://api.resend.com/emails"
-    to_emails = [env.get("EMAIL_TO", "724097@qq.com")]
-    customer = contact.get('email', '')
-    if customer:
-        to_emails.append(customer)
+客户信息 / CONTACT
+--------------------------
+Name: {contact.get('name', '-')}
+Company: {contact.get('company', '-')}
+Email: {contact.get('email', '-')}
+Country: {contact.get('country', '-')}
+Phone: {contact.get('phone', '-')}
+{f"Remark: {contact.get('message', '')}" if contact.get('message') else ''}
 
-    payload = {
-        "from": "Party Maker <onboarding@resend.dev>",
-        "to": to_emails,
-        "subject": f"【询盘通知】New Inquiry from {contact.get('name', 'Unknown')} - {pi_no}",
-        "html": html,
-        "attachments": [{"filename": f"{pi_no}.xlsx", "content": excel_b64}]
-    }
+产品清单 / PRODUCTS ({len(cart)} items)
+--------------------------
+{rows}
+=========================================
+TOTAL: ${total:.2f}
 
-    from urllib.request import Request, urlopen
-    req = Request(url, data=json.dumps(payload).encode(),
-                  headers={"Authorization": f"Bearer {env.get('RESEND_API_KEY')}",
-                           "Content-Type": "application/json"}, method='POST')
-    try:
-        with urlopen(req, timeout=30) as resp:
-            return json.loads(resp.read())
-    except Exception as e:
-        raise Exception(f"Resend error: {str(e)}")
+📎 Excel附件见邮件上方。
+由 Party Maker 网站自动发送
+"""
 
 
 def json_response(data, status=200):
