@@ -1878,16 +1878,16 @@
                 price: product.price || 0,
                 description: product.description || '',
                 images: product.images || [],
-                // Excel PI 需要的完整字段
-                cost: product._costPrice || (product.price * 0.6),
-                pcsPerCtn: product._pcsPerCtn || '',
-                ctnL: product._ctnL || '',
-                ctnW: product._ctnW || '',
-                ctnH: product._ctnH || '',
-                cbm: product._cbm || '',
-                nw: product._nw || '',
-                gw: product._gw || '',
-                unitSize: product._unitSize || ''
+                // Excel PI 完整字段（后端用下划线前缀）
+                _costPrice: product._costPrice || (product.price * 0.6),
+                _unitSize: product._unitSize || '',
+                _pcsPerCtn: product._pcsPerCtn || '',
+                _ctnL: product._ctnL || '',
+                _ctnW: product._ctnW || '',
+                _ctnH: product._ctnH || '',
+                _cbm: product._cbm || '',
+                _nw: product._nw || '',
+                _gw: product._gw || ''
             });
             showToast(`Added: ${product.name} × ${qty}`, 'success');
         }
@@ -2027,10 +2027,16 @@
                 id: c.id, sku: c.sku, name: c.name, description: c.description || '',
                 quantity: c.qty, price: c.price || 0,
                 images: c.images || [],
-                ctn: c.ctn || '-',
-                stock: c.stock || 'Yes',
-                cost: c.cost || (c.price * 0.6),
-                remark: c.remark || ''
+                // Excel PI 完整字段
+                _costPrice: c._costPrice || 0,
+                _unitSize: c._unitSize || '',
+                _pcsPerCtn: c._pcsPerCtn || '',
+                _ctnL: c._ctnL || '',
+                _ctnW: c._ctnW || '',
+                _ctnH: c._ctnH || '',
+                _cbm: c._cbm || '',
+                _nw: c._nw || '',
+                _gw: c._gw || ''
             })),
             timestamp: new Date().toISOString()
         };
