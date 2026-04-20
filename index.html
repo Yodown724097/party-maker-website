@@ -1737,6 +1737,10 @@
         // ============ LOAD PRODUCTS (embedded) ============
     function loadProducts() {
         buildCategoryList();
+        // Ramadan default active + expanded
+        currentTheme = 'Ramadan';
+        currentSubcat = 'all';
+        toggleTheme('Ramadan');
         filterAndRender();
     }
 
@@ -1763,7 +1767,7 @@
             pillsContainer.innerHTML = themes.map(t => {
                 const isRamadan = t === 'Ramadan';
                 const count = Object.values(structure[t]).reduce((a,b)=>a+b,0);
-                return `<button class="theme-pill ${isRamadan ? 'ramadan' : ''}" onclick="setCategory('${t.replace(/'/g,"\\'")}','all');scrollToTop()">${t} (${count})</button>`;
+                return `<button class="theme-pill ${isRamadan ? 'ramadan' : ''}${t === 'Ramadan' ? ' active' : ''}" onclick="setCategory('${t.replace(/'/g,"\\'")}','all');scrollToTop()">${t} (${count})</button>`;
             }).join('');
         }
 
@@ -1986,7 +1990,7 @@
                         <button class="card-qty-btn" onclick="event.stopPropagation();cardQtyChange('${p.id}',-1)" title="-${QTY_STEP}">
                             <svg width="12" height="12"><use href="#icon-minus"/></svg>
                         </button>
-                        <input type="number" min="${QTY_STEP}" step="${QTY_STEP}" value="${qty || ''}"
+                        <input type="number" min="${QTY_STEP}" step="${QTY_STEP}" value="${qty || QTY_STEP}"
                             class="qty-input-card"
                             id="qty-${p.id}"
                             autocomplete="off"
