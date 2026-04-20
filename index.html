@@ -1734,30 +1734,12 @@
     }
 
     // ============ INIT ============
-    async function loadProducts() {
-        // Show loading spinner
-        const grid = document.getElementById('productGrid');
-        if (grid) grid.innerHTML = '<div class="loading-state"><div class="spinner-ring"></div><span>Loading products...</span></div>';
-
-        // Fetch products.json (graceful fallback to embedded data)
-        if (!window._productsLoaded) {
-            try {
-                const resp = await fetch('/products.json');
-                if (resp.ok) {
-                    const data = await resp.json();
-                    allProducts = Array.isArray(data) ? data : (data.products || []);
-                    window._productsLoaded = true;
-                }
-            } catch(e) {
-                console.warn('Fetch failed, using embedded data:', e);
-            }
-        }
-
+        // ============ LOAD PRODUCTS (embedded) ============
+    function loadProducts() {
         buildCategoryList();
         filterAndRender();
     }
 
-    // ============ CATEGORIES ============
     function buildCategoryList() {
         const structure = {};
         allProducts.forEach(p => {
