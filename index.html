@@ -1737,10 +1737,18 @@
         // ============ LOAD PRODUCTS (embedded) ============
     function loadProducts() {
         buildCategoryList();
-        // Ramadan default active + expanded
+        // Ramadan: active pill + expanded sidebar
         currentTheme = 'Ramadan';
         currentSubcat = 'all';
-        toggleTheme('Ramadan');
+        // Activate Ramadan pill
+        document.querySelectorAll('.theme-pill').forEach(p => {
+            p.classList.toggle('active', p.textContent.includes('Ramadan'));
+        });
+        // Expand Ramadan subcat list + arrow
+        const ramadanList = document.getElementById('sl-Ramadan');
+        const ramadanLabel = document.getElementById('tl-Ramadan');
+        if (ramadanList) ramadanList.classList.add('open');
+        if (ramadanLabel) ramadanLabel.classList.add('open');
         filterAndRender();
     }
 
