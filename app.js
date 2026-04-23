@@ -20,7 +20,21 @@ async function init() {
 
 // ============ INIT ============
     // ============ LOAD PRODUCTS (embedded) ============
-function loadProducts() {
+async function loadProducts() {
+    // Fetch product data from products.json
+    try {
+        const resp = await fetch('/products.json');
+        if (!resp.ok) throw new Error('Failed to load products: ' + resp.status);
+        const data = await resp.json();
+        allProducts = data.products || data || [];
+        console.log('Loaded ' + allProducts.length + ' products');
+    } catch (err) {
+        console.error('Error loading products:', err);
+        document.getElementById('productsGrid').innerHTML =
+            '<div style="text-align:center;padding:4rem 1rem;color:var(--text-light);grid-column:1/-1;">' +
+            '<p>Failed to load products. Please refresh the page.</p></div>';
+        return;
+    }
     buildCategoryList();
     // Ramadan: active pill + expanded sidebar
     currentTheme = 'Ramadan';
@@ -678,3 +692,4 @@ function showToast(msg, type = 'default') {
 }
 
 // ============ START ============
+init();
