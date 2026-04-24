@@ -1,9 +1,12 @@
 /**
- * Cloudflare Pages Function - 中转代理
- * 接收请求 → POST给VPS处理（生成Excel+发邮件）→ 返回结果
+ * Cloudflare Pages Function - Inquiry Email Handler
+ * 用 Resend API 直接发送询盘邮件，无需 VPS 中转
  *
- * 前端请求 /api/generate
- * 实际处理: api.partymaker.cn/trigger-mail
+ * 流程:
+ *   1. 接收前端 POST 请求（contact + cart）
+ *   2. 生成 PI 号
+ *   3. 用 Resend 发客户通知邮件（无附件，无成本价）
+ *   4. 用 Resend 发内部邮件给 info@partymaker.cn（含 Excel 附件，含成本价）
  */
 export async function onRequest({ request, env }) {
   const corsHeaders = {
@@ -12,90 +15,646 @@ export async function onRequest({ request, env }) {
     'Access-Control-Allow-Headers': 'Content-Type',
   };
 
-  // 处理 OPTIONS 预检
   if (request.method === 'OPTIONS') {
     return new Response(null, { status: 204, headers: corsHeaders });
   }
 
   if (request.method !== 'POST') {
-    return new Response(JSON.stringify({ error: 'Method not allowed' }), {
-      status: 405,
-      headers: { 'Content-Type': 'application/json', ...corsHeaders }
-    });
+    return jsonResp({ error: 'Method not allowed' }, 405, corsHeaders);
   }
 
   try {
     const body = await request.json();
-
     const { contact, cart, send_email = true } = body;
 
     if (!contact?.name || !contact?.email) {
-      return new Response(JSON.stringify({ error: 'Missing name/email' }), {
-        status: 400,
-        headers: { 'Content-Type': 'application/json', ...corsHeaders }
-      });
+      return jsonResp({ error: 'Missing name/email' }, 400, corsHeaders);
     }
-
     if (!cart || cart.length === 0) {
-      return new Response(JSON.stringify({ error: 'Cart is empty' }), {
-        status: 400,
-        headers: { 'Content-Type': 'application/json', ...corsHeaders }
-      });
+      return jsonResp({ error: 'Cart is empty' }, 400, corsHeaders);
     }
 
-    // 生成PI号
+    // 生成 PI 号
     const now = new Date();
     const piNo = `PI-${String(now.getFullYear()).slice(-2)}${String(now.getMonth()+1).padStart(2,'0')}${String(now.getDate()).padStart(2,'0')}-${Math.floor(Math.random()*9000+1000)}`;
     const total = cart.reduce((sum, item) => {
       return sum + (parseInt(item.quantity || 0) * parseFloat(item.price || 0));
     }, 0);
 
-    // 转发给VPS处理（生成Excel+发两封邮件）
-    const triggerResponse = await fetch('https://api.partymaker.cn/trigger-mail', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'X-Trigger-Key': 'pm-trigger-2026'
-      },
-      body: JSON.stringify({
-        action: 'full_process',
-        pi_no: piNo,
-        contact,
-        cart,
-        total,
-        send_email
-      })
-    });
+    const results = {};
 
-    if (!triggerResponse.ok) {
-      const errText = await triggerResponse.text();
-      return new Response(JSON.stringify({
-        success: false,
-        error: `VPS error: ${triggerResponse.status} - ${errText}`
-      }), {
-        status: 502,
-        headers: { 'Content-Type': 'application/json', ...corsHeaders }
-      });
+    if (send_email) {
+      const apiKey = env.RESEND_API_KEY;
+      if (!apiKey) {
+        return jsonResp({ error: 'RESEND_API_KEY not configured' }, 500, corsHeaders);
+      }
+
+      // ===== 1. 发客户通知邮件（无附件，无成本价） =====
+      const customerHtml = buildCustomerHtml(contact, cart, piNo, now, total);
+      const customerText = buildCustomerText(contact, cart, piNo, total);
+
+      try {
+        const customerRes = await fetch('https://api.resend.com/emails', {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${apiKey}`,
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            from: 'Party Maker <info@partymaker.cn>',
+            to: [contact.email],
+            subject: `Inquiry Received - ${piNo}`,
+            text: customerText,
+            html: customerHtml,
+          }),
+        });
+        const customerData = await customerRes.json();
+        results.customer_email = customerRes.ok
+          ? { sent: true, id: customerData.id }
+          : { sent: false, error: customerData };
+
+        // ===== 2. 发内部邮件给 info@（含 Excel 附件，含成本价） =====
+        const ownerHtml = buildOwnerHtml(contact, cart, piNo, now, total);
+        const xlsxBase64 = generateXlsxBase64(contact, cart, piNo, now, total);
+
+        const ownerRes = await fetch('https://api.resend.com/emails', {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${apiKey}`,
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            from: 'Party Maker <info@partymaker.cn>',
+            to: ['info@partymaker.cn'],
+            subject: `[New Inquiry] ${piNo} - ${contact.name} (${contact.email})`,
+            html: ownerHtml,
+            attachments: [{
+              filename: `${piNo}.xlsx`,
+              content: xlsxBase64,
+            }],
+          }),
+        });
+        const ownerData = await ownerRes.json();
+        results.owner_email = ownerRes.ok
+          ? { sent: true, id: ownerData.id }
+          : { sent: false, error: ownerData };
+
+      } catch (emailErr) {
+        results.customer_email = { sent: false, error: emailErr.message };
+        results.owner_email = { sent: false, error: emailErr.message };
+      }
     }
 
-    const vpsResult = await triggerResponse.json();
-
-    return new Response(JSON.stringify({
-      success: true,
-      piNo,
-      results: vpsResult
-    }), {
-      status: 200,
-      headers: { 'Content-Type': 'application/json', ...corsHeaders }
-    });
+    return jsonResp({ success: true, piNo, results }, 200, corsHeaders);
 
   } catch (err) {
-    return new Response(JSON.stringify({
-      success: false,
-      error: err.message || 'Internal error'
-    }), {
-      status: 500,
-      headers: { 'Content-Type': 'application/json', ...corsHeaders }
-    });
+    return jsonResp({ success: false, error: err.message || 'Internal error' }, 500, corsHeaders);
   }
+}
+
+// ============================================================
+// HTML / Text 模板
+// ============================================================
+
+function buildCustomerHtml(contact, cart, piNo, now, total) {
+  let rowsHtml = '';
+  cart.forEach((item, i) => {
+    const qty = parseInt(item.quantity || 0);
+    const price = parseFloat(item.price || 0);
+    const subtotal = qty * price;
+    const sku = item.sku || item.id || '-';
+    const name = item.name || '';
+    const img = (Array.isArray(item.images) && item.images[0]) ? item.images[0] : '';
+    rowsHtml += `<tr>
+      <td style="padding:8px 12px;border-bottom:1px solid #eee;text-align:center;font-size:13px;">${i+1}</td>
+      <td style="padding:8px 12px;border-bottom:1px solid #eee;text-align:center;font-size:13px;font-weight:bold;">${sku}</td>
+      <td style="padding:8px 12px;border-bottom:1px solid #eee;font-size:13px;">${name}</td>
+      <td style="padding:8px 12px;border-bottom:1px solid #eee;text-align:center;font-size:13px;">${qty}</td>
+      <td style="padding:8px 12px;border-bottom:1px solid #eee;text-align:right;font-size:13px;">$${price.toFixed(2)}</td>
+      <td style="padding:8px 12px;border-bottom:1px solid #eee;text-align:right;font-size:13px;font-weight:bold;">$${subtotal.toFixed(2)}</td>
+      <td style="padding:8px 12px;border-bottom:1px solid #eee;text-align:center;font-size:13px;">${img ? `<a href="${img}" style="color:#0563C1;">View</a>` : '-'}</td>
+    </tr>`;
+  });
+
+  const dateStr = now.toISOString().replace('T', ' ').slice(0, 16);
+
+  return `<!DOCTYPE html>
+<html><head><meta charset="utf-8"></head>
+<body style="font-family:Arial,sans-serif;max-width:720px;margin:0 auto;padding:0;background:#f5f5f5;">
+  <div style="background:#9CAF88;color:white;padding:28px 32px;border-radius:12px 12px 0 0;">
+    <h1 style="margin:0;font-size:22px;">Inquiry Received</h1>
+    <p style="margin:8px 0 0;opacity:0.9;font-size:14px;">Reference: ${piNo} | ${dateStr}</p>
+  </div>
+  <div style="background:white;padding:24px 32px;border:1px solid #ddd;border-top:none;">
+    <p style="font-size:15px;color:#333;">Dear <strong>${contact.name || 'Valued Customer'}</strong>,</p>
+    <p style="font-size:14px;color:#555;line-height:1.6;">Thank you for your inquiry! We have received your request and will get back to you shortly with a formal <strong>Proforma Invoice (PI)</strong>.</p>
+    <p style="font-size:14px;color:#555;line-height:1.6;">Below is a summary of your inquiry:</p>
+  </div>
+  <div style="background:white;padding:0 32px 24px;border:1px solid #ddd;border-top:none;">
+    <table style="width:100%;border-collapse:collapse;font-size:13px;">
+      <thead><tr style="background:#9CAF88;color:white;">
+        <th style="padding:10px 12px;text-align:center;">#</th>
+        <th style="padding:10px 12px;text-align:center;">SKU</th>
+        <th style="padding:10px 12px;text-align:left;">Product</th>
+        <th style="padding:10px 12px;text-align:center;">Qty</th>
+        <th style="padding:10px 12px;text-align:right;">Price</th>
+        <th style="padding:10px 12px;text-align:right;">Subtotal</th>
+        <th style="padding:10px 12px;text-align:center;">Image</th>
+      </tr></thead>
+      <tbody>${rowsHtml}</tbody>
+      <tfoot><tr style="background:#F7F9F5;">
+        <td colspan="5"></td>
+        <td style="padding:10px 12px;text-align:right;font-weight:bold;font-size:15px;">$${total.toFixed(2)}</td>
+        <td></td>
+      </tr></tfoot>
+    </table>
+  </div>
+  <div style="background:white;padding:20px 32px;border:1px solid #ddd;border-top:none;">
+    <p style="font-size:14px;color:#555;line-height:1.6;">We will send you the formal PI via email within <strong>24 hours</strong>.</p>
+    <p style="font-size:14px;color:#555;">If you have any questions, feel free to reply to this email.</p>
+  </div>
+  <div style="text-align:center;font-size:12px;color:#999;padding:16px;">
+    Sent by <a href="https://partymaker.cn" style="color:#9CAF88;">Party Maker</a>
+  </div>
+</body></html>`;
+}
+
+function buildCustomerText(contact, cart, piNo, total) {
+  let rowsText = '';
+  cart.forEach((item, i) => {
+    const qty = parseInt(item.quantity || 0);
+    const price = parseFloat(item.price || 0);
+    const subtotal = qty * price;
+    const sku = item.sku || item.id || '-';
+    const name = item.name || '';
+    const img = (Array.isArray(item.images) && item.images[0]) ? item.images[0] : '';
+    rowsText += `${i+1}. ${sku} | ${name} | Qty: ${qty} | $${price.toFixed(2)} | Subtotal: $${subtotal.toFixed(2)}\n`;
+    if (img) rowsText += `   Image: ${img}\n`;
+  });
+
+  return `Dear ${contact.name || 'Valued Customer'},
+
+Thank you for your inquiry! We have received your request and will get back to you shortly.
+
+Your Inquiry Reference: ${piNo}
+
+PRODUCTS INQUIRY (${cart.length} items)
+----------------------------------------
+${rowsText}
+----------------------------------------
+TOTAL: $${total.toFixed(2)}
+
+Our team will prepare a formal PI (Proforma Invoice) and send it to you via email.
+
+Best regards,
+PARTY MAKER
+info@partymaker.cn`;
+}
+
+function buildOwnerHtml(contact, cart, piNo, now, total) {
+  let rowsHtml = '';
+  cart.forEach((item, i) => {
+    const qty = parseInt(item.quantity || 0);
+    const price = parseFloat(item.price || 0);
+    const costPrice = parseFloat(item._costPrice || 0);
+    const subtotal = qty * price;
+    const sku = item.sku || item.id || '-';
+    const name = item.name || '';
+    const unitSize = item._unitSize || '-';
+    rowsHtml += `<tr>
+      <td style="padding:6px 10px;border-bottom:1px solid #eee;text-align:center;">${i+1}</td>
+      <td style="padding:6px 10px;border-bottom:1px solid #eee;text-align:center;font-weight:bold;">${sku}</td>
+      <td style="padding:6px 10px;border-bottom:1px solid #eee;">${name}</td>
+      <td style="padding:6px 10px;border-bottom:1px solid #eee;text-align:center;">${qty}</td>
+      <td style="padding:6px 10px;border-bottom:1px solid #eee;text-align:right;">$${price.toFixed(2)}</td>
+      <td style="padding:6px 10px;border-bottom:1px solid #eee;text-align:right;font-weight:bold;">$${subtotal.toFixed(2)}</td>
+      <td style="padding:6px 10px;border-bottom:1px solid #eee;text-align:right;color:#c00;">${costPrice > 0 ? 'CNY ' + costPrice.toFixed(2) : '-'}</td>
+      <td style="padding:6px 10px;border-bottom:1px solid #eee;text-align:center;">${unitSize}</td>
+    </tr>`;
+  });
+
+  const dateStr = now.toISOString().replace('T', ' ').slice(0, 16);
+
+  return `<!DOCTYPE html>
+<html><head><meta charset="utf-8"></head>
+<body style="font-family:Arial,sans-serif;max-width:800px;margin:0 auto;padding:0;background:#f5f5f5;">
+  <div style="background:#2c3e50;color:white;padding:24px 32px;border-radius:12px 12px 0 0;">
+    <h1 style="margin:0;font-size:20px;">New Inquiry Received</h1>
+    <p style="margin:6px 0 0;opacity:0.85;font-size:13px;">${piNo} | ${dateStr}</p>
+  </div>
+  <div style="background:white;padding:20px 32px;border:1px solid #ddd;border-top:none;">
+    <h3 style="margin:0 0 12px;color:#333;">Customer Info</h3>
+    <table style="font-size:14px;color:#555;line-height:1.8;">
+      <tr><td style="padding-right:16px;font-weight:bold;white-space:nowrap;">Name:</td><td>${contact.name || '-'}</td></tr>
+      <tr><td style="font-weight:bold;">Email:</td><td><a href="mailto:${contact.email || ''}">${contact.email || '-'}</a></td></tr>
+      <tr><td style="font-weight:bold;">Company:</td><td>${contact.company || '-'}</td></tr>
+      <tr><td style="font-weight:bold;">Phone:</td><td>${contact.phone || '-'}</td></tr>
+      <tr><td style="font-weight:bold;">Country:</td><td>${contact.country || '-'}</td></tr>
+      <tr><td style="font-weight:bold;">Message:</td><td>${(contact.message || '-').replace(/\n/g, '<br>')}</td></tr>
+    </table>
+  </div>
+  <div style="background:white;padding:0 32px 20px;border:1px solid #ddd;border-top:none;">
+    <h3 style="margin:0 0 8px;color:#333;">Products (${cart.length} items)</h3>
+    <table style="width:100%;border-collapse:collapse;font-size:12px;">
+      <thead><tr style="background:#2c3e50;color:white;">
+        <th style="padding:8px 10px;text-align:center;">#</th>
+        <th style="padding:8px 10px;text-align:center;">SKU</th>
+        <th style="padding:8px 10px;text-align:left;">Product</th>
+        <th style="padding:8px 10px;text-align:center;">Qty</th>
+        <th style="padding:8px 10px;text-align:right;">USD</th>
+        <th style="padding:8px 10px;text-align:right;">Amount</th>
+        <th style="padding:8px 10px;text-align:right;">Cost(CNY)</th>
+        <th style="padding:8px 10px;text-align:center;">Unit Size</th>
+      </tr></thead>
+      <tbody>${rowsHtml}</tbody>
+      <tfoot><tr style="background:#f7f9f5;">
+        <td colspan="5"></td>
+        <td style="padding:8px 10px;text-align:right;font-weight:bold;font-size:14px;">$${total.toFixed(2)}</td>
+        <td colspan="2"></td>
+      </tr></tfoot>
+    </table>
+  </div>
+  <div style="text-align:center;font-size:11px;color:#999;padding:12px;">
+    Auto-generated by Party Maker Website
+  </div>
+</body></html>`;
+}
+
+// ============================================================
+// Excel (XLSX) 生成 — 纯 JS 实现
+// 使用简化的 OOXML 格式生成真实 .xlsx 文件
+// ============================================================
+
+function generateXlsxBase64(contact, cart, piNo, now, total) {
+  // 构建共享字符串表和 worksheet
+  const strings = [];
+  const stringIdx = {};
+
+  function addString(s) {
+    const str = String(s);
+    if (str in stringIdx) return stringIdx[str];
+    const idx = strings.length;
+    strings.push(str);
+    stringIdx[str] = idx;
+    return idx;
+  }
+
+  // 预添加常用字符串
+  const colLetters = ['No.','Item No.','Image','Product Name','Description','USD Price','Qty','Amount','Cost(CNY)','Unit Size','Unit Weight','Inner Size'];
+  const colLettersIdx = colLetters.map(addString);
+
+  // 构建行数据
+  const rows = [];
+
+  // Row 1: Title
+  rows.push([['A1', addString('PROFORMA INVOICE'), true, 16, true]]);
+
+  // Row 2-7: Contact info
+  const info = [
+    ['A2','TO:'],['B2', addString(contact.company || '')],
+    ['G2','From:'],['H2', addString('PARTY MAKER')],
+    ['A3','ATTN:'],['B3', addString(contact.name || '')],
+    ['G3','ATTN:'],['H3',''],
+    ['A4','TEL:'],['B4', addString(contact.phone || '')],
+    ['G4','TEL:'],['H4', addString('+86-572-222222')],
+    ['A5','EMAIL:'],['B5', addString(contact.email || '')],
+    ['G5','Email:'],['H5', addString('info@partymaker.cn')],
+    ['A6','COUNTRY:'],['B6', addString(contact.country || '')],
+    ['A7','REMARK:'],['B7', addString((contact.message || '').slice(0, 100))],
+    ['G7','PI No.'],['H7', addString(piNo)],
+  ];
+  rows.push(info);
+
+  // Row 9: Headers
+  const headerRow = [];
+  for (let c = 0; c < colLettersIdx.length; c++) {
+    const colL = String.fromCharCode(65 + c);
+    headerRow.push([`${colL}9`, colLettersIdx[c], true, 10, false, true]);
+  }
+  rows.push(headerRow);
+
+  // Product rows (row 10+)
+  let rowNum = 10;
+  cart.forEach((item, i) => {
+    const qty = parseInt(item.quantity || 0);
+    const price = parseFloat(item.price || 0);
+    const costPrice = parseFloat(item._costPrice || 0);
+    const sku = item.sku || item.id || '-';
+    const name = item.name || '';
+    const desc = (item.description || '').replace(/\n/g, ' ');
+    const unitSize = item._unitSize || '';
+    const images = Array.isArray(item.images) ? item.images : [];
+    const imgUrl = images[0] || '';
+
+    const rowData = [
+      [`A${rowNum}`, i + 1, false, 10, false, false, 'center'],
+      [`B${rowNum}`, addString(sku), false, 10, false, false, 'center'],
+      [`C${rowNum}`, imgUrl ? addString(imgUrl) : -1, false, 10, false, false, 'center'],
+      [`D${rowNum}`, addString(name), false, 10, false, false, 'left'],
+      [`E${rowNum}`, addString(desc), false, 10, false, false, 'left'],
+      [`F${rowNum}`, price, false, 10, false, false, 'right', '$#,##0.00'],
+      [`G${rowNum}`, qty, false, 10, false, false, 'center'],
+      [`H${rowNum}`, `F${rowNum}*G${rowNum}`, false, 10, true, false, 'right', '$#,##0.00'],
+      [`I${rowNum}`, costPrice > 0 ? costPrice : '', false, 10, false, false, 'right', costPrice > 0 ? '#,##0.00' : ''],
+      [`J${rowNum}`, unitSize && !['nan','None',''].includes(String(unitSize)) ? addString(unitSize) : -1, false, 10, false, false, 'center'],
+    ];
+    rows.push(rowData);
+    rowNum++;
+  });
+
+  // Total row
+  const totalRowIdx = rowNum;
+  rows.push([
+    [`A${rowNum}`, addString('TOTAL:'), true, 11, false, false, 'right'],
+    [`H${rowNum}`, `SUM(H10:H${rowNum - 1})`, true, 11, true, false, 'right', '$#,##0.00'],
+  ]);
+  rowNum += 2;
+
+  // Terms
+  rows.push([[`A${rowNum}`, addString('TERMS & CONDITIONS'), true, 11, false, false, 'left']]);
+  rowNum++;
+  const terms = [
+    '1. FOB Ningbo / Shanghai',
+    '2. Price does not include testing, inspection and auditing costs',
+    '3. Production time: 45 days after deposit is received',
+    '4. Payment: 30% deposit, 70% balance before goods leave factory',
+  ];
+  terms.forEach(t => {
+    rows.push([[`A${rowNum}`, addString(t), false, 10, false, false, 'left']]);
+    rowNum++;
+  });
+
+  // Bank info
+  rowNum++;
+  rows.push([[`A${rowNum}`, addString('BANK INFORMATION'), true, 11, false, false, 'left']]);
+  rowNum++;
+  const bankInfo = [
+    ['BENEFICIARY:', 'JIATAO INDUSTRY (SHANGHAI) CO.,LTD'],
+    ['BANK NAME:', 'AGRICULTURAL BANK OF CHINA SHANGHAI YANGPU BRANCH'],
+    ['BANK ADDRESS:', 'NO.1128, XIANGYIN ROAD, YANGPU DISTRICT, SHANGHAI CHINA'],
+    ['POST CODE:', '200433'],
+    ['A/C NO.:', '09421014040006209'],
+    ['SWIFT CODE:', 'ABOCCNBJ090'],
+  ];
+  bankInfo.forEach(([label, val]) => {
+    rows.push([
+      [`A${rowNum}`, addString(label), true, 10, false, false, 'left'],
+      [`B${rowNum}`, addString(val), false, 10, false, false, 'left'],
+    ]);
+    rowNum++;
+  });
+
+  // 构建 XLSX XML
+  const xlsx = buildXlsx(strings, rows, cart.length);
+  return btoa(xlsx);
+}
+
+function buildXlsx(strings, rows, productCount) {
+  // 生成共享字符串 XML
+  let ssXml = '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>';
+  ssXml += '<sst xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main" count="' + strings.length + '" uniqueCount="' + strings.length + '">';
+  strings.forEach(s => {
+    ssXml += '<si><t>' + escapeXml(String(s)) + '</t></si>';
+  });
+  ssXml += '</sst>';
+
+  // 生成 worksheet XML
+  let wsXml = '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>';
+  wsXml += '<worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships">';
+
+  // 列宽
+  const widths = [5, 12, 30, 30, 25, 10, 8, 12, 10, 12, 10, 12];
+  wsXml += '<cols>';
+  widths.forEach((w, i) => {
+    wsXml += '<col min="' + (i+1) + '" max="' + (i+1) + '" width="' + w + '" customWidth="1"/>';
+  });
+  wsXml += '</cols>';
+
+  wsXml += '<sheetData>';
+
+  // Track merge cells
+  const merges = [];
+
+  rows.forEach(rowData => {
+    // Find the row number from the first cell
+    const firstCell = rowData[0][0];
+    const rowNum = parseInt(firstCell.replace(/[A-Z]/g, ''));
+
+    wsXml += '<row r="' + rowNum + '">';
+    rowData.forEach(([cellRef, value, bold, fontSize, isFormula, isHeader, align, numFmt]) => {
+      const col = cellRef.replace(/[0-9]/g, '');
+      const colNum = colLetterToNum(col);
+
+      wsXml += '<c r="' + cellRef + '"';
+      if (isHeader) wsXml += ' s="1"'; // Header style
+      else if (bold) wsXml += ' s="2"'; // Bold style
+      if (typeof value === 'number' || (isFormula)) {
+        wsXml += '>';
+        if (isFormula) {
+          wsXml += '<f>' + escapeXml(String(value)) + '</f>';
+        } else {
+          wsXml += '<v>' + value + '</v>';
+        }
+        wsXml += '</c>';
+      } else if (typeof value === 'string' && value >= 0) {
+        // Shared string reference
+        wsXml += ' t="s"><v>' + value + '</v></c>';
+      } else {
+        // Empty or inline string
+        wsXml += '></c>';
+      }
+    });
+    wsXml += '</row>';
+  });
+
+  wsXml += '</sheetData>';
+
+  // Merge cells for title row
+  wsXml += '<mergeCells count="1"><mergeCell ref="A1:L1"/></mergeCells>';
+
+  wsXml += '</worksheet>';
+
+  // Build the XLSX zip (minimal structure)
+  return buildXlsxZip(ssXml, wsXml);
+}
+
+function buildXlsxZip(ssXml, wsXml) {
+  // Minimal XLSX as a ZIP file
+  // We build the ZIP manually since we can't use Node.js zlib in Workers
+  // Use a simplified approach: build the binary ZIP structure
+
+  const files = [
+    { path: '[Content_Types].xml', content: '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>' +
+      '<Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types">' +
+      '<Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/>' +
+      '<Default Extension="xml" ContentType="application/xml"/>' +
+      '<Override PartName="/xl/workbook.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet.main+xml"/>' +
+      '<Override PartName="/xl/worksheets/sheet1.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.worksheet+xml"/>' +
+      '<Override PartName="/xl/sharedStrings.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.sharedStrings+xml"/>' +
+      '</Types>'
+    },
+    { path: '_rels/.rels', content: '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>' +
+      '<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">' +
+      '<Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" Target="xl/workbook.xml"/>' +
+      '</Relationships>'
+    },
+    { path: 'xl/workbook.xml', content: '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>' +
+      '<workbook xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships">' +
+      '<sheets><sheet name="Proforma Invoice" sheetId="1" r:id="rId1"/></sheets>' +
+      '</workbook>'
+    },
+    { path: 'xl/_rels/workbook.xml.rels', content: '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>' +
+      '<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">' +
+      '<Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/worksheet" Target="worksheets/sheet1.xml"/>' +
+      '<Relationship Id="rId2" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/sharedStrings" Target="sharedStrings.xml"/>' +
+      '</Relationships>'
+    },
+    { path: 'xl/worksheets/sheet1.xml', content: wsXml },
+    { path: 'xl/sharedStrings.xml', content: ssXml },
+    { path: 'xl/styles.xml', content: '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>' +
+      '<styleSheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main">' +
+      '<numFmts count="0"/>' +
+      '<fonts count="2">' +
+      '<font><sz val="10"/><name val="Arial"/></font>' +
+      '<font><b/><sz val="11"/><name val="Arial"/></font>' +
+      '</fonts>' +
+      '<fills count="1"><fill><patternFill patternType="none"/></fill></fills>' +
+      '<borders count="1"><border/></borders>' +
+      '<cellStyleXfs count="1"><xf/></cellStyleXfs>' +
+      '<cellXfs count="3">' +
+      '<xf/></xf>' +         // s=0: normal
+      '<xf numFmtId="0" fontId="0" fillId="0" borderId="0" applyFont="1"><alignment horizontal="center" vertical="center" wrapText="1"/></xf>' + // s=1: header center
+      '<xf numFmtId="0" fontId="1" fillId="0" borderId="0" applyFont="1"/></xf>' +  // s=2: bold
+      '</cellXfs>' +
+      '<cellStyles count="1"><cellStyle name="Normal" xfId="0"/></cellStyles>' +
+      '</styleSheet>'
+    },
+  ];
+
+  // Build ZIP
+  return createZip(files);
+}
+
+function createZip(files) {
+  const encoder = new TextEncoder();
+  const parts = [];
+  const centralDir = [];
+  let offset = 0;
+
+  files.forEach(file => {
+    const contentBytes = encoder.encode(file.content);
+    const filenameBytes = encoder.encode(file.path);
+    const crc = crc32(contentBytes);
+
+    // Local file header
+    const local = new Uint8Array(30 + filenameBytes.length + contentBytes.length);
+    const lv = new DataView(local.buffer);
+    lv.setUint32(0, 0x04034b50, true); // signature
+    lv.setUint16(4, 20, true);          // version needed
+    lv.setUint16(6, 0, true);           // flags
+    lv.setUint16(8, 0, true);           // compression: stored
+    lv.setUint16(10, 0, true);          // mod time
+    lv.setUint16(12, 0, true);          // mod date
+    lv.setUint32(14, crc, true);        // crc32
+    lv.setUint32(18, contentBytes.length, true); // compressed size
+    lv.setUint32(22, contentBytes.length, true); // uncompressed size
+    lv.setUint16(26, filenameBytes.length, true); // filename length
+    lv.setUint16(28, 0, true);          // extra field length
+    local.set(filenameBytes, 30);
+    local.set(contentBytes, 30 + filenameBytes.length);
+
+    parts.push(local);
+
+    // Central directory entry
+    const cd = new Uint8Array(46 + filenameBytes.length);
+    const cv = new DataView(cd.buffer);
+    cv.setUint32(0, 0x02014b50, true); // signature
+    cv.setUint16(4, 20, true);          // version made by
+    cv.setUint16(6, 20, true);          // version needed
+    cv.setUint16(8, 0, true);           // flags
+    cv.setUint16(10, 0, true);          // compression
+    cv.setUint16(12, 0, true);          // mod time
+    cv.setUint16(14, 0, true);          // mod date
+    cv.setUint32(16, crc, true);        // crc32
+    cv.setUint32(20, contentBytes.length, true); // compressed size
+    cv.setUint32(24, contentBytes.length, true); // uncompressed size
+    cv.setUint16(28, filenameBytes.length, true);
+    cv.setUint16(30, 0, true);          // extra length
+    cv.setUint16(32, 0, true);          // comment length
+    cv.setUint16(34, 0, true);          // disk number
+    cv.setUint16(36, 0, true);          // internal attrs
+    cv.setUint32(38, 0, true);          // external attrs
+    cv.setUint32(42, offset, true);     // local header offset
+    cd.set(filenameBytes, 46);
+
+    centralDir.push(cd);
+    offset += local.length;
+  });
+
+  const cdOffset = offset;
+  const cdSize = centralDir.reduce((s, cd) => s + cd.length, 0);
+
+  // End of central directory
+  const eocd = new Uint8Array(22);
+  const ev = new DataView(eocd.buffer);
+  ev.setUint32(0, 0x06054b50, true);
+  ev.setUint16(4, 0, true);
+  ev.setUint16(6, 0, true);
+  ev.setUint16(8, files.length, true);
+  ev.setUint16(10, files.length, true);
+  ev.setUint32(12, cdSize, true);
+  ev.setUint32(16, cdOffset, true);
+  ev.setUint16(20, 0, true);
+
+  // Concatenate all parts
+  const totalSize = offset + cdSize + 22;
+  const result = new Uint8Array(totalSize);
+  let pos = 0;
+  for (const part of parts) {
+    result.set(part, pos);
+    pos += part.length;
+  }
+  for (const cd of centralDir) {
+    result.set(cd, pos);
+    pos += cd.length;
+  }
+  result.set(eocd, pos);
+
+  // Convert to binary string for btoa
+  let binary = '';
+  for (let i = 0; i < result.length; i++) {
+    binary += String.fromCharCode(result[i]);
+  }
+  return binary;
+}
+
+// CRC32 implementation
+function crc32(data) {
+  let crc = 0xFFFFFFFF;
+  for (let i = 0; i < data.length; i++) {
+    crc ^= data[i];
+    for (let j = 0; j < 8; j++) {
+      crc = (crc >>> 1) ^ (crc & 1 ? 0xEDB88320 : 0);
+    }
+  }
+  return (crc ^ 0xFFFFFFFF) >>> 0;
+}
+
+function colLetterToNum(col) {
+  let num = 0;
+  for (let i = 0; i < col.length; i++) {
+    num = num * 26 + (col.charCodeAt(i) - 64);
+  }
+  return num;
+}
+
+function escapeXml(s) {
+  return s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&apos;');
+}
+
+function jsonResp(data, status, corsHeaders) {
+  return new Response(JSON.stringify(data), {
+    status,
+    headers: { 'Content-Type': 'application/json', ...corsHeaders }
+  });
 }

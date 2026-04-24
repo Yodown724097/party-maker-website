@@ -15,7 +15,20 @@ let searchQuery = '';
 // ============ INIT ============
 async function init() {
     setupSearch();
+    setupSidebarKeyboardScroll();
     await loadProducts();
+}
+
+// ============ SIDEBAR KEYBOARD SCROLL ============
+function setupSidebarKeyboardScroll() {
+    const sidebar = document.querySelector('.sidebar');
+    if (!sidebar) return;
+    sidebar.addEventListener('keydown', e => {
+        if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
+            e.preventDefault();
+            sidebar.scrollTop += e.key === 'ArrowDown' ? 40 : -40;
+        }
+    });
 }
 
 // ============ INIT ============
