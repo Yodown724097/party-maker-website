@@ -15,7 +15,7 @@ from pathlib import Path
 # ========== CONFIG ==========
 SITE_URL = "https://www.partymaker.cn"
 SITE_NAME = "Party Maker"
-SITE_DESC = "Wholesale party supplies sourcing from Yiwu, China. Ramadan, Easter, Birthday, Chinese New Year and more."
+SITE_DESC = "Wholesale celebration products from Yiwu factory, China. Ramadan, Eid, Diwali, Easter, New Year. No MOQ spot goods. Custom from 600 pcs. Custom packaging. Global shipping."
 WEBSITE_DIR = Path(__file__).parent  # party-maker-website/
 PRODUCTS_JSON = WEBSITE_DIR / "products.json"
 PUBLIC_JSON = WEBSITE_DIR / "products-public.json"
@@ -397,7 +397,7 @@ def generate_product_page(product, all_products, css_path="../style.css"):
         thumb_items = []
         for i, img in enumerate(images):
             active = ' active' if i == 0 else ''
-            thumb_items.append(f'<img class="thumb{active}" src="{img}" data-full="{img}" alt="{name} photo {i+1}" loading="lazy">')
+            thumb_items.append(f'<img class="thumb{active}" src="{img}" data-full="{img}" alt="{name} - {i+1:02d}" loading="lazy">')
         thumbs_html = f'<div class="thumb-strip">{"".join(thumb_items)}</div>'
 
     # Tags
