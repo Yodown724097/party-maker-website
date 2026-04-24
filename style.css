@@ -216,13 +216,8 @@ header {
 .sidebar {
     position: sticky;
     top: 80px;
-    height: fit-content;
-    max-height: calc(100vh - 100px);
+    height: calc(100vh - 100px);
     overflow-y: auto;
-    outline: none;
-}
-.sidebar:focus {
-    outline: none;
 }
 .sidebar::-webkit-scrollbar { width: 4px; }
 .sidebar::-webkit-scrollbar-thumb { background: var(--border); border-radius: 4px; }
