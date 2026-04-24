@@ -22,6 +22,16 @@ PUBLIC_JSON = WEBSITE_DIR / "products-public.json"
 SITEMAP_FILE = WEBSITE_DIR / "sitemap.xml"
 ROBOTS_FILE = WEBSITE_DIR / "robots.txt"
 
+# CSS/JS version — computed once per build from file mtime
+def get_file_version(*files):
+    if not files:
+        return "1"
+    latest = max(os.path.getmtime(str(f)) for f in files if os.path.exists(str(f)))
+    return str(int(latest))[-8:]
+
+CSS_VERSION = get_file_version(WEBSITE_DIR / "style.css", WEBSITE_DIR / "app.js")
+print(f"[INFO] CSS/JS version: {CSS_VERSION}")
+
 # Only _costPrice is truly internal; packaging specs are useful for buyers
 INTERNAL_FIELDS = ("_costPrice",)
 
@@ -85,7 +95,7 @@ PRODUCT_TEMPLATE = """\
     </script>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="{css_path}">
+    <link rel="stylesheet" href="{css_path}?v={css_ver}">
 </head>
 <body>
 <header>
@@ -242,7 +252,7 @@ CATEGORY_TEMPLATE = """\
     </script>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="{css_path}">
+    <link rel="stylesheet" href="{css_path}?v={css_ver}">
 </head>
 <body>
 <header>
@@ -364,7 +374,7 @@ def build_product_card(p, css_path="../style.css"):
     </a>"""
 
 
-def generate_product_page(product, all_products, css_path="../style.css"):
+def generate_product_page(product, all_products, css_path="../style.css", css_ver=CSS_VERSION):
     """Generate a full product detail HTML page."""
     sku = product['sku']
     name = product.get('name', '')
@@ -472,6 +482,7 @@ def generate_product_page(product, all_products, css_path="../style.css"):
         specs_html=specs_html,
         related_html=related_html,
         css_path=css_path,
+        css_ver=css_ver,
         detail_css=DETAIL_CSS,
         name_json=name_json,
         desc_json=desc_json,
@@ -483,7 +494,7 @@ def generate_product_page(product, all_products, css_path="../style.css"):
     return page_html
 
 
-def generate_category_page(theme, subcategory, products, all_products, css_path="../style.css"):
+def generate_category_page(theme, subcategory, products, all_products, css_path="../style.css", css_ver=CSS_VERSION):
     """Generate a category listing HTML page."""
     if subcategory:
         page_name = f"{theme} - {subcategory}"
@@ -519,6 +530,7 @@ def generate_category_page(theme, subcategory, products, all_products, css_path=
         count=len(products),
         products_grid_html=products_html,
         css_path=css_path,
+        css_ver=css_ver,
         detail_css=DETAIL_CSS,
         name_json=json_str(page_name),
         desc_json=json_str(desc_text),
