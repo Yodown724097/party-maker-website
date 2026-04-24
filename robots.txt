@@ -1,5 +1,20 @@
 User-agent: *
 Allow: /
+
+Sitemap: https://www.partymaker.cn/sitemap.xml
+
+# Block AI crawlers from API endpoints
+User-agent: GPTBot
 Disallow: /api/
 
-Sitemap: https://partymaker.cn/sitemap.xml
+User-agent: ChatGPT-User
+Disallow: /api/
+
+User-agent: ClaudeBot
+Disallow: /api/
+
+User-agent: Bytespider
+Disallow: /api/
+
+User-agent: Applebot-Extended
+Disallow: /api/

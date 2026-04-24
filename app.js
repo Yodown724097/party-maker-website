@@ -16,6 +16,8 @@ let searchQuery = '';
 async function init() {
     setupSearch();
     await loadProducts();
+    // Apply route from URL path (not hash)
+    applyRoute();
 }
 
 // ============ INIT ============
@@ -168,7 +170,7 @@ function setCategory(theme, subcat) {
     });
     updateSectionTitle();
     filterAndRender();
-    updateHashFromState();
+    updateUrlFromState();
 }
 
 function scrollToTop() {
@@ -545,8 +547,8 @@ async function submitInquiry(e) {
 // ============ LIGHTBOX ============
 function openLightbox(url, name, sku, imagesJson) {
     if (!url) return;
-    // Update hash for deep link
-    if (sku) history.replaceState(null, '', '#product/' + sku);
+    // Update URL for deep link
+    if (sku) history.replaceState(null, '', '/product/' + sku + '/');
     const images = imagesJson ? JSON.parse(decodeURIComponent(imagesJson)) : [url];
     window._lbImages = images;
     window._lbIdx = images.indexOf(url);
@@ -592,8 +594,8 @@ function lbNav(dir) {
 function closeLightbox() {
     document.getElementById('lightbox').classList.remove('active');
     document.getElementById('lightboxImg').src = '';
-    // Restore hash from current category state
-    updateHashFromState();
+    // Restore URL from current category state
+    updateUrlFromState();
 }
 // Touch滑动支持
 function _lbInitTouch() {
@@ -616,18 +618,60 @@ function _lbInitTouch() {
 }
 
 
-// ============ HASH ROUTING ============
-function applyHashRoute() {
-    const hash = window.location.hash.slice(1) || '';  // remove #
+// ============ PATH ROUTING ============
+function applyRoute() {
+    // Check for ?p=SKU query param (from pre-rendered product pages "Inquire" button)
+    const urlParams = new URLSearchParams(window.location.search);
+    const pParam = urlParams.get('p');
+    if (pParam) {
+        const product = allProducts.find(pr => pr.sku === pParam || pr.id === pParam);
+        if (product) {
+            currentTheme = 'all';
+            currentSubcat = 'all';
+            updateThemePills();
+            filterAndRender();
+            setTimeout(() => {
+                const imgUrl = product.images[0];
+                const name = product.name || '';
+                const imagesJson = encodeURIComponent(JSON.stringify(product.images || []));
+                openLightbox(imgUrl, name, pParam, imagesJson);
+            }, 200);
+        }
+        // Clean URL
+        history.replaceState(null, '', '/');
+        return;
+    }
 
+    const path = window.location.pathname.replace(/\/+$/, ''); // remove trailing slash
+    const hash = window.location.hash.slice(1) || '';  // legacy hash support
+
+    // Route from path
+    if (path.match(/^\/product\//)) {
+        // Product detail: /product/SKU/
+        const sku = path.replace('/product/', '').replace(/\/+$/, '');
+        currentTheme = 'all';
+        currentSubcat = 'all';
+        updateThemePills();
+        filterAndRender();
+        const product = allProducts.find(p => p.id === sku || p.sku === sku);
+        if (product && product.images && product.images[0]) {
+            setTimeout(() => {
+                const imgUrl = product.images[0];
+                const name = product.name || '';
+                const imagesJson = encodeURIComponent(JSON.stringify(product.images || []));
+                openLightbox(imgUrl, name, sku, imagesJson);
+            }, 100);
+        }
+        return;
+    }
+
+    // Route from hash (legacy fallback for old bookmarks/shared links)
     if (hash.startsWith('product/')) {
-        // Product detail view: #product/SKU
         const sku = hash.replace('product/', '');
         currentTheme = 'all';
         currentSubcat = 'all';
         updateThemePills();
         filterAndRender();
-        // Find product and open lightbox
         const product = allProducts.find(p => p.id === sku || p.sku === sku);
         if (product && product.images && product.images[0]) {
             const imgUrl = product.images[0];
@@ -635,26 +679,46 @@ function applyHashRoute() {
             const imagesJson = encodeURIComponent(JSON.stringify(product.images || []));
             setTimeout(() => openLightbox(imgUrl, name, sku, imagesJson), 100);
         }
-    } else if (hash.includes('/')) {
-        // Category view: #Theme/Subcategory
+        // Redirect hash to path (301-like)
+        history.replaceState(null, '', '/product/' + sku + '/');
+        return;
+    }
+
+    // Category from path: /Theme/Subcategory or /Theme
+    if (path !== '/' && path !== '') {
+        const parts = path.split('/').filter(Boolean);
+        if (parts.length === 2) {
+            const theme = decodeURIComponent(parts[0]);
+            const subcat = decodeURIComponent(parts[1]);
+            setCategory(theme, subcat);
+            return;
+        } else if (parts.length === 1) {
+            setCategory(decodeURIComponent(parts[0]), 'all');
+            return;
+        }
+    }
+
+    // Category from hash (legacy fallback)
+    if (hash.includes('/')) {
         const parts = hash.split('/');
         const theme = decodeURIComponent(parts[0]);
         const subcat = decodeURIComponent(parts[1]);
         setCategory(theme, subcat);
+        return;
     } else if (hash) {
-        // Theme-only view: #Theme
         setCategory(decodeURIComponent(hash), 'all');
-    } else {
-        // Default: Ramadan
-        currentTheme = 'Ramadan';
-        currentSubcat = 'all';
-        updateThemePills();
-        const ramadanList = document.getElementById('sl-Ramadan');
-        const ramadanLabel = document.getElementById('tl-Ramadan');
-        if (ramadanList) ramadanList.classList.add('open');
-        if (ramadanLabel) ramadanLabel.classList.add('open');
-        filterAndRender();
+        return;
     }
+
+    // Default: show all products with Ramadan active
+    currentTheme = 'Ramadan';
+    currentSubcat = 'all';
+    updateThemePills();
+    const ramadanList = document.getElementById('sl-Ramadan');
+    const ramadanLabel = document.getElementById('tl-Ramadan');
+    if (ramadanList) ramadanList.classList.add('open');
+    if (ramadanLabel) ramadanLabel.classList.add('open');
+    filterAndRender();
 }
 
 function updateThemePills() {
@@ -664,21 +728,21 @@ function updateThemePills() {
     updateSectionTitle();
 }
 
-function updateHashFromState() {
+function updateUrlFromState() {
     if (currentTheme === 'all') {
-        history.replaceState(null, '', window.location.pathname);
+        history.replaceState(null, '', '/');
     } else if (currentSubcat === 'all') {
-        history.replaceState(null, '', '#' + encodeURIComponent(currentTheme));
+        history.replaceState(null, '', '/' + encodeURIComponent(currentTheme) + '/');
     } else {
-        history.replaceState(null, '', '#' + encodeURIComponent(currentTheme) + '/' + encodeURIComponent(currentSubcat));
+        history.replaceState(null, '', '/' + encodeURIComponent(currentTheme) + '/' + encodeURIComponent(currentSubcat) + '/');
     }
 }
 
-// Listen for hash changes (browser back/forward)
-window.addEventListener('hashchange', () => {
+// Listen for browser back/forward (popstate replaces hashchange)
+window.addEventListener('popstate', () => {
     if (allProducts.length > 0) {
         closeLightbox();
-        applyHashRoute();
+        applyRoute();
     }
 });
 

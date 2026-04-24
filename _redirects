@@ -1,0 +1,4 @@
+# Cloudflare Pages _redirects
+# All product pages (/product/SKU/) and category pages (/Theme/Subcategory/) are
+# pre-rendered as static HTML files. Cloudflare Pages serves them directly.
+# No SPA fallback rewrite needed — all valid routes have real HTML files.
