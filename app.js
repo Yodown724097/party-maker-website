@@ -25,7 +25,7 @@ async function init() {
 async function loadProducts() {
     // Fetch product data from products.json
     try {
-        const resp = await fetch('/products.json');
+        const resp = await fetch('/products-public.json');
         if (!resp.ok) throw new Error('Failed to load products: ' + resp.status);
         const data = await resp.json();
         allProducts = data.products || data || [];
@@ -287,14 +287,14 @@ function renderProducts() {
         return `
         <div class="product-card ${inCart ? 'in-cart' : ''}" data-id="${p.id}">
             <div class="product-image" ${clickHandler ? `onclick="${clickHandler}"` : 'style="cursor:default"'}">
-                ${imgUrl ? `<img src="${imgUrl}" alt="${p.name}" loading="lazy" onerror="this.parentElement.innerHTML='<div class=img-placeholder><svg width=40 height=40 style=\\'color:var(--text-light)\\'><use href=\\'#icon-package\\'></use></svg></div>'">` : `<div class="img-placeholder"><svg width="40" height="40" style="color:var(--text-light)"><use href="#icon-package"/></svg></div>`}
+                ${imgUrl ? `<img src="${imgUrl}" alt="${p.name}" width="800" height="800" loading="lazy" onerror="this.parentElement.innerHTML='<div class=img-placeholder><svg width=40 height=40 style=\\'color:var(--text-light)\\'><use href=\\'#icon-package\\'></use></svg></div>'">` : `<div class="img-placeholder"><svg width="40" height="40" style="color:var(--text-light)"><use href="#icon-package"/></svg></div>`}
                 ${badge}
                 ${imgDots}
                 ${tagBadges ? `<div class="tag-badges">${tagBadges}</div>` : ''}
             </div>
             <div class="product-info">
                 ${p.sku ? `<div class="product-sku">${p.sku}</div>` : ''}
-                <div class="product-name" title="${p.name}">${p.name}</div>
+                <a href="/product/${(p.sku||'').replace(/'/g,"\\'")}/" class="product-name" title="${p.name}" onclick="event.stopPropagation()">${p.name}</a>
                 <div class="product-price">${priceText}</div>
                 <div class="card-bottom">
                     <button class="card-qty-btn" onclick="event.stopPropagation();cardQtyChange('${p.id}',-1)" title="-${QTY_STEP}">

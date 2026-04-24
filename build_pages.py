@@ -25,6 +25,12 @@ ROBOTS_FILE = WEBSITE_DIR / "robots.txt"
 # Only _costPrice is truly internal; packaging specs are useful for buyers
 INTERNAL_FIELDS = ("_costPrice",)
 
+# Fields needed by the frontend product list (lightweight JSON)
+PUBLIC_LIST_FIELDS = (
+    "id", "sku", "name", "price", "price_range", "description", "seo_desc",
+    "theme", "subcategory", "images", "tags", "badge",
+)
+
 # Product page template
 PRODUCT_TEMPLATE = """\
 <!DOCTYPE html>
@@ -325,8 +331,14 @@ def json_str(text):
 
 
 def clean_public_product(p):
-    """Remove only _costPrice from a product dict. Keep packaging specs (useful for buyers)."""
-    return {k: v for k, v in p.items() if k not in INTERNAL_FIELDS}
+    """Return a lightweight product dict for the public frontend JSON.
+    Only includes fields needed by product card rendering + lightbox."""
+    slim = {}
+    for key in PUBLIC_LIST_FIELDS:
+        val = p.get(key)
+        if val is not None:
+            slim[key] = val
+    return slim
 
 
 def build_product_card(p, css_path="../style.css"):
@@ -1012,7 +1024,7 @@ def main():
     # === 1. Generate products-public.json (strip internal fields) ===
     public_products = [clean_public_product(p) for p in products]
     public_data = {"products": public_products}
-    PUBLIC_JSON.write_text(json.dumps(public_data, ensure_ascii=False, indent=2), encoding='utf-8')
+    PUBLIC_JSON.write_text(json.dumps(public_data, ensure_ascii=False, separators=(',', ':')), encoding='utf-8')
     pub_size = PUBLIC_JSON.stat().st_size
     print(f"\n[1] products-public.json: {len(public_products)} products, {pub_size/1024:.0f} KB")
 
