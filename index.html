@@ -62,7 +62,8 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link rel="dns-prefetch" href="https://pub-1fd965ab66464286847edcb540254451.r2.dev">
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="style.css?v=77012552">
+    <link rel="stylesheet" href="style.css?v=13421496">
+
 
 </head>
 <body>
@@ -114,6 +115,18 @@
     </symbol>
     <symbol id="icon-package" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
         <path d="m7.5 4.27 9 5.15M21 8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16Z"/><path d="m3.3 7 8.7 5 8.7-5M12 22V12"/>
+    </symbol>
+    <symbol id="icon-box" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/><polyline points="3.27 6.96 12 12.01 20.73 6.96"/><line x1="12" y1="22.08" x2="12" y2="12"/>
+    </symbol>
+    <symbol id="icon-custom" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/>
+    </symbol>
+    <symbol id="icon-truck" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+        <rect x="1" y="3" width="15" height="13"/><polygon points="16 8 20 8 23 11 23 16 16 16 16 8"/><circle cx="5.5" cy="18.5" r="2.5"/><circle cx="18.5" cy="18.5" r="2.5"/>
+    </symbol>
+    <symbol id="icon-clock" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+        <circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/>
     </symbol>
 </svg>
 
@@ -232,61 +245,91 @@
 <!-- About Modal -->
 <div class="modal-overlay" id="aboutModal">
     <div class="modal">
-        <div class="modal-header">
-            <h2>About Party Maker</h2>
-            <button class="modal-close" onclick="closeModal('aboutModal')">
-                <svg width="18" height="18"><use href="#icon-x2"/></svg>
-            </button>
+        <div class="about-hero">
+            <div class="about-hero-logo">🎉</div>
+            <h2>Party Maker</h2>
+            <p>Wholesale celebration products from Yiwu, China.<br>Ramadan · Eid · Diwali · Easter · New Year</p>
         </div>
-        <div class="modal-body about-content">
-            <p style="font-size:1rem;line-height:1.7;">
-                <strong>Party Maker</strong> — wholesale celebration products from Yiwu, China.<br>
-                Ramadan, Eid, Eid al-Adha, Diwali, Easter, New Year, and more.
+        <div class="modal-body">
+            <!-- Service Cards -->
+            <div class="about-services">
+                <div class="service-card">
+                    <div class="service-icon">
+                        <svg width="20" height="20"><use href="#icon-box"/></svg>
+                    </div>
+                    <div class="service-title">Spot Goods</div>
+                    <div class="service-desc">No MOQ required.<br>Ready to ship.</div>
+                </div>
+                <div class="service-card">
+                    <div class="service-icon">
+                        <svg width="20" height="20"><use href="#icon-custom"/></svg>
+                    </div>
+                    <div class="service-title">Custom Order</div>
+                    <div class="service-desc">600 pcs minimum.<br>Custom packaging OK.</div>
+                </div>
+                <div class="service-card">
+                    <div class="service-icon">
+                        <svg width="20" height="20"><use href="#icon-truck"/></svg>
+                    </div>
+                    <div class="service-title">Global Shipping</div>
+                    <div class="service-desc">Air &amp; sea freight.<br>Door-to-door available.</div>
+                </div>
+                <div class="service-card">
+                    <div class="service-icon">
+                        <svg width="20" height="20"><use href="#icon-clock"/></svg>
+                    </div>
+                    <div class="service-title">Fast Lead Time</div>
+                    <div class="service-desc">Spot: ~10 days<br>Custom: ~45 days</div>
+                </div>
+            </div>
+
+            <!-- Stats -->
+            <div class="about-stats">
+                <div class="stat-box">
+                    <div class="num">10K+</div>
+                    <div class="label">Products</div>
+                </div>
+                <div class="stat-box">
+                    <div class="num">50+</div>
+                    <div class="label">Countries</div>
+                </div>
+                <div class="stat-box">
+                    <div class="num">48h</div>
+                    <div class="label">Response</div>
+                </div>
+            </div>
+
+            <!-- FAQ -->
+            <div class="about-faq-title">FAQ</div>
+            <div class="faq-grid">
+                <div class="faq-item">
+                    <div class="faq-q">What's the MOQ?</div>
+                    <div class="faq-a">Spot goods: none. Custom orders: 600–1200 pcs.</div>
+                </div>
+                <div class="faq-item">
+                    <div class="faq-q">Can I get samples?</div>
+                    <div class="faq-a">Yes — available. Buyer covers shipping.</div>
+                </div>
+                <div class="faq-item">
+                    <div class="faq-q">Custom packaging?</div>
+                    <div class="faq-a">Yes. Send us your design, we handle the rest.</div>
+                </div>
+                <div class="faq-item">
+                    <div class="faq-q">How long to ship?</div>
+                    <div class="faq-a">~10 days for spot. ~45 days for custom orders.</div>
+                </div>
+                <div class="faq-item">
+                    <div class="faq-q">Do you ship worldwide?</div>
+                    <div class="faq-a">Yes — we ship to 50+ countries by air and sea.</div>
+                </div>
+            </div>
+
+            <!-- CTA -->
+            <p style="text-align:center;font-size:0.85rem;color:var(--text-light);margin-top:1.25rem;">
+                Questions? <a href="#" onclick="closeModal('aboutModal');openModal('contactModal');return false" style="color:var(--primary);font-weight:600;">Contact us →</a>
             </p>
 
-            <h3>What We Do</h3>
-            <ul style="line-height:2;padding-left:1.2rem;color:var(--text);">
-                <li>Spot goods — <strong>no MOQ</strong></li>
-                <li>Custom orders — <strong>600 pcs+</strong></li>
-                <li>Custom packaging available</li>
-                <li>Global shipping</li>
-            </ul>
-
-            <h3>Lead Time</h3>
-            <ul style="line-height:2;padding-left:1.2rem;color:var(--text);">
-                <li>Spot goods: ~<strong>10 days</strong></li>
-                <li>Custom orders: ~<strong>45 days</strong></li>
-            </ul>
-
-            <h3>Samples</h3>
-            <p>Available. Buyer covers shipping.</p>
-
-            <h3>FAQ</h3>
-            <div class="faq-item">
-                <div class="faq-q">Is there an MOQ?</div>
-                <div class="faq-a">Spot goods: no MOQ. Custom orders: 600–1200 pcs.</div>
-            </div>
-            <div class="faq-item">
-                <div class="faq-q">Can I get samples?</div>
-                <div class="faq-a">Yes. Buyer covers shipping.</div>
-            </div>
-            <div class="faq-item">
-                <div class="faq-q">Can you customize packaging?</div>
-                <div class="faq-a">Yes.</div>
-            </div>
-            <div class="faq-item">
-                <div class="faq-q">What's the lead time?</div>
-                <div class="faq-a">Spot goods ~10 days. Custom orders ~45 days.</div>
-            </div>
-            <div class="faq-item">
-                <div class="faq-q">Do you ship globally?</div>
-                <div class="faq-a">Yes.</div>
-            </div>
-
-            <p style="text-align:center;font-size:0.85rem;color:var(--text-light);margin-top:1.5rem;">
-                Questions? <a href="#" onclick="closeModal('aboutModal');openModal('contactModal');return false" style="color:var(--primary);font-weight:600;">Contact us</a>
-            </p>
-
+            <!-- Social -->
             <div class="about-social">
                 <a href="https://www.tiktok.com/@partymakercn" target="_blank" title="X (Twitter)"><svg><use href="#icon-x"/></svg></a>
                 <a href="https://wa.me/8617274613005" target="_blank" title="WhatsApp"><svg><use href="#icon-whatsapp"/></svg></a>
@@ -468,7 +511,7 @@ Flexible MOQ. Fast lead time. Global shipping.
 </footer>
 
 
-<script src="app.js?v=77012552" defer></script>
+<script src="app.js?v=13421496" defer></script>
 <noscript>
     <div style="max-width:800px;margin:4rem auto;padding:2rem;font-family:sans-serif;color:#4A5A3A;text-align:center;">
         <h1 style="font-size:2rem;margin-bottom:1rem;">Party Maker - Wholesale Celebration Products</h1>
