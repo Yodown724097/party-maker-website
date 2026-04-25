@@ -485,7 +485,7 @@ def build_product_card(p, css_path="../style.css"):
     sku = escape_html(p.get('sku', ''))
     price = f"{p.get('price', 0):.2f}"
     return f"""\
-    <a href="/product/{p['sku']}/" class="product-card">
+    <a href="/product/{p['id']}/" class="product-card">
         <div class="product-image">
             <img src="{img}" alt="{name}" loading="lazy">
             {tags}
@@ -500,7 +500,7 @@ def build_product_card(p, css_path="../style.css"):
 
 def generate_product_page(product, all_products, css_path="../style.css", css_ver=CSS_VERSION):
     """Generate a full product detail HTML page."""
-    sku = product['sku']
+    sku = product['id']
     name = product.get('name', '')
     description = product.get('description', '')
     seo_desc = product.get('seo_desc', '') or description
@@ -571,7 +571,7 @@ def generate_product_page(product, all_products, css_path="../style.css", css_ve
     # Related products (same subcategory, exclude self, max 8)
     related = [p for p in all_products
                if p.get('subcategory', '').strip() == subcategory
-               and p['sku'] != sku][:8]
+               and p['id'] != sku][:8]
     related_html = '\n'.join(build_product_card(r, css_path) for r in related)
 
     # Short name for breadcrumb (truncate if too long)
@@ -641,7 +641,7 @@ def generate_category_page(theme, subcategory, products, all_products, css_path=
     # JSON-LD: ItemList
     items = []
     for i, p in enumerate(products[:20], 1):  # Google recommends max ~20 items
-        items.append(f'{{"@type":"ListItem","position":{i},"item":{{"@type":"Product","name":{json_str(p.get("name",""))},"url":"{SITE_URL}/product/{p["sku"]}/"}}}}')
+        items.append(f'{{"@type":"ListItem","position":{i},"item":{{"@type":"Product","name":{json_str(p.get("name",""))},"url":"{SITE_URL}/product/{p["id"]}/"}}}}')
     item_list_json = '"itemListElement": [' + ','.join(items) + ']'
 
     page_html = CATEGORY_TEMPLATE.format(
@@ -1286,7 +1286,7 @@ def main():
     product_dir = WEBSITE_DIR / "product"
     count = 0
     for p in products_to_gen:
-        sku = p['sku']
+        sku = p['id']
         out_dir = product_dir / sku
         out_dir.mkdir(parents=True, exist_ok=True)
         page_html = generate_product_page(p, products)
@@ -1329,7 +1329,7 @@ def main():
 
     # === 5. Add product URLs to sitemap ===
     for p in products:
-        sitemap_urls.append((f"{SITE_URL}/product/{p['sku']}/", "0.6", "monthly"))
+        sitemap_urls.append((f"{SITE_URL}/product/{p['id']}/", "0.6", "monthly"))
 
     print(f"[4] Sitemap URLs: {len(sitemap_urls)} total")
 
