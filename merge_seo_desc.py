@@ -8,9 +8,9 @@ import openpyxl
 import os
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
-WEBSITE_DIR = os.path.join(BASE_DIR, 'party-maker-website')
-PRODUCTS_JSON = os.path.join(WEBSITE_DIR, 'products.json')
-SEO_XLSX = os.path.join(BASE_DIR, 'seo_desc_review.xlsx')
+WEBSITE_DIR = BASE_DIR
+PRODUCTS_JSON = os.path.join(BASE_DIR, 'products.json')
+SEO_XLSX = os.path.join(BASE_DIR, '..', 'seo_desc_review.xlsx')
 
 def main():
     # Load Excel
@@ -36,7 +36,7 @@ def main():
     products = data['products']
     matched = 0
     for p in products:
-        sku = str(p['sku'])
+        sku = str(p.get('sku') or p.get('id', ''))
         if sku in seo_map:
             p['seo_desc'] = seo_map[sku]
             matched += 1

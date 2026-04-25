@@ -11,9 +11,9 @@ import hashlib
 
 # Paths
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
-WEBSITE_DIR = os.path.join(BASE_DIR, 'party-maker-website')
-PRODUCTS_JSON = os.path.join(WEBSITE_DIR, 'products.json')
-OUTPUT_XLSX = os.path.join(BASE_DIR, 'seo_desc_review.xlsx')
+WEBSITE_DIR = BASE_DIR
+PRODUCTS_JSON = os.path.join(BASE_DIR, 'products.json')
+OUTPUT_XLSX = os.path.join(BASE_DIR, '..', 'seo_desc_review.xlsx')
 
 def load_products():
     with open(PRODUCTS_JSON, 'r', encoding='utf-8') as f:
@@ -199,7 +199,7 @@ def generate_seo_desc(products):
     total = len(products)
     
     for i, p in enumerate(products):
-        sku = p['sku']
+        sku = p.get('sku') or p.get('id', '')
         name = p.get('name', '').strip()
         desc = clean_text(p.get('description', ''))
         theme = p.get('theme', 'General Party')
