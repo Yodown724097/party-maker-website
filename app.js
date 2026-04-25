@@ -620,8 +620,52 @@ function _lbInitTouch() {
 
 // ============ PATH ROUTING ============
 function applyRoute() {
-    // Check for ?p=SKU query param (from pre-rendered product pages "Inquire" button)
     const urlParams = new URLSearchParams(window.location.search);
+
+    // Handle ?addcart=SKU — from static product page "Inquire This Product" button
+    const addCartSku = urlParams.get('addcart') || (() => {
+        try { return localStorage.getItem('pm_addcart'); } catch(e) { return null; }
+    })();
+    if (addCartSku) {
+        try { localStorage.removeItem('pm_addcart'); } catch(e) {}
+        history.replaceState(null, '', '/');
+        const product = allProducts.find(pr => pr.sku === addCartSku || pr.id === addCartSku);
+        if (product) {
+            const existing = cart.find(c => c.id === product.id);
+            if (!existing) {
+                const DEFAULT_QTY = 120;
+                cart.push({
+                    id: product.id, qty: DEFAULT_QTY,
+                    name: product.name,
+                    sku: product.sku,
+                    price: product.price || 0,
+                    description: product.description || '',
+                    images: product.images || [],
+                    _costPrice: product._costPrice || (product.price * 0.6),
+                    _costNote: product._costNote || '',
+                    _orderNo: product._orderNo || '',
+                    _stockQty: product._stockQty || '-',
+                    _unitSize: product._unitSize || '',
+                    _pcsPerCtn: product._pcsPerCtn || '-',
+                    _ctnL: product._ctnL || '-',
+                    _ctnW: product._ctnW || '-',
+                    _ctnH: product._ctnH || '-',
+                    _cbm: product._cbm || '-',
+                    _nw: product._nw || '-',
+                    _gw: product._gw || '-'
+                });
+            }
+            updateCartUI();
+            renderProducts();
+            setTimeout(() => {
+                toggleCart();
+                showToast(`✓ Added to cart — adjust qty then submit inquiry`, 'success');
+            }, 300);
+        }
+        return;
+    }
+
+    // Check for ?p=SKU query param (from pre-rendered product pages "Inquire" button)
     const pParam = urlParams.get('p');
     if (pParam) {
         const product = allProducts.find(pr => pr.sku === pParam || pr.id === pParam);

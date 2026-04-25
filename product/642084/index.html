@@ -50,7 +50,7 @@
     </script>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="../style.css?v=77022991">
+    <link rel="stylesheet" href="../style.css?v=77085492">
 </head>
 <body>
 <header>
@@ -114,7 +114,23 @@
 
             <div class="detail-specs"><h3>Packaging Details</h3><table class="specs-table"><tr><td class="spec-label">Pcs/Carton</td><td class="spec-value">13</td></tr><tr><td class="spec-label">Carton Size</td><td class="spec-value">103 x 22 x 103 cm</td></tr><tr><td class="spec-label">CBM</td><td class="spec-value">0.230</td></tr><tr><td class="spec-label">N.W.</td><td class="spec-value">31.8 kg</td></tr><tr><td class="spec-label">G.W.</td><td class="spec-value">32.8 kg</td></tr></table></div>
             <div class="detail-actions">
-                <a href="/?p=642084" class="btn-inquiry">&#128722; Inquire This Product</a>
+                <a href="/?addcart=642084" class="btn-inquiry" onclick="
+                    event.preventDefault();
+                    try {
+                        localStorage.setItem('pm_addcart','642084');
+                    } catch(e) {}
+                    var t = document.getElementById('pm-cart-toast');
+                    if (!t) {
+                        t = document.createElement('div');
+                        t.id = 'pm-cart-toast';
+                        t.style.cssText = 'position:fixed;bottom:24px;left:50%;transform:translateX(-50%);background:#4E6A3E;color:#fff;padding:12px 22px;border-radius:24px;font-size:0.9rem;font-weight:600;z-index:9999;box-shadow:0 4px 16px rgba(0,0,0,0.18);display:flex;align-items:center;gap:8px;';
+                        t.innerHTML = '&#10003; Added to inquiry cart &mdash; <a href="/" style="color:#d4e8c2;text-decoration:underline;">View Cart &amp; Submit</a>';
+                        document.body.appendChild(t);
+                    }
+                    t.style.display = 'flex';
+                    clearTimeout(window._pmCartToastTimer);
+                    window._pmCartToastTimer = setTimeout(function(){ t.style.display='none'; }, 5000);
+                ">&#128722; Inquire This Product</a>
                 <a href="mailto:info@partymaker.cn?subject=Inquiry: 642084 - Acrylic Islamic Wall Art - Ayatul Kursi&body=Hi, I'm interested in SKU 642084: Acrylic Islamic Wall Art - Ayatul Kursi%0A%0APlease send me more details." class="btn-email">
                     &#9993; Email Inquiry
                 </a>
