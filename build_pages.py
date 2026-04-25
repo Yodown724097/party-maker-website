@@ -186,14 +186,12 @@ PRODUCT_TEMPLATE = """\
 <div class="pdp-inquiry-product">
 <div class="pdp-inquiry-thumb"><img src="{first_image}" alt="{name_escaped}" id="pdpThumb"></div>
 <div><div class="pdp-inquiry-name" id="pdpProductName">{name_escaped}</div>
-<div class="pdp-inquiry-sku">SKU: {sku}</div>
-<div class="pdp-inquiry-price">${price}</div></div>
+<div class="pdp-inquiry-sku">SKU: {sku}</div></div>
 </div>
 <button class="pdp-inquiry-close" onclick="closePdpInquiry()">&times;</button>
 </div>
 <div id="pdpInquiryFormWrap">
 <div class="pdp-inquiry-body">
-<p class="pdp-inquiry-sub">Fill in your details and we will reply within 24 hours.</p>
 <form id="pdpInquiryForm" onsubmit="return submitPdpInquiry(event)">
 <div class="pdp-form-row">
 <div class="pdp-form-group">
@@ -216,12 +214,16 @@ PRODUCT_TEMPLATE = """\
 </div>
 </div>
 <div class="pdp-form-group">
+<label>Quantity Needed (Optional)</label>
+<input type="number" id="pdpQty" placeholder="e.g. 1000" min="1">
+</div>
+<div class="pdp-form-group">
 <label>Phone / WhatsApp</label>
 <input type="tel" id="pdpPhone" placeholder="+1 234 567 8900">
 </div>
 <div class="pdp-form-group">
 <label>Message / Notes</label>
-<textarea id="pdpNotes" rows="3" placeholder="Quantity needed, target market, questions..."></textarea>
+<textarea id="pdpNotes" rows="3" placeholder="Any questions or special requirements..."></textarea>
 </div>
 <button type="submit" class="pdp-submit-btn" id="pdpSubmitBtn">Send Inquiry &#10148;</button>
 </form>
@@ -232,7 +234,7 @@ PRODUCT_TEMPLATE = """\
 <div class="pdp-success-icon">&#10003;</div>
 <h3>Inquiry Sent!</h3>
 <p>We will reply within 24 hours.</p>
-<button class="pdp-submit-btn" onclick="closePdpInquiry()">Continue Browsing</button>
+<a href="/" class="pdp-submit-btn">Continue Browsing</a>
 </div>
 </div>
 </div>
@@ -240,7 +242,6 @@ PRODUCT_TEMPLATE = """\
 <script>
 var PDP_SKU='{sku}';
 var PDP_NAME='{name_escaped_js}';
-var PDP_PRICE='{price}';
 var PDP_IMG='{first_image}';
 function openPdpInquiry(){{
 document.getElementById('pdpInquiryOverlay').style.display='flex';
@@ -250,6 +251,7 @@ document.getElementById('pdpName').value='';
 document.getElementById('pdpCompany').value='';
 document.getElementById('pdpEmail').value='';
 document.getElementById('pdpCountry').value='';
+document.getElementById('pdpQty').value='';
 document.getElementById('pdpPhone').value='';
 document.getElementById('pdpNotes').value='';
 document.getElementById('pdpProductName').textContent=PDP_NAME;
@@ -272,6 +274,8 @@ async function submitPdpInquiry(e){{
 e.preventDefault();
 var btn=document.getElementById('pdpSubmitBtn');
 btn.disabled=true;btn.textContent='Sending...';btn.style.opacity='0.7';
+var qty=document.getElementById('pdpQty').value.trim();
+var msgExtra=qty?'Quantity needed: '+qty+'\n':'';
 var payload={{
 contact:{{
 name:document.getElementById('pdpName').value.trim(),
@@ -279,11 +283,11 @@ company:document.getElementById('pdpCompany').value.trim(),
 email:document.getElementById('pdpEmail').value.trim(),
 country:document.getElementById('pdpCountry').value.trim(),
 phone:document.getElementById('pdpPhone').value.trim(),
-message:document.getElementById('pdpNotes').value.trim()
+message:(msgExtra+document.getElementById('pdpNotes').value.trim())
 }},
 cart:[{{
-id:PDP_SKU,sku:PDP_SKU,name:PDP_NAME,description:'',
-quantity:120,price:PDP_PRICE||0,images:[PDP_IMG],
+id:PDP_SKU,sku:PDP_SKU,name:PDP_NAME,description:'',quantity:qty?parseInt(qty):120,
+price:0,images:[PDP_IMG],
 _costPrice:0,_costNote:'',_orderNo:PDP_SKU,_stockQty:'-',
 _unitSize:'',_ctnL:'-',_ctnW:'-',_ctnH:'-',_pcsPerCtn:'-',_cbm:'-',_nw:'-',_gw:'-'
 }}],
@@ -1178,18 +1182,17 @@ header {
     background: #F7F9F5;
     border-radius: 16px 16px 0 0;
 }
-.pdp-inquiry-product { display: flex; align-items: center; gap: 0.75rem; }
+.pdp-inquiry-product { display: flex; align-items: center; gap: 0.6rem; }
 .pdp-inquiry-thumb {
-    width: 52px;
-    height: 52px;
-    border-radius: 8px;
+    width: 40px;
+    height: 40px;
+    border-radius: 6px;
     object-fit: cover;
     border: 1px solid #e0e0e0;
     flex-shrink: 0;
 }
-.pdp-inquiry-name { font-weight: 700; color: #2A3A1A; font-size: 0.9rem; }
-.pdp-inquiry-sku { font-size: 0.72rem; color: #888; font-family: monospace; }
-.pdp-inquiry-price { font-size: 0.82rem; color: #B8960F; font-weight: 700; margin-top: 0.15rem; }
+.pdp-inquiry-name { font-weight: 600; color: #2A3A1A; font-size: 0.85rem; }
+.pdp-inquiry-sku { font-size: 0.7rem; color: #888; font-family: monospace; margin-top: 2px; }
 .pdp-inquiry-close {
     background: none;
     border: none;
@@ -1201,7 +1204,6 @@ header {
 }
 .pdp-inquiry-close:hover { color: #333; }
 .pdp-inquiry-body { padding: 1.25rem; }
-.pdp-inquiry-sub { font-size: 0.82rem; color: #888; margin-bottom: 1rem; text-align: center; }
 .pdp-form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem; }
 .pdp-form-group { margin-bottom: 0.75rem; }
 .pdp-form-group label { display: block; font-size: 0.78rem; font-weight: 600; color: #555; margin-bottom: 0.3rem; }
