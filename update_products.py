@@ -18,32 +18,32 @@ from datetime import datetime
 sys.stdout.reconfigure(encoding='utf-8')
 
 # ============ 配置 ============
-PRODUCTS_JSON_PATH = r'C:\Users\Administrator\WorkBuddy\20260423091746\party-maker-website\products.json'
-INDEX_HTML_PATH = r'C:\Users\Administrator\WorkBuddy\20260423091746\party-maker-website\index.html'
-WORKSPACE = r'C:\Users\Administrator\WorkBuddy\20260423091746'
+PRODUCTS_JSON_PATH = r'C:\Users\Administrator\WorkBuddy\20260423171832\party-maker-website\products.json'
+INDEX_HTML_PATH = r'C:\Users\Administrator\WorkBuddy\20260423171832\party-maker-website\index.html'
+WORKSPACE = r'C:\Users\Administrator\WorkBuddy\20260423171832'
 
-# Excel列名映射（中文表头 → 英文字段）
+# Excel列名映射（产品总表 → 英文字段）
 COLUMN_MAP = {
-    'ID/SKU': 'id',
+    'Item No.': 'id',
     'Product Name': 'name',
-    'Price (USD)': 'price',
+    'USD Price': 'price',
     'Theme': 'theme',
-    'Subcategory': 'subcategory',
+    'Function': 'subcategory',
     'Description': 'description',
-    'Images URLs': 'images',
-    'Tags': 'tags',  # ← 新增Tags字段
-    'Cost Price (CNY)': '_costPrice',
-    'Cost Note': '_costNote',
-    'Order No': '_orderNo',
+    'Image': 'images',
+    'Tags': 'tags',
+    '成本价': '_costPrice',
+    '成本备注': '_costNote',
+    '下达单号': '_orderNo',
     'Stock Qty': '_stockQty',
     'Unit Size': '_unitSize',
-    'CTN Length (cm)': '_ctnL',
-    'CTN Width (cm)': '_ctnW',
-    'CTN Height (cm)': '_ctnH',
+    'CTN L': '_ctnL',
+    'CTN W': '_ctnW',
+    'CTN H': '_ctnH',
     'pcs/CTN': '_pcsPerCtn',
     'CBM': '_cbm',
-    'N.W (kg)': '_nw',
-    'G.W (kg)': '_gw',
+    'N.W': '_nw',
+    'G.W': '_gw',
 }
 
 
@@ -52,7 +52,7 @@ def read_excel(excel_path):
     print(f"\n📖 读取Excel: {excel_path}")
 
     # 读取主数据表
-    df = pd.read_excel(excel_path, sheet_name='产品数据')
+    df = pd.read_excel(excel_path, sheet_name='产品总表')
     print(f"   产品数据行数: {len(df)}")
 
     # 读取删除列表（如果有）
@@ -86,6 +86,8 @@ def df_to_product(row):
             # 类型转换
             if field == 'price':
                 try:
+                    # 去除美元符号和逗号
+                    val = str(val).replace('$', '').replace(',', '').strip()
                     val = float(val) if val else 0
                 except:
                     val = 0
@@ -100,8 +102,21 @@ def df_to_product(row):
                 except:
                     val = 0
             elif field == 'images':
-                # 图片URL处理：分号分隔的字符串转数组
-                val = [url.strip() for url in val.split(';') if url.strip()] if val else []
+                # 图片URL处理：将逗号分隔的文件名转换为R2 URL
+                if val:
+                    # 获取SKU
+                    sku = str(row['Item No.']).strip()
+                    # 分割文件名
+                    filenames = [f.strip() for f in val.split(',') if f.strip()]
+                    urls = []
+                    for i, filename in enumerate(filenames):
+                        # 生成标准R2 URL：SKU/序号.jpg（01, 02, ...）
+                        seq = str(i+1).zfill(2)
+                        url = f'https://pub-1fd965ab66464286847edcb540254451.r2.dev/{sku}/{seq}.jpg'
+                        urls.append(url)
+                    val = urls
+                else:
+                    val = []
             elif field == 'tags':
                 # Tags处理：逗号分隔的字符串转数组
                 val = [t.strip().lower() for t in val.split(',') if t.strip()] if val else []
