@@ -15,22 +15,12 @@ from pathlib import Path
 # ========== CONFIG ==========
 SITE_URL = "https://www.partymaker.cn"
 SITE_NAME = "Party Maker"
-SITE_DESC = "Wholesale celebration products from Yiwu factory, China. Ramadan, Eid, Diwali, Easter, New Year. No MOQ spot goods. Custom from 600 pcs. Custom packaging. Global shipping."
+SITE_DESC = "Wholesale party supplies sourcing from Yiwu, China. Ramadan, Easter, Birthday, Chinese New Year and more."
 WEBSITE_DIR = Path(__file__).parent  # party-maker-website/
 PRODUCTS_JSON = WEBSITE_DIR / "products.json"
 PUBLIC_JSON = WEBSITE_DIR / "products-public.json"
 SITEMAP_FILE = WEBSITE_DIR / "sitemap.xml"
 ROBOTS_FILE = WEBSITE_DIR / "robots.txt"
-
-# CSS/JS version — computed once per build from file mtime
-def get_file_version(*files):
-    if not files:
-        return "1"
-    latest = max(os.path.getmtime(str(f)) for f in files if os.path.exists(str(f)))
-    return str(int(latest))[-8:]
-
-CSS_VERSION = get_file_version(WEBSITE_DIR / "style.css", WEBSITE_DIR / "app.js")
-print(f"[INFO] CSS/JS version: {CSS_VERSION}")
 
 # Only _costPrice is truly internal; packaging specs are useful for buyers
 INTERNAL_FIELDS = ("_costPrice",)
@@ -95,7 +85,7 @@ PRODUCT_TEMPLATE = """\
     </script>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="{css_path}?v={css_ver}">
+    <link rel="stylesheet" href="{css_path}">
 </head>
 <body>
 <header>
@@ -159,7 +149,14 @@ PRODUCT_TEMPLATE = """\
 
             {specs_html}
             <div class="detail-actions">
-                <button class="btn-inquiry" onclick="openPdpInquiry()">&#128722; Inquire This Product</button>
+                <a href="/?p={sku}" class="btn-inquiry">&#128722; Inquire This Product</a>
+                <a href="mailto:info@partymaker.cn?subject=Inquiry: {sku} - {name_escaped}&body=Hi, I'm interested in SKU {sku}: {name_escaped}%0A%0APlease send me more details." class="btn-email">
+                    &#9993; Email Inquiry
+                </a>
+            </div>
+
+            <div class="detail-contact">
+                <p>Need a custom quote? <a href="https://wa.me/8617274613005?text=Hi, I'm interested in SKU {sku}: {name_escaped}" target="_blank">WhatsApp us</a> or <a href="mailto:info@partymaker.cn">email us</a>.</p>
             </div>
         </div>
     </div>
@@ -171,133 +168,6 @@ PRODUCT_TEMPLATE = """\
         </div>
     </div>
 </main>
-
-<!-- Product Inquiry Modal -->
-<div class="pdp-inquiry-overlay" id="pdpInquiryOverlay" onclick="if(event.target===this)closePdpInquiry()">
-<div class="pdp-inquiry-modal" id="pdpInquiryModal">
-<div class="pdp-inquiry-header">
-<div class="pdp-inquiry-product">
-<div class="pdp-inquiry-thumb"><img src="{first_image}" alt="{name_escaped}" id="pdpThumb"></div>
-<div><div class="pdp-inquiry-name" id="pdpProductName">{name_escaped}</div>
-<div class="pdp-inquiry-sku">SKU: {sku}</div></div>
-</div>
-<button class="pdp-inquiry-close" onclick="closePdpInquiry()">&times;</button>
-</div>
-<div id="pdpInquiryFormWrap">
-<div class="pdp-inquiry-body">
-<form id="pdpInquiryForm" onsubmit="return submitPdpInquiry(event)">
-<div class="pdp-form-row">
-<div class="pdp-form-group">
-<label>Name <span class="pdp-req">*</span></label>
-<input type="text" id="pdpName" required placeholder="Your name">
-</div>
-<div class="pdp-form-group">
-<label>Company</label>
-<input type="text" id="pdpCompany" placeholder="Company name">
-</div>
-</div>
-<div class="pdp-form-row">
-<div class="pdp-form-group">
-<label>Email <span class="pdp-req">*</span></label>
-<input type="email" id="pdpEmail" required placeholder="you@example.com">
-</div>
-<div class="pdp-form-group">
-<label>Country <span class="pdp-req">*</span></label>
-<input type="text" id="pdpCountry" required placeholder="Your country">
-</div>
-</div>
-<div class="pdp-form-group">
-<label>Quantity Needed (Optional)</label>
-<input type="number" id="pdpQty" placeholder="e.g. 1000" min="1">
-</div>
-<div class="pdp-form-group">
-<label>Phone / WhatsApp</label>
-<input type="tel" id="pdpPhone" placeholder="+1 234 567 8900">
-</div>
-<div class="pdp-form-group">
-<label>Message / Notes</label>
-<textarea id="pdpNotes" rows="3" placeholder="Any questions or special requirements..."></textarea>
-</div>
-<button type="submit" class="pdp-submit-btn" id="pdpSubmitBtn">Send Inquiry &#10148;</button>
-</form>
-</div>
-</div>
-<div id="pdpInquirySuccess" style="display:none">
-<div class="pdp-success">
-<div class="pdp-success-icon">&#10003;</div>
-<h3>Inquiry Sent!</h3>
-<p>We will reply within 24 hours.</p>
-<a href="/" class="pdp-submit-btn">Continue Browsing</a>
-</div>
-</div>
-</div>
-</div>
-<script>
-var PDP_SKU='{sku}';
-var PDP_NAME='{name_escaped_js}';
-var PDP_IMG='{first_image}';
-function openPdpInquiry(){{
-document.getElementById('pdpInquiryOverlay').style.display='flex';
-document.getElementById('pdpInquiryFormWrap').style.display='block';
-document.getElementById('pdpInquirySuccess').style.display='none';
-document.getElementById('pdpName').value='';
-document.getElementById('pdpCompany').value='';
-document.getElementById('pdpEmail').value='';
-document.getElementById('pdpCountry').value='';
-document.getElementById('pdpQty').value='';
-document.getElementById('pdpPhone').value='';
-document.getElementById('pdpNotes').value='';
-document.getElementById('pdpProductName').textContent=PDP_NAME;
-document.getElementById('pdpThumb').src=PDP_IMG;
-document.getElementById('pdpSubmitBtn').disabled=false;
-document.getElementById('pdpSubmitBtn').textContent='Send Inquiry \u21B3';
-document.getElementById('pdpSubmitBtn').style.opacity='1';
-}}
-function closePdpInquiry(){{document.getElementById('pdpInquiryOverlay').style.display='none';}}
-function showPdpToast(msg){{
-var t=document.getElementById('pdpToast');
-if(!t){{t=document.createElement('div');t.id='pdpToast';document.body.appendChild(t);}}
-t.style.cssText='position:fixed;bottom:24px;left:50%;transform:translateX(-50%);background:#c0392b;color:#fff;padding:12px 22px;border-radius:24px;font-size:0.88rem;font-weight:600;z-index:99999;';
-t.textContent=msg;
-t.style.display='block';
-clearTimeout(window._pdpToastTimer);
-window._pdpToastTimer=setTimeout(function(){{t.style.display='none';}},4000);
-}}
-async function submitPdpInquiry(e){{
-e.preventDefault();
-var btn=document.getElementById('pdpSubmitBtn');
-btn.disabled=true;btn.textContent='Sending...';btn.style.opacity='0.7';
-var qty=document.getElementById('pdpQty').value.trim();
-var msgExtra=qty?'Quantity needed: '+qty+'\\n':'';
-var payload={{
-contact:{{
-name:document.getElementById('pdpName').value.trim(),
-company:document.getElementById('pdpCompany').value.trim(),
-email:document.getElementById('pdpEmail').value.trim(),
-country:document.getElementById('pdpCountry').value.trim(),
-phone:document.getElementById('pdpPhone').value.trim(),
-message:(msgExtra+document.getElementById('pdpNotes').value.trim())
-}},
-cart:[{{
-id:PDP_SKU,sku:PDP_SKU,name:PDP_NAME,description:'',quantity:qty?parseInt(qty):120,
-price:0,images:[PDP_IMG],
-_costPrice:0,_costNote:'',_orderNo:PDP_SKU,_stockQty:'-',
-_unitSize:'',_ctnL:'-',_ctnW:'-',_ctnH:'-',_pcsPerCtn:'-',_cbm:'-',_nw:'-',_gw:'-'
-}}],
-send_email:true,
-timestamp:new Date().toISOString()
-}};
-try{{
-var resp=await fetch('/api/generate',{{method:'POST',headers:{{'Content-Type':'application/json'}},body:JSON.stringify(payload)}});
-if(!resp.ok){{var err=await resp.json().catch(()=>({{}}));throw new Error(err.error||'Server error');}}
-document.getElementById('pdpInquiryFormWrap').style.display='none';
-document.getElementById('pdpInquirySuccess').style.display='flex';
-}}catch(err){{
-showPdpToast('Failed: '+err.message);
-btn.disabled=false;btn.textContent='Send Inquiry \u21B3';btn.style.opacity='1';
-}}
-}}
-</script>
 
 <footer>
     <div class="footer-inner">
@@ -372,7 +242,7 @@ CATEGORY_TEMPLATE = """\
     </script>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="{css_path}?v={css_ver}">
+    <link rel="stylesheet" href="{css_path}">
 </head>
 <body>
 <header>
@@ -454,10 +324,6 @@ def escape_html(text):
     """Escape HTML entities."""
     return html.escape(str(text), quote=True)
 
-def escape_js(text):
-    """Escape text for use inside a JS single-quoted string."""
-    return str(text).replace('\\', '\\\\').replace("'", "\\'").replace('\n', '\\n')
-
 
 def json_str(text):
     """Return a JSON-escaped string (with quotes)."""
@@ -475,7 +341,7 @@ def clean_public_product(p):
     return slim
 
 
-def build_product_card(p, css_path="../style.css"):
+def build_product_card(p, css_path="/style.css"):
     """Build a product card HTML snippet for category pages."""
     img = p['images'][0] if p.get('images') else ''
     tags = ''
@@ -485,7 +351,7 @@ def build_product_card(p, css_path="../style.css"):
     sku = escape_html(p.get('sku', ''))
     price = f"{p.get('price', 0):.2f}"
     return f"""\
-    <a href="/product/{p['id']}/" class="product-card">
+    <a href="/product/{p['sku']}/" class="product-card">
         <div class="product-image">
             <img src="{img}" alt="{name}" loading="lazy">
             {tags}
@@ -498,9 +364,9 @@ def build_product_card(p, css_path="../style.css"):
     </a>"""
 
 
-def generate_product_page(product, all_products, css_path="../style.css", css_ver=CSS_VERSION):
+def generate_product_page(product, all_products, css_path="/style.css"):
     """Generate a full product detail HTML page."""
-    sku = product['id']
+    sku = product['sku']
     name = product.get('name', '')
     description = product.get('description', '')
     seo_desc = product.get('seo_desc', '') or description
@@ -531,7 +397,7 @@ def generate_product_page(product, all_products, css_path="../style.css", css_ve
         thumb_items = []
         for i, img in enumerate(images):
             active = ' active' if i == 0 else ''
-            thumb_items.append(f'<img class="thumb{active}" src="{img}" data-full="{img}" alt="{name} - {i+1:02d}" loading="lazy">')
+            thumb_items.append(f'<img class="thumb{active}" src="{img}" data-full="{img}" alt="{name} photo {i+1}" loading="lazy">')
         thumbs_html = f'<div class="thumb-strip">{"".join(thumb_items)}</div>'
 
     # Tags
@@ -571,7 +437,7 @@ def generate_product_page(product, all_products, css_path="../style.css", css_ve
     # Related products (same subcategory, exclude self, max 8)
     related = [p for p in all_products
                if p.get('subcategory', '').strip() == subcategory
-               and p['id'] != sku][:8]
+               and p['sku'] != sku][:8]
     related_html = '\n'.join(build_product_card(r, css_path) for r in related)
 
     # Short name for breadcrumb (truncate if too long)
@@ -593,7 +459,6 @@ def generate_product_page(product, all_products, css_path="../style.css", css_ve
         og_image=first_image,
         price=price,
         name_escaped=escape_html(name),
-        name_escaped_js=escape_js(name),
         seo_desc_escaped=escape_html(seo_desc),
         sku=sku,
         theme=escape_html(theme),
@@ -607,7 +472,6 @@ def generate_product_page(product, all_products, css_path="../style.css", css_ve
         specs_html=specs_html,
         related_html=related_html,
         css_path=css_path,
-        css_ver=css_ver,
         detail_css=DETAIL_CSS,
         name_json=name_json,
         desc_json=desc_json,
@@ -619,7 +483,7 @@ def generate_product_page(product, all_products, css_path="../style.css", css_ve
     return page_html
 
 
-def generate_category_page(theme, subcategory, products, all_products, css_path="../style.css", css_ver=CSS_VERSION):
+def generate_category_page(theme, subcategory, products, all_products, css_path="/style.css"):
     """Generate a category listing HTML page."""
     if subcategory:
         page_name = f"{theme} - {subcategory}"
@@ -641,7 +505,7 @@ def generate_category_page(theme, subcategory, products, all_products, css_path=
     # JSON-LD: ItemList
     items = []
     for i, p in enumerate(products[:20], 1):  # Google recommends max ~20 items
-        items.append(f'{{"@type":"ListItem","position":{i},"item":{{"@type":"Product","name":{json_str(p.get("name",""))},"url":"{SITE_URL}/product/{p["id"]}/"}}}}')
+        items.append(f'{{"@type":"ListItem","position":{i},"item":{{"@type":"Product","name":{json_str(p.get("name",""))},"url":"{SITE_URL}/product/{p["sku"]}/"}}}}')
     item_list_json = '"itemListElement": [' + ','.join(items) + ']'
 
     page_html = CATEGORY_TEMPLATE.format(
@@ -655,7 +519,6 @@ def generate_category_page(theme, subcategory, products, all_products, css_path=
         count=len(products),
         products_grid_html=products_html,
         css_path=css_path,
-        css_ver=css_ver,
         detail_css=DETAIL_CSS,
         name_json=json_str(page_name),
         desc_json=json_str(desc_text),
@@ -855,6 +718,29 @@ DETAIL_CSS = """
     transition: background 0.2s, transform 0.15s;
 }
 .btn-inquiry:hover { background: #7A8B6E; transform: translateY(-1px); }
+.btn-email {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    padding: 0.65rem 1.25rem;
+    border: 1.5px solid #D9E0D1;
+    color: #5A6A4A;
+    border-radius: 8px;
+    font-size: 0.9rem;
+    font-weight: 500;
+    text-decoration: none;
+    transition: all 0.2s;
+}
+.btn-email:hover { border-color: #9CAF88; color: #9CAF88; }
+.detail-contact {
+    padding: 1rem;
+    background: #F7F9F5;
+    border-radius: 8px;
+    font-size: 0.85rem;
+    color: #7A8A6A;
+}
+.detail-contact a { color: #9CAF88; font-weight: 600; }
+
 .related-products {
     margin-top: 2rem;
 }
@@ -1122,128 +1008,6 @@ header {
     .product-detail, .category-page { padding: 1rem; }
     .footer-inner { flex-direction: column; text-align: center; }
 }
-
-/* PDP Inquiry Modal */
-.pdp-inquiry-overlay {
-    display: none;
-    position: fixed;
-    inset: 0;
-    background: rgba(0,0,0,0.55);
-    z-index: 9000;
-    align-items: center;
-    justify-content: center;
-    padding: 1rem;
-}
-.pdp-inquiry-modal {
-    background: #fff;
-    border-radius: 16px;
-    width: 100%;
-    max-width: 520px;
-    max-height: 92vh;
-    overflow-y: auto;
-    box-shadow: 0 20px 60px rgba(0,0,0,0.2);
-}
-.pdp-inquiry-header {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    padding: 1rem 1.25rem;
-    border-bottom: 1px solid #eee;
-    background: #F7F9F5;
-    border-radius: 16px 16px 0 0;
-}
-.pdp-inquiry-product { display: flex; align-items: center; gap: 0.6rem; }
-.pdp-inquiry-thumb {
-    width: 40px;
-    height: 40px;
-    border-radius: 6px;
-    border: 1px solid #e0e0e0;
-    flex-shrink: 0;
-    overflow: hidden;
-}
-.pdp-inquiry-thumb img {
-    width: 100%;
-    height: 100%;
-    object-fit: cover;
-}
-.pdp-inquiry-name { font-weight: 600; color: #2A3A1A; font-size: 0.85rem; }
-.pdp-inquiry-sku { font-size: 0.7rem; color: #888; font-family: monospace; margin-top: 2px; }
-.pdp-inquiry-close {
-    background: none;
-    border: none;
-    font-size: 1.6rem;
-    color: #999;
-    cursor: pointer;
-    line-height: 1;
-    padding: 0 0 0 1rem;
-}
-.pdp-inquiry-close:hover { color: #333; }
-.pdp-inquiry-body { padding: 1.25rem; }
-.pdp-form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem; }
-.pdp-form-group { margin-bottom: 0.75rem; }
-.pdp-form-group label { display: block; font-size: 0.78rem; font-weight: 600; color: #555; margin-bottom: 0.3rem; }
-.pdp-req { color: #c0392b; }
-.pdp-form-group input,
-.pdp-form-group textarea {
-    width: 100%;
-    padding: 0.55rem 0.75rem;
-    border: 1.5px solid #D9E0D1;
-    border-radius: 8px;
-    font-size: 0.85rem;
-    font-family: inherit;
-    color: #333;
-    box-sizing: border-box;
-    background: #fafcf8;
-    transition: border-color 0.2s;
-}
-.pdp-form-group input:focus,
-.pdp-form-group textarea:focus {
-    outline: none;
-    border-color: #9CAF88;
-    background: #fff;
-}
-.pdp-form-group textarea { resize: vertical; }
-.pdp-submit-btn {
-    width: 100%;
-    padding: 0.8rem;
-    background: #9CAF88;
-    color: #fff;
-    border: none;
-    border-radius: 10px;
-    font-size: 0.95rem;
-    font-weight: 700;
-    cursor: pointer;
-    margin-top: 0.5rem;
-    transition: background 0.2s, opacity 0.2s;
-}
-.pdp-submit-btn:hover { background: #7A8B6E; }
-.pdp-submit-btn:disabled { opacity: 0.55; cursor: not-allowed; }
-.pdp-success {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    padding: 3rem 2rem;
-    text-align: center;
-}
-.pdp-success-icon {
-    width: 64px;
-    height: 64px;
-    border-radius: 50%;
-    background: #E8F5E3;
-    color: #4E6A3E;
-    font-size: 2rem;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    margin-bottom: 1rem;
-}
-.pdp-success h3 { color: #2A3A1A; font-size: 1.2rem; margin: 0 0 0.5rem; }
-.pdp-success p { color: #777; font-size: 0.88rem; margin: 0 0 1.5rem; }
-@media (max-width: 480px) {
-    .pdp-form-row { grid-template-columns: 1fr; }
-    .pdp-inquiry-modal { border-radius: 12px; }
-}
 """
 
 
@@ -1286,7 +1050,7 @@ def main():
     product_dir = WEBSITE_DIR / "product"
     count = 0
     for p in products_to_gen:
-        sku = p['id']
+        sku = p['sku']
         out_dir = product_dir / sku
         out_dir.mkdir(parents=True, exist_ok=True)
         page_html = generate_product_page(p, products)
@@ -1329,7 +1093,7 @@ def main():
 
     # === 5. Add product URLs to sitemap ===
     for p in products:
-        sitemap_urls.append((f"{SITE_URL}/product/{p['id']}/", "0.6", "monthly"))
+        sitemap_urls.append((f"{SITE_URL}/product/{p['sku']}/", "0.6", "monthly"))
 
     print(f"[4] Sitemap URLs: {len(sitemap_urls)} total")
 
