@@ -11,6 +11,9 @@ let cart = [];
 let currentTheme = 'all';
 let currentSubcat = 'all';
 let searchQuery = '';
+// 分页状态
+let currentPage = 1;
+const productsPerPage = 24; // 每页显示数量
 
 // ============ INIT ============
 async function init() {
@@ -222,6 +225,9 @@ function setupSearch() {
 
 // ============ FILTER ============
 function filterAndRender() {
+    // 重置分页
+    currentPage = 1;
+    
     filteredProducts = allProducts.filter(p => {
         const matchTheme = currentTheme === 'all' || (p.theme || '') === currentTheme;
         const matchSubcat = currentSubcat === 'all' || (p.subcategory || '') === currentSubcat;
@@ -264,9 +270,19 @@ function renderProducts() {
                 <svg width="48" height="48" style="margin-bottom:1rem"><use href="#icon-search"/></svg>
                 <p>No products found.</p>
             </div>`;
+        // 清除加载更多按钮
+        const loadMoreBtn = document.getElementById('loadMoreBtn');
+        if (loadMoreBtn) loadMoreBtn.remove();
         return;
     }
-    grid.innerHTML = filteredProducts.map(p => {
+    
+    // 计算当前页应显示的产品
+    const startIndex = 0; // 每次filterAndRender会重置currentPage=1，所以从0开始
+    const endIndex = currentPage * productsPerPage;
+    const productsToShow = filteredProducts.slice(startIndex, endIndex);
+    
+    // 生成产品HTML
+    const productsHTML = productsToShow.map(p => {
         const inCart = cart.some(c => c.id === p.id);
         const imgUrl = p.images && p.images[0] ? p.images[0] : '';
         const imagesJson = encodeURIComponent(JSON.stringify(p.images || []));
@@ -319,6 +335,49 @@ function renderProducts() {
             </div>
         </div>`;
     }).join('');
+    
+    // 更新网格内容（注意：这里直接设置innerHTML，会移除旧内容）
+    grid.innerHTML = productsHTML;
+    
+    // 更新产品计数显示
+    document.getElementById('productsCount').textContent = `${productsToShow.length} of ${filteredProducts.length} products`;
+    
+    // 添加或更新加载更多按钮
+    updateLoadMoreButton(endIndex);
+}
+
+// ============ 加载更多功能 ============
+function updateLoadMoreButton(endIndex) {
+    let loadMoreBtn = document.getElementById('loadMoreBtn');
+    
+    // 如果已经显示了所有产品，移除加载更多按钮
+    if (endIndex >= filteredProducts.length) {
+        if (loadMoreBtn) loadMoreBtn.remove();
+        return;
+    }
+    
+    // 创建或更新加载更多按钮
+    if (!loadMoreBtn) {
+        loadMoreBtn = document.createElement('button');
+        loadMoreBtn.id = 'loadMoreBtn';
+        loadMoreBtn.className = 'load-more-btn';
+        loadMoreBtn.innerHTML = 'Load More Products';
+        loadMoreBtn.onclick = loadMoreProducts;
+        
+        // 将按钮添加到产品网格后
+        const grid = document.getElementById('productsGrid');
+        grid.parentNode.insertBefore(loadMoreBtn, grid.nextSibling);
+    }
+    
+    // 更新按钮文本
+    const remaining = filteredProducts.length - endIndex;
+    const nextPageCount = Math.min(productsPerPage, remaining);
+    loadMoreBtn.innerHTML = `Load ${nextPageCount} More Products (${remaining} remaining)`;
+}
+
+function loadMoreProducts() {
+    currentPage++;
+    renderProducts();
 }
 
 // ============ CART ============

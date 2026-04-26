@@ -24,26 +24,26 @@ WORKSPACE = r'C:\Users\Administrator\WorkBuddy\20260423171832'
 
 # Excel列名映射（产品总表 → 英文字段）
 COLUMN_MAP = {
-    'Item No.': 'id',
+    'ID/SKU': 'id',
     'Product Name': 'name',
-    'USD Price': 'price',
+    'Price (USD)': 'price',
     'Theme': 'theme',
-    'Function': 'subcategory',
+    'Subcategory': 'subcategory',
     'Description': 'description',
-    'Image': 'images',
+    'Images URLs': 'images',
     'Tags': 'tags',
-    '成本价': '_costPrice',
-    '成本备注': '_costNote',
-    '下达单号': '_orderNo',
+    'Cost Price (CNY)': '_costPrice',
+    'Cost Note': '_costNote',
+    'Order No': '_orderNo',
     'Stock Qty': '_stockQty',
     'Unit Size': '_unitSize',
-    'CTN L': '_ctnL',
-    'CTN W': '_ctnW',
-    'CTN H': '_ctnH',
+    'CTN Length (cm)': '_ctnL',
+    'CTN Width (cm)': '_ctnW',
+    'CTN Height (cm)': '_ctnH',
     'pcs/CTN': '_pcsPerCtn',
     'CBM': '_cbm',
-    'N.W': '_nw',
-    'G.W': '_gw',
+    'N.W (kg)': '_nw',
+    'G.W (kg)': '_gw',
 }
 
 
@@ -52,7 +52,7 @@ def read_excel(excel_path):
     print(f"\n📖 读取Excel: {excel_path}")
 
     # 读取主数据表
-    df = pd.read_excel(excel_path, sheet_name='产品总表')
+    df = pd.read_excel(excel_path, sheet_name='产品数据')
     print(f"   产品数据行数: {len(df)}")
 
     # 读取删除列表（如果有）
