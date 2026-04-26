@@ -11,9 +11,6 @@ let cart = [];
 let currentTheme = 'all';
 let currentSubcat = 'all';
 let searchQuery = '';
-// 分页状态
-let currentPage = 1;
-const productsPerPage = 24; // 每页显示数量
 
 // ============ INIT ============
 async function init() {
@@ -35,9 +32,12 @@ async function loadProducts() {
         console.log('Loaded ' + allProducts.length + ' products');
     } catch (err) {
         console.error('Error loading products:', err);
-        document.getElementById('productsGrid').innerHTML =
-            '<div style="text-align:center;padding:4rem 1rem;color:var(--text-light);grid-column:1/-1;">' +
-            '<p>Failed to load products. Please refresh the page.</p></div>';
+        const productsGridEl = document.getElementById('productsGrid');
+        if (productsGridEl) {
+            productsGridEl.innerHTML =
+                '<div style="text-align:center;padding:4rem 1rem;color:var(--text-light);grid-column:1/-1;">' +
+                '<p>Failed to load products. Please refresh the page.</p></div>';
+        }
         return;
     }
     buildCategoryList();
@@ -183,6 +183,7 @@ function scrollToTop() {
 function updateSectionTitle() {
     const el = document.getElementById('sectionTitle');
     const bc = document.querySelector('.breadcrumb');
+    if (!el || !bc) return; // 如果元素不存在，直接返回
     if (currentTheme === 'all') {
         el.textContent = 'All Products';
         bc.innerHTML = '<span>All Products</span>';
@@ -225,9 +226,6 @@ function setupSearch() {
 
 // ============ FILTER ============
 function filterAndRender() {
-    // 重置分页
-    currentPage = 1;
-    
     filteredProducts = allProducts.filter(p => {
         const matchTheme = currentTheme === 'all' || (p.theme || '') === currentTheme;
         const matchSubcat = currentSubcat === 'all' || (p.subcategory || '') === currentSubcat;
@@ -257,32 +255,24 @@ function filterAndRender() {
         return (a.name || '').localeCompare(b.name || '');  // 按名称排序
     });
 
-    document.getElementById('productsCount').textContent = `${filteredProducts.length} products`;
+    const productsCountEl = document.getElementById('productsCount');
+    if (productsCountEl) productsCountEl.textContent = `${filteredProducts.length} products`;
     renderProducts();
 }
 
 // ============ RENDER PRODUCTS ============
 function renderProducts() {
     const grid = document.getElementById('productsGrid');
+    if (!grid) return; // 如果productsGrid元素不存在，直接返回
     if (filteredProducts.length === 0) {
         grid.innerHTML = `
             <div style="text-align:center;padding:4rem 1rem;color:var(--text-light);grid-column:1/-1;">
                 <svg width="48" height="48" style="margin-bottom:1rem"><use href="#icon-search"/></svg>
                 <p>No products found.</p>
             </div>`;
-        // 清除加载更多按钮
-        const loadMoreBtn = document.getElementById('loadMoreBtn');
-        if (loadMoreBtn) loadMoreBtn.remove();
         return;
     }
-    
-    // 计算当前页应显示的产品
-    const startIndex = 0; // 每次filterAndRender会重置currentPage=1，所以从0开始
-    const endIndex = currentPage * productsPerPage;
-    const productsToShow = filteredProducts.slice(startIndex, endIndex);
-    
-    // 生成产品HTML
-    const productsHTML = productsToShow.map(p => {
+    grid.innerHTML = filteredProducts.map(p => {
         const inCart = cart.some(c => c.id === p.id);
         const imgUrl = p.images && p.images[0] ? p.images[0] : '';
         const imagesJson = encodeURIComponent(JSON.stringify(p.images || []));
@@ -335,49 +325,6 @@ function renderProducts() {
             </div>
         </div>`;
     }).join('');
-    
-    // 更新网格内容（注意：这里直接设置innerHTML，会移除旧内容）
-    grid.innerHTML = productsHTML;
-    
-    // 更新产品计数显示
-    document.getElementById('productsCount').textContent = `${productsToShow.length} of ${filteredProducts.length} products`;
-    
-    // 添加或更新加载更多按钮
-    updateLoadMoreButton(endIndex);
-}
-
-// ============ 加载更多功能 ============
-function updateLoadMoreButton(endIndex) {
-    let loadMoreBtn = document.getElementById('loadMoreBtn');
-    
-    // 如果已经显示了所有产品，移除加载更多按钮
-    if (endIndex >= filteredProducts.length) {
-        if (loadMoreBtn) loadMoreBtn.remove();
-        return;
-    }
-    
-    // 创建或更新加载更多按钮
-    if (!loadMoreBtn) {
-        loadMoreBtn = document.createElement('button');
-        loadMoreBtn.id = 'loadMoreBtn';
-        loadMoreBtn.className = 'load-more-btn';
-        loadMoreBtn.innerHTML = 'Load More Products';
-        loadMoreBtn.onclick = loadMoreProducts;
-        
-        // 将按钮添加到产品网格后
-        const grid = document.getElementById('productsGrid');
-        grid.parentNode.insertBefore(loadMoreBtn, grid.nextSibling);
-    }
-    
-    // 更新按钮文本
-    const remaining = filteredProducts.length - endIndex;
-    const nextPageCount = Math.min(productsPerPage, remaining);
-    loadMoreBtn.innerHTML = `Load ${nextPageCount} More Products (${remaining} remaining)`;
-}
-
-function loadMoreProducts() {
-    currentPage++;
-    renderProducts();
 }
 
 // ============ CART ============
@@ -613,18 +560,21 @@ function openLightbox(url, name, sku, imagesJson) {
     window._lbIdx = images.indexOf(url);
     if (window._lbIdx < 0) window._lbIdx = 0;
     _lbRender();
-    document.getElementById('lightboxInfo').textContent = (sku ? '['+sku+'] ' : '') + (name || '');
+    const lightboxInfoEl = document.getElementById('lightboxInfo');
+    if (lightboxInfoEl) lightboxInfoEl.textContent = (sku ? '['+sku+'] ' : '') + (name || '');
     const prevBtn = document.getElementById('lbPrev');
     const nextBtn = document.getElementById('lbNext');
     if (prevBtn) prevBtn.style.display = images.length > 1 ? '' : 'none';
     if (nextBtn) nextBtn.style.display = images.length > 1 ? '' : 'none';
-    document.getElementById('lightbox').classList.add('active');
+    const lightboxEl = document.getElementById('lightbox');
+    if (lightboxEl) lightboxEl.classList.add('active');
     _lbInitTouch();
 }
 function _lbRender() {
     const imgs = window._lbImages || [];
     const idx = window._lbIdx || 0;
-    document.getElementById('lightboxImg').src = imgs[idx] || '';
+    const lightboxImgEl = document.getElementById('lightboxImg');
+    if (lightboxImgEl) lightboxImgEl.src = imgs[idx] || '';
     // 计数器
     const counter = document.getElementById('lbCounter');
     if (counter) counter.textContent = imgs.length > 1 ? `${idx + 1} / ${imgs.length}` : '';
@@ -651,8 +601,10 @@ function lbNav(dir) {
     _lbRender();
 }
 function closeLightbox() {
-    document.getElementById('lightbox').classList.remove('active');
-    document.getElementById('lightboxImg').src = '';
+    const lightboxEl = document.getElementById('lightbox');
+    if (lightboxEl) lightboxEl.classList.remove('active');
+    const lightboxImgEl = document.getElementById('lightboxImg');
+    if (lightboxImgEl) lightboxImgEl.src = '';
     // Restore URL from current category state
     updateUrlFromState();
 }
@@ -679,52 +631,8 @@ function _lbInitTouch() {
 
 // ============ PATH ROUTING ============
 function applyRoute() {
-    const urlParams = new URLSearchParams(window.location.search);
-
-    // Handle ?addcart=SKU — from static product page "Inquire This Product" button
-    const addCartSku = urlParams.get('addcart') || (() => {
-        try { return localStorage.getItem('pm_addcart'); } catch(e) { return null; }
-    })();
-    if (addCartSku) {
-        try { localStorage.removeItem('pm_addcart'); } catch(e) {}
-        history.replaceState(null, '', '/');
-        const product = allProducts.find(pr => pr.sku === addCartSku || pr.id === addCartSku);
-        if (product) {
-            const existing = cart.find(c => c.id === product.id);
-            if (!existing) {
-                const DEFAULT_QTY = 120;
-                cart.push({
-                    id: product.id, qty: DEFAULT_QTY,
-                    name: product.name,
-                    sku: product.sku,
-                    price: product.price || 0,
-                    description: product.description || '',
-                    images: product.images || [],
-                    _costPrice: product._costPrice || (product.price * 0.6),
-                    _costNote: product._costNote || '',
-                    _orderNo: product._orderNo || '',
-                    _stockQty: product._stockQty || '-',
-                    _unitSize: product._unitSize || '',
-                    _pcsPerCtn: product._pcsPerCtn || '-',
-                    _ctnL: product._ctnL || '-',
-                    _ctnW: product._ctnW || '-',
-                    _ctnH: product._ctnH || '-',
-                    _cbm: product._cbm || '-',
-                    _nw: product._nw || '-',
-                    _gw: product._gw || '-'
-                });
-            }
-            updateCartUI();
-            renderProducts();
-            setTimeout(() => {
-                toggleCart();
-                showToast(`✓ Added to cart — adjust qty then submit inquiry`, 'success');
-            }, 300);
-        }
-        return;
-    }
-
     // Check for ?p=SKU query param (from pre-rendered product pages "Inquire" button)
+    const urlParams = new URLSearchParams(window.location.search);
     const pParam = urlParams.get('p');
     if (pParam) {
         const product = allProducts.find(pr => pr.sku === pParam || pr.id === pParam);
