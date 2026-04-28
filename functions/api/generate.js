@@ -245,6 +245,7 @@ function buildOwnerHtml(contact, cart, piNo, now, total) {
 
 // ============================================================
 // Excel (XLSX) 生成 — 纯 JS 实现（OOXML ZIP 格式）
+// 完全匹配参考PI模板排版：表头布局、合并单元格、样式、列宽行高
 // ============================================================
 
 function generateXlsxBase64(contact, cart, piNo, now, total) {
@@ -252,7 +253,7 @@ function generateXlsxBase64(contact, cart, piNo, now, total) {
   const stringIdx = {};
 
   function addString(s) {
-    const str = String(s);
+    const str = String(s == null ? '' : s);
     if (str in stringIdx) return stringIdx[str];
     const idx = strings.length;
     strings.push(str);
@@ -260,115 +261,173 @@ function generateXlsxBase64(contact, cart, piNo, now, total) {
     return idx;
   }
 
-  // 预添加列标题
-  const colLetters = ['No.','Item No.','Image','Product Name','Description','USD Price','Qty','Amount','Cost(CNY)','Unit Size','Unit Weight','Inner Size'];
-  const colLettersIdx = colLetters.map(addString);
+  // 单元格数据格式: [cellRef, value, valueType, styleName]
+  // valueType: 'n'=number, 's'=shared string index, 'f'=formula, 'e'=empty
+  // styleName: mapped to cellXf index in styles.xml
+
+  // 列标题（A-T，20列）
+  const headers = [
+    'No.','Item No.','Image','Product Name','Description',
+    'Price','Qty','Amount',
+    '成本价','成本备注','下载单号','Stock Qty',
+    'Unit Size','CTN L','CTN W','CTN H','pcs/CTN','CBM','N.W','G.W'
+  ];
+  const headerIdx = headers.map(addString);
 
   // 构建行数据
   const rows = [];
 
-  // Row 1: Title
-  rows.push([['A1', addString('PROFORMA INVOICE'), true, 16, true]]);
+  // ---- Row 1: PROFORMA INVOICE (merged A1:H1) ----
+  rows.push([['A1', addString('PROFORMA INVOICE'), 's', 'title']]);
 
-  // Row 2-7: Contact info
-  const info = [
-    ['A2','TO:'],['B2', addString(contact.company || '')],
-    ['G2','From:'],['H2', addString('PARTY MAKER')],
-    ['A3','ATTN:'],['B3', addString(contact.name || '')],
-    ['G3','ATTN:'],['H3',''],
-    ['A4','TEL:'],['B4', addString(contact.phone || '')],
-    ['G4','TEL:'],['H4', addString('+86-572-222222')],
-    ['A5','EMAIL:'],['B5', addString(contact.email || '')],
-    ['G5','Email:'],['H5', addString('info@partymaker.cn')],
-    ['A6','COUNTRY:'],['B6', addString(contact.country || '')],
-    ['A7','REMARK:'],['B7', addString((contact.message || '').slice(0, 100))],
-    ['G7','PI No.'],['H7', addString(piNo)],
+  // ---- Row 2: BUYER INFO + PI No. ----
+  rows.push([
+    ['A2', addString('BUYER INFO:'), 's', 'label'],
+    ['F2', addString('NO.:'), 's', 'normal'],
+    ['G2', addString(piNo), 's', 'normal'],
+  ]);
+
+  // ---- Row 3-6: Contact info (left: A label + B value, right: F label + G value) ----
+  const dateStr = now.toISOString().slice(0,10);
+  const infoRows = [
+    [['A3','TO:'], ['B3',''], ['F3','From:'], ['G3','PARTY MAKER']],
+    [['A4','ATTN:'], ['B4', contact.name || ''], ['F4','Email:'], ['G4','service@partymaker.cn']],
+    [['A5','TEL:'], ['B5', contact.phone || ''], ['F5','Date:'], ['G5', dateStr]],
+    [['A6','Addr:'], ['B6', contact.country || ''], ['F6','Port:'], ['G6','FOB Ningbo/Shanghai']],
   ];
-  rows.push(info);
+  infoRows.forEach(infoRow => {
+    const row = [];
+    infoRow.forEach(([ref, val]) => {
+      row.push([ref, addString(val), 's', 'normal']);
+    });
+    rows.push(row);
+  });
 
-  // Row 9: Headers
+  // ---- Row 7: separator (thin row) ----
+  rows.push([]);
+
+  // ---- Row 8: Table headers (A-T, green fill, white bold, thin borders) ----
   const headerRow = [];
-  for (let c = 0; c < colLettersIdx.length; c++) {
-    const colL = String.fromCharCode(65 + c);
-    headerRow.push([`${colL}9`, colLettersIdx[c], true, 10, false, true]);
+  for (let c = 0; c < headers.length; c++) {
+    const colL = c < 26 ? String.fromCharCode(65 + c) : 'A' + String.fromCharCode(65 + c - 26);
+    headerRow.push([`${colL}8`, headerIdx[c], 's', 'header']);
   }
   rows.push(headerRow);
 
-  // Product rows (row 10+)
-  let rowNum = 10;
+  // ---- Product rows (row 9+) ----
+  const dataStartRow = 9;
+  let rowNum = dataStartRow;
   cart.forEach((item, i) => {
-    const qty = parseInt(item.quantity || 0);
+    const qty = parseInt(item.quantity || 0) || 120;
     const price = parseFloat(item.price || 0);
     const costPrice = parseFloat(item._costPrice || 0);
     const sku = item.sku || item.id || '-';
     const name = item.name || '';
     const desc = (item.description || '').replace(/\n/g, ' ');
-    const unitSize = item._unitSize || '';
     const images = Array.isArray(item.images) ? item.images : [];
     const imgUrl = images[0] || '';
 
-    const rowData = [
-      [`A${rowNum}`, i + 1, false, 10, false, false, 'center'],
-      [`B${rowNum}`, addString(sku), false, 10, false, false, 'center'],
-      [`C${rowNum}`, imgUrl ? addString(imgUrl) : -1, false, 10, false, false, 'center'],
-      [`D${rowNum}`, addString(name), false, 10, false, false, 'left'],
-      [`E${rowNum}`, addString(desc), false, 10, false, false, 'left'],
-      [`F${rowNum}`, price, false, 10, false, false, 'right', '$#,##0.00'],
-      [`G${rowNum}`, qty, false, 10, false, false, 'center'],
-      [`H${rowNum}`, `F${rowNum}*G${rowNum}`, false, 10, true, false, 'right', '$#,##0.00'],
-      [`I${rowNum}`, costPrice > 0 ? costPrice : '', false, 10, false, false, 'right', costPrice > 0 ? '#,##0.00' : ''],
-      [`J${rowNum}`, unitSize && !['nan','None',''].includes(String(unitSize)) ? addString(unitSize) : -1, false, 10, false, false, 'center'],
+    // Helper: get internal field, return '' if no real data
+    const getVal = (key, dashIfEmpty) => {
+      const v = item[key];
+      if (v == null || v === '' || v === 'nan' || v === 'None' || v === 'NaN') return '';
+      if (dashIfEmpty && (v === '-' || v === 0)) return '-';
+      return v;
+    };
+
+    const costNote = getVal('_costNote');
+    const orderNo = getVal('_orderNo');
+    const stockQty = getVal('_stockQty', true);
+    const unitSize = getVal('_unitSize');
+    const ctnL = getVal('_ctnL', true);
+    const ctnW = getVal('_ctnW', true);
+    const ctnH = getVal('_ctnH', true);
+    const pcsPerCtn = getVal('_pcsPerCtn', true);
+    const cbm = getVal('_cbm', true);
+    const nw = getVal('_nw', true);
+    const gw = getVal('_gw', true);
+
+    // Helper: add a cell — string value → 's', numeric → 'n', empty → empty cell with style
+    const strCell = (ref, val, style) => val ? [ref, addString(String(val)), 's', style] : [ref, '', 'e', style];
+    const numCell = (ref, val, style) => (val !== '' && val != null && !isNaN(val) && val !== '-') ? [ref, Number(val), 'n', style] : strCell(ref, val, style);
+
+    const row = [
+      [`A${rowNum}`, i + 1, 'n', 'data'],                                          // No.
+      [`B${rowNum}`, addString(sku), 's', 'dataC'],                                 // Item No.
+      imgUrl ? [`C${rowNum}`, addString(imgUrl), 's', 'dataC'] : [`C${rowNum}`, '', 'e', 'dataC'], // Image (URL)
+      [`D${rowNum}`, addString(name), 's', 'dataL'],                                // Product Name
+      [`E${rowNum}`, addString(desc), 's', 'dataL'],                                // Description
+      [`F${rowNum}`, price, 'n', 'price'],                                          // Price ($ format)
+      [`G${rowNum}`, qty, 'n', 'dataC'],                                            // Qty
+      [`H${rowNum}`, `F${rowNum}*G${rowNum}`, 'f', 'formula'],                      // Amount (formula $ format)
+      [`I${rowNum}`, costPrice > 0 ? costPrice : '', costPrice > 0 ? 'n' : 'e', 'costPrice'], // 成本价 (¥ format)
+      strCell(`J${rowNum}`, costNote, 'dataC'),                                     // 成本备注
+      strCell(`K${rowNum}`, orderNo, 'dataC'),                                      // 下载单号
+      strCell(`L${rowNum}`, stockQty, 'dataC'),                                     // Stock Qty
+      strCell(`M${rowNum}`, unitSize, 'dataC'),                                     // Unit Size
+      strCell(`N${rowNum}`, ctnL, 'dataC'),                                         // CTN L
+      strCell(`O${rowNum}`, ctnW, 'dataC'),                                         // CTN W
+      strCell(`P${rowNum}`, ctnH, 'dataC'),                                         // CTN H
+      strCell(`Q${rowNum}`, pcsPerCtn, 'dataC'),                                    // pcs/CTN
+      strCell(`R${rowNum}`, cbm, 'dataCbm'),                                        // CBM (0.000 format)
+      strCell(`S${rowNum}`, nw, 'dataCbm'),                                         // N.W (0.000 format)
+      strCell(`T${rowNum}`, gw, 'dataCbm'),                                         // G.W (0.000 format)
     ];
-    rows.push(rowData);
+
+    rows.push(row);
     rowNum++;
   });
 
-  // Total row
+  // ---- Total row ----
+  const totalRow = rowNum;
   rows.push([
-    [`A${rowNum}`, addString('TOTAL:'), true, 11, false, false, 'right'],
-    [`H${rowNum}`, `SUM(H10:H${rowNum - 1})`, true, 11, true, false, 'right', '$#,##0.00'],
+    [`A${totalRow}`, addString('TOTAL:'), 's', 'totalLabel'],
+    [`H${totalRow}`, `SUM(H${dataStartRow}:H${totalRow - 1})`, 'f', 'totalFormula'],
   ]);
-  rowNum += 2;
+  rowNum = totalRow + 2;
 
-  // Terms
-  rows.push([[`A${rowNum}`, addString('TERMS & CONDITIONS'), true, 11, false, false, 'left']]);
+  // ---- Terms & Conditions ----
+  const termsRow = rowNum;
+  rows.push([[`A${rowNum}`, addString('TERMS & CONDITIONS'), 's', 'section']]);
   rowNum++;
   const terms = [
-    '1. FOB Ningbo / Shanghai',
+    '1. FOB Ningbo/Shanghai',
     '2. Price does not include testing, inspection and auditing costs',
-    '3. Production time: 45 days after deposit is received',
-    '4. Payment: 30% deposit, 70% balance before goods leave factory',
+    '3. Production time: 45 days after deposit received',
+    '4. Payment: 30% deposit, 70% balance before shipment',
   ];
   terms.forEach(t => {
-    rows.push([[`A${rowNum}`, addString(t), false, 10, false, false, 'left']]);
+    rows.push([[`A${rowNum}`, addString(t), 's', 'normal']]);
     rowNum++;
   });
 
-  // Bank info
+  // ---- Bank Information ----
   rowNum++;
-  rows.push([[`A${rowNum}`, addString('BANK INFORMATION'), true, 11, false, false, 'left']]);
+  const bankStartRow = rowNum;
+  rows.push([[`A${rowNum}`, addString('BANK INFORMATION'), 's', 'section']]);
   rowNum++;
   const bankInfo = [
     ['BENEFICIARY:', 'JIATAO INDUSTRY (SHANGHAI) CO.,LTD'],
-    ['BANK NAME:', 'AGRICULTURAL BANK OF CHINA SHANGHAI YANGPU BRANCH'],
-    ['BANK ADDRESS:', 'NO.1128, XIANGYIN ROAD, YANGPU DISTRICT, SHANGHAI CHINA'],
+    ['BANK:', 'AGRICULTURAL BANK OF CHINA SHANGHAI YANGPU BRANCH'],
+    ['ADDRESS:', 'NO. 1128, XIANGYIN ROAD, YANGPU DISTRICT, SHANGHAI'],
     ['POST CODE:', '200433'],
     ['A/C NO.:', '09421014040006209'],
-    ['SWIFT CODE:', 'ABOCCNBJ090'],
+    ['SWIFT:', 'ABOCCNBJ090'],
   ];
   bankInfo.forEach(([label, val]) => {
     rows.push([
-      [`A${rowNum}`, addString(label), true, 10, false, false, 'left'],
-      [`B${rowNum}`, addString(val), false, 10, false, false, 'left'],
+      [`A${rowNum}`, addString(label), 's', 'bankLabel'],
+      [`B${rowNum}`, addString(val), 's', 'bankValue'],
     ]);
     rowNum++;
   });
 
-  const xlsx = buildXlsx(strings, rows, cart.length);
+  const xlsx = buildXlsx(strings, rows, cart.length, totalRow, dataStartRow, termsRow, bankStartRow);
   return btoa(xlsx);
 }
 
-function buildXlsx(strings, rows, productCount) {
+function buildXlsx(strings, rows, productCount, totalRow, dataStartRow, termsRow, bankStartRow) {
+  // Shared strings XML
   let ssXml = '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>';
   ssXml += '<sst xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main" count="' + strings.length + '" uniqueCount="' + strings.length + '">';
   strings.forEach(s => {
@@ -376,55 +435,201 @@ function buildXlsx(strings, rows, productCount) {
   });
   ssXml += '</sst>';
 
+  // Column widths (A-T, matching reference Excel)
+  const widths = [6.3, 12, 9.4, 28.3, 25, 11.7, 10.4, 12, 10, 8, 10, 13, 13, 8, 13, 13, 13, 13, 13, 13];
+  let colsXml = '<cols>';
+  widths.forEach((w, i) => {
+    colsXml += '<col min="' + (i+1) + '" max="' + (i+1) + '" width="' + w + '" customWidth="1"/>';
+  });
+  colsXml += '</cols>';
+
+  // Build worksheet XML
   let wsXml = '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>';
   wsXml += '<worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships">';
+  wsXml += colsXml;
 
-  const widths = [5, 12, 30, 30, 25, 10, 8, 12, 10, 12, 10, 12];
-  wsXml += '<cols>';
-  widths.forEach((w, i) => {
-    wsXml += '<col min="' + (i+1) + '" max="' + (i+1) + '" width="' + w + '" customWidth="1"/>';
-  });
-  wsXml += '</cols>';
+  // Row heights
+  wsXml += '<sheetFormatPr defaultRowHeight="15"/>';
+  // Custom row heights
+  const rowHeights = {};
+  rowHeights[1] = 36;
+  for (let r = 3; r <= 6; r++) rowHeights[r] = 18;
+  rowHeights[7] = 4; // separator
+  rowHeights[8] = 22; // header
+  for (let r = dataStartRow; r < dataStartRow + productCount; r++) rowHeights[r] = 65;
+  rowHeights[totalRow] = 25;
+  if (termsRow) rowHeights[termsRow] = 20;
+  for (let r = bankStartRow || 0; r < (bankStartRow || 0) + 7; r++) rowHeights[r] = 18;
 
   wsXml += '<sheetData>';
 
+  // Style mapping:
+  // 0 = default
+  // 1 = header (green fill #9CAF88, white bold 10pt, center, thin border, wrap)
+  // 2 = title (green fill #9CAF88, bold 16pt, center)
+  // 3 = bold label (bold 11pt)
+  // 4 = data cell center (thin border, center, wrap)
+  // 5 = data cell left (thin border, left, wrap)
+  // 6 = data cell right (thin border, right)
+  // 7 = total label (bold 11pt, fill #F7F9F5, thin border, right)
+  // 8 = total formula (bold 11pt, fill #F7F9F5, thin border, right)
+  // 9 = section header (bold 11pt)
+  // 10 = bank label (bold 11pt)
+  // 11 = bank value (11pt)
+
+  const styleMap = {
+    'title': 2,
+    'label': 3,
+    'normal': 0,
+    'header': 1,
+    'data': 4,
+    'dataC': 4,
+    'dataL': 5,
+    'dataR': 6,
+    'price': 12,
+    'formula': 13,
+    'costPrice': 14,
+    'dataCbm': 15,
+    'totalLabel': 7,
+    'totalFormula': 8,
+    'section': 9,
+    'bankLabel': 10,
+    'bankValue': 11,
+  };
+
   rows.forEach(rowData => {
+    if (!rowData || rowData.length === 0) {
+      // Empty row (separator)
+      const row7 = 7;
+      wsXml += '<row r="' + row7 + '" ht="4" customHeight="1"/>';
+      return;
+    }
     const firstCell = rowData[0][0];
     const rowNum = parseInt(firstCell.replace(/[A-Z]/g, ''));
+    let rowAttr = ' r="' + rowNum + '"';
+    if (rowHeights[rowNum]) {
+      rowAttr += ' ht="' + rowHeights[rowNum] + '" customHeight="1"';
+    }
+    wsXml += '<row' + rowAttr + '>';
 
-    wsXml += '<row r="' + rowNum + '">';
-    rowData.forEach(([cellRef, value, bold, fontSize, isFormula, isHeader, align, numFmt]) => {
-      const col = cellRef.replace(/[0-9]/g, '');
-      const colNum = colLetterToNum(col);
+    rowData.forEach(([cellRef, value, valueType, styleName]) => {
+      const sIdx = styleMap[styleName] || 0;
+      wsXml += '<c r="' + cellRef + '"' + (sIdx > 0 ? ' s="' + sIdx + '"' : '');
 
-      wsXml += '<c r="' + cellRef + '"';
-      if (isHeader) wsXml += ' s="1"';
-      else if (bold) wsXml += ' s="2"';
-      if (typeof value === 'number' || (isFormula)) {
+      if (valueType === 'f') {
+        // Formula
         wsXml += '>';
-        if (isFormula) {
-          wsXml += '<f>' + escapeXml(String(value)) + '</f>';
-        } else {
-          wsXml += '<v>' + value + '</v>';
-        }
+        wsXml += '<f>' + escapeXml(String(value)) + '</f>';
         wsXml += '</c>';
-      } else if (typeof value === 'string' && value >= 0) {
-        wsXml += ' t="s"><v>' + value + '</v></c>';
+      } else if (valueType === 'n') {
+        // Number value
+        wsXml += '>';
+        wsXml += '<v>' + value + '</v>';
+        wsXml += '</c>';
+      } else if (valueType === 's') {
+        // Shared string index
+        wsXml += ' t="s">';
+        wsXml += '<v>' + value + '</v>';
+        wsXml += '</c>';
       } else {
+        // Empty cell
         wsXml += '></c>';
       }
     });
+
     wsXml += '</row>';
   });
 
   wsXml += '</sheetData>';
-  wsXml += '<mergeCells count="1"><mergeCell ref="A1:L1"/></mergeCells>';
+
+  // Merge cells (matching reference Excel)
+  const fixedMergeCount = 3; // A1:H1, A2:D2, TOTAL row
+  wsXml += '<mergeCells count="' + fixedMergeCount + '">';
+  wsXml += '<mergeCell ref="A1:H1"/>';     // Title
+  wsXml += '<mergeCell ref="A2:D2"/>';     // BUYER INFO
+  wsXml += '<mergeCell ref="A' + totalRow + ':G' + totalRow + '"/>'; // TOTAL row
+  // Bank merges: B:E for rows with bankLabel where label is BENEFICIARY, BANK, ADDRESS, A/C NO., SWIFT
+  let bankMergeCount = 0;
+  let bankMergeXml = '';
+  for (let ri = 0; ri < rows.length; ri++) {
+    const rd = rows[ri];
+    if (!rd || !rd[0]) continue;
+    const first = rd[0];
+    if (!Array.isArray(first) || first.length < 4) continue;
+    if (first[3] === 'bankLabel') {
+      const r = parseInt(String(first[0]).replace(/[A-Z]/g, ''));
+      const labelIdx = (typeof first[1] === 'number') ? first[1] : -1;
+      // Check label text
+      const labelText = labelIdx >= 0 ? strings[labelIdx] : '';
+      if (['BENEFICIARY:', 'BANK:', 'ADDRESS:', 'A/C NO.:', 'SWIFT:'].includes(labelText)) {
+        bankMergeXml += '<mergeCell ref="B' + r + ':E' + r + '"/>';
+        bankMergeCount++;
+      }
+    }
+  }
+  // Update merge count
+  const totalMergeCount = fixedMergeCount + bankMergeCount;
+  wsXml = wsXml.replace('<mergeCells count="' + fixedMergeCount + '">', '<mergeCells count="' + totalMergeCount + '">');
+  wsXml += bankMergeXml;
+  wsXml += '</mergeCells>';
+
   wsXml += '</worksheet>';
 
   return buildXlsxZip(ssXml, wsXml);
 }
 
 function buildXlsxZip(ssXml, wsXml) {
+  // Styles XML — 12 styles matching reference Excel
+  // 0=default, 1=header(green+white), 2=title, 3=bold label,
+  // 4=data center, 5=data left, 6=data right,
+  // 7=total label, 8=total formula, 9=section, 10=bank label, 11=bank value
+  const stylesXml = '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>' +
+    '<styleSheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main">' +
+    '<numFmts count="3">' +
+    '<numFmt numFmtId="164" formatCode="&quot;$&quot;#,##0.00"/>' +
+    '<numFmt numFmtId="165" formatCode="&quot;¥&quot;#,##0.00"/>' +
+    '<numFmt numFmtId="166" formatCode="0.000"/>' +
+    '</numFmts>' +
+    '<fonts count="6">' +
+    '<font><sz val="10"/><name val="Arial"/></font>' +                                          // 0: default 10pt
+    '<font><b/><sz val="10"/><color rgb="FFFFFFFF"/><name val="Arial"/></font>' +                // 1: bold white 10pt (header)
+    '<font><b/><sz val="16"/><name val="Arial"/></font>' +                                       // 2: bold 16pt (title)
+    '<font><b/><sz val="11"/><name val="Arial"/></font>' +                                       // 3: bold 11pt (labels)
+    '<font><sz val="11"/><name val="Arial"/></font>' +                                           // 4: 11pt (normal)
+    '<font><b/><sz val="11"/><color rgb="FFFFFFFF"/><name val="Arial"/></font>' +                // 5: bold white 11pt (unused, reserved)
+    '</fonts>' +
+    '<fills count="4">' +
+    '<fill><patternFill patternType="none"/></fill>' +                                            // 0: none
+    '<fill><patternFill patternType="gray125"/></fill>' +                                        // 1: gray125 (required)
+    '<fill><patternFill patternType="solid"><fgColor rgb="FF9CAF88"/><bgColor rgb="FF9CAF88"/></patternFill></fill>' + // 2: green #9CAF88
+    '<fill><patternFill patternType="solid"><fgColor rgb="FFF7F9F5"/><bgColor rgb="FFF7F9F5"/></patternFill></fill>' + // 3: light green #F7F9F5
+    '</fills>' +
+    '<borders count="2">' +
+    '<border/>' +                                                                                  // 0: no border
+    '<border><left style="thin"><color rgb="FF000000"/></left><right style="thin"><color rgb="FF000000"/></right><top style="thin"><color rgb="FF000000"/></top><bottom style="thin"><color rgb="FF000000"/></bottom></border>' + // 1: thin black
+    '</borders>' +
+    '<cellStyleXfs count="1"><xf/></cellStyleXfs>' +
+    '<cellXfs count="16">' +
+    '<xf/>' +                                                                                      // 0: default
+    '<xf numFmtId="0" fontId="1" fillId="2" borderId="1" applyFont="1" applyFill="1" applyBorder="1" applyAlignment="1"><alignment horizontal="center" vertical="center" wrapText="1"/></xf>' + // 1: header
+    '<xf numFmtId="0" fontId="2" fillId="2" borderId="0" applyFont="1" applyFill="1" applyAlignment="1"><alignment horizontal="center" vertical="center" wrapText="1"/></xf>' + // 2: title
+    '<xf numFmtId="0" fontId="3" borderId="0" applyFont="1"/>' +                             // 3: bold label
+    '<xf numFmtId="0" fontId="0" borderId="1" applyBorder="1" applyAlignment="1"><alignment horizontal="center" vertical="center" wrapText="1"/></xf>' + // 4: data center
+    '<xf numFmtId="0" fontId="0" borderId="1" applyBorder="1" applyAlignment="1"><alignment horizontal="left" vertical="center" wrapText="1"/></xf>' +   // 5: data left
+    '<xf numFmtId="0" fontId="0" borderId="1" applyBorder="1" applyAlignment="1"><alignment horizontal="right" vertical="center"/></xf>' +               // 6: data right (default numFmt)
+    '<xf numFmtId="0" fontId="3" fillId="3" borderId="1" applyFont="1" applyFill="1" applyBorder="1" applyAlignment="1"><alignment horizontal="right" vertical="center"/></xf>' + // 7: total label
+    '<xf numFmtId="164" fontId="3" fillId="3" borderId="1" applyFont="1" applyFill="1" applyBorder="1" applyNumberFormat="1" applyAlignment="1"><alignment horizontal="right" vertical="center"/></xf>' + // 8: total formula ($#,##0.00)
+    '<xf numFmtId="0" fontId="3" borderId="0" applyFont="1"/>' +                             // 9: section header
+    '<xf numFmtId="0" fontId="3" borderId="0" applyFont="1"/>' +                             // 10: bank label (same as 9)
+    '<xf numFmtId="0" fontId="4" borderId="0" applyFont="1"/>' +                             // 11: bank value
+    '<xf numFmtId="164" fontId="0" borderId="1" applyBorder="1" applyNumberFormat="1" applyAlignment="1"><alignment horizontal="right" vertical="center"/></xf>' + // 12: price ($#,##0.00)
+    '<xf numFmtId="164" fontId="0" borderId="1" applyBorder="1" applyNumberFormat="1" applyAlignment="1"><alignment horizontal="right" vertical="center"/></xf>' + // 13: amount formula ($#,##0.00)
+    '<xf numFmtId="165" fontId="0" borderId="1" applyBorder="1" applyNumberFormat="1" applyAlignment="1"><alignment horizontal="right" vertical="center"/></xf>' + // 14: cost price (¥#,##0.00)
+    '<xf numFmtId="166" fontId="0" borderId="1" applyBorder="1" applyNumberFormat="1" applyAlignment="1"><alignment horizontal="center" vertical="center"/></xf>' + // 15: CBM/NW/GW (0.000)
+    '</cellXfs>' +
+    '<cellStyles count="1"><cellStyle name="Normal" xfId="0"/></cellStyles>' +
+    '</styleSheet>';
+
   const files = [
     { path: '[Content_Types].xml', content: '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>' +
       '<Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types">' +
@@ -442,7 +647,7 @@ function buildXlsxZip(ssXml, wsXml) {
     },
     { path: 'xl/workbook.xml', content: '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>' +
       '<workbook xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships">' +
-      '<sheets><sheet name="Proforma Invoice" sheetId="1" r:id="rId1"/></sheets>' +
+      '<sheets><sheet name="PI" sheetId="1" r:id="rId1"/></sheets>' +
       '</workbook>'
     },
     { path: 'xl/_rels/workbook.xml.rels', content: '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>' +
@@ -453,24 +658,7 @@ function buildXlsxZip(ssXml, wsXml) {
     },
     { path: 'xl/worksheets/sheet1.xml', content: wsXml },
     { path: 'xl/sharedStrings.xml', content: ssXml },
-    { path: 'xl/styles.xml', content: '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>' +
-      '<styleSheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main">' +
-      '<numFmts count="0"/>' +
-      '<fonts count="2">' +
-      '<font><sz val="10"/><name val="Arial"/></font>' +
-      '<font><b/><sz val="11"/><name val="Arial"/></font>' +
-      '</fonts>' +
-      '<fills count="1"><fill><patternFill patternType="none"/></fill></fills>' +
-      '<borders count="1"><border/></borders>' +
-      '<cellStyleXfs count="1"><xf/></cellStyleXfs>' +
-      '<cellXfs count="3">' +
-      '<xf/></xf>' +
-      '<xf numFmtId="0" fontId="0" fillId="0" borderId="0" applyFont="1"><alignment horizontal="center" vertical="center" wrapText="1"/></xf>' +
-      '<xf numFmtId="0" fontId="1" fillId="0" borderId="0" applyFont="1"/></xf>' +
-      '</cellXfs>' +
-      '<cellStyles count="1"><cellStyle name="Normal" xfId="0"/></cellStyles>' +
-      '</styleSheet>'
-    },
+    { path: 'xl/styles.xml', content: stylesXml },
   ];
 
   return createZip(files);
