@@ -3,6 +3,16 @@ const R2_PRODUCTS_URL = '/products.json';
 // Direct to Cloudflare Pages Function (no CORS issues, no VPS needed)
 const WORKER_URL = '/api/generate';
 const QTY_STEP = 12;
+const R2_PUBLIC = 'https://pub-1fd965ab66464286847edcb540254451.r2.dev';
+
+function thumbUrl(originalUrl) {
+    // Convert {SKU}/01.webp -> {SKU}/thumb/01.webp
+    if (!originalUrl || !originalUrl.startsWith(R2_PUBLIC)) return originalUrl;
+    const path = originalUrl.replace(R2_PUBLIC + '/', '');
+    const lastSlash = path.lastIndexOf('/');
+    if (lastSlash === -1) return originalUrl;
+    return R2_PUBLIC + '/' + path.substring(0, lastSlash) + '/thumb/' + path.substring(lastSlash + 1);
+}
 const PAGE_SIZE = 24;
 
 // ============ STATE ============
@@ -23,32 +33,17 @@ async function init() {
     applyRoute();
 }
 
-// ============ INIT ============
-    // ============ LOAD PRODUCTS (embedded) ============
+// ============ LOAD PRODUCTS (progressive) ============
 async function loadProducts() {
-    // Priority 1: Read embedded data from HTML (zero network request)
+    let embeddedCount = 0;
+    // Step 1: Read embedded first-screen data (zero network request)
     if (window.__PRODUCTS__ && window.__PRODUCTS__.length > 0) {
         allProducts = window.__PRODUCTS__;
-        console.log('Loaded ' + allProducts.length + ' products (embedded)');
-    } else {
-        // Priority 2: Fetch from JSON as fallback
-        try {
-            const resp = await fetch('/products-public.json');
-            if (!resp.ok) throw new Error('Failed to load products: ' + resp.status);
-            const data = await resp.json();
-            allProducts = data.products || data || [];
-            console.log('Loaded ' + allProducts.length + ' products (fetch)');
-        } catch (err) {
-            console.error('Error loading products:', err);
-            const productsGridEl = document.getElementById('productsGrid');
-            if (productsGridEl) {
-                productsGridEl.innerHTML =
-                    '<div style="text-align:center;padding:4rem 1rem;color:var(--text-light);grid-column:1/-1;">' +
-                    '<p>Failed to load products. Please refresh the page.</p></div>';
-            }
-            return;
-        }
+        embeddedCount = allProducts.length;
+        console.log('Loaded ' + embeddedCount + ' products (embedded first-screen)');
     }
+
+    // Step 2: Build categories & render with whatever we have
     buildCategoryList();
     // Ramadan: active pill + expanded sidebar
     currentTheme = 'Ramadan';
@@ -63,6 +58,33 @@ async function loadProducts() {
     if (ramadanList) ramadanList.classList.add('open');
     if (ramadanLabel) ramadanLabel.classList.add('open');
     filterAndRender();
+
+    // Step 3: Background fetch full product list (non-blocking)
+    try {
+        const resp = await fetch('/products-public.json');
+        if (!resp.ok) throw new Error('Failed to load products: ' + resp.status);
+        const data = await resp.json();
+        const fullList = data.products || data || [];
+        // Only update if we got more products than embedded
+        if (fullList.length > embeddedCount) {
+            allProducts = fullList;
+            console.log('Loaded ' + allProducts.length + ' products (full fetch)');
+            // Rebuild category list with full data & re-render
+            buildCategoryList();
+            // Re-activate Ramadan pill
+            document.querySelectorAll('.theme-pill').forEach(p => {
+                p.classList.toggle('active', p.textContent.includes('Ramadan'));
+            });
+            const rl = document.getElementById('sl-Ramadan');
+            const rlb = document.getElementById('tl-Ramadan');
+            if (rl) rl.classList.add('open');
+            if (rlb) rlb.classList.add('open');
+            filterAndRender();
+        }
+    } catch (err) {
+        // Embedded data is already rendered; fetch failure is non-critical
+        console.warn('Background fetch failed (using embedded data):', err);
+    }
 }
 
 function buildCategoryList() {
@@ -236,6 +258,7 @@ function setupSearch() {
 // ============ FILTER ============
 function filterAndRender() {
     visibleCount = PAGE_SIZE;  // 重置分页显示数量
+    renderedCount = 0;  // 重置已渲染计数，强制全量重建
     filteredProducts = allProducts.filter(p => {
         const matchTheme = currentTheme === 'all' || (p.theme || '') === currentTheme;
         const matchSubcat = currentSubcat === 'all' || (p.subcategory || '') === currentSubcat;
@@ -272,91 +295,126 @@ function filterAndRender() {
 }
 
 // ============ RENDER PRODUCTS ============
-function renderProducts() {
+// Track how many cards are currently in DOM for incremental append
+let renderedCount = 0;
+
+function renderProducts(appendOnly) {
     const grid = document.getElementById('productsGrid');
-    if (!grid) return; // 如果productsGrid元素不存在，直接返回
+    if (!grid) return;
     if (filteredProducts.length === 0) {
         grid.innerHTML = `
             <div style="text-align:center;padding:4rem 1rem;color:var(--text-light);grid-column:1/-1;">
                 <svg width="48" height="48" style="margin-bottom:1rem"><use href="#icon-search"/></svg>
                 <p>No products found.</p>
             </div>`;
+        renderedCount = 0;
         return;
     }
-    
-    // 只渲染当前可见的产品数量
-    const productsToShow = filteredProducts.slice(0, visibleCount);
-    
-    let html = productsToShow.map((p, idx) => {
-        const inCart = cart.some(c => c.id === p.id);
-        const imgUrl = p.images && p.images[0] ? p.images[0] : '';
-        const imagesJson = encodeURIComponent(JSON.stringify(p.images || []));
-        const imgCount = p.images ? p.images.length : 0;
-        const imgDots = imgCount > 1 ? `<div class="img-dots"><span class="img-dot active"></span><span class="img-dot-more">+${imgCount-1}</span></div>` : '';
-        const isAboveFold = idx < 4; // first row for LCP
-        const imgAttrs = isAboveFold
-            ? `width="400" height="400" fetchpriority="high" decoding="async"`
-            : `width="400" height="400" loading="lazy" decoding="async"`;
-        // Tags徽章（hot/new）
-        const tags = p.tags || [];
-        const tagBadges = tags.map(t => {
-            if (t === 'hot') return '<span class="tag-hot">HOT</span>';
-            if (t === 'new') return '<span class="tag-new">NEW</span>';
-            return '';
-        }).join('');
-        const badge = p.badge ? `<span class="product-badge">${p.badge}</span>` : '';
-        const priceText = p.price ? `$${parseFloat(p.price).toFixed(2)} / unit` : (p.price_range || 'Price on request');
-        const cartItem = cart.find(c => c.id === p.id);
-        const qty = cartItem ? cartItem.qty : '';
-        const clickHandler = imgUrl ? `openLightbox('${imgUrl}', '${p.name.replace(/'/g,"\\'")}', '${(p.sku||'').replace(/'/g,"\\'")}', '${imagesJson}')` : '';
-        return `
-        <div class="product-card ${inCart ? 'in-cart' : ''}" data-id="${p.id}">
-            <div class="product-image" ${clickHandler ? `onclick="${clickHandler}"` : 'style="cursor:default"'}">
-                ${imgUrl ? `<img src="${imgUrl}" alt="${p.name}" ${imgAttrs} onerror="this.parentElement.innerHTML='<div class=img-placeholder><svg width=40 height=40 style=\\'color:var(--text-light)\\'><use href=\\'#icon-package\\'></use></svg></div>'">` : `<div class="img-placeholder"><svg width="40" height="40" style="color:var(--text-light)"><use href="#icon-package"/></svg></div>`}
-                ${badge}
-                ${imgDots}
-                ${tagBadges ? `<div class="tag-badges">${tagBadges}</div>` : ''}
-            </div>
-            <div class="product-info">
-                ${p.sku ? `<div class="product-sku">${p.sku}</div>` : ''}
-                <a href="/product/${(p.sku||'').replace(/'/g,"\\'")}/" class="product-name" title="${p.name}" onclick="event.stopPropagation()">${p.name}</a>
-                <div class="product-price">${priceText}</div>
-                <div class="card-bottom">
-                    <button class="card-qty-btn" onclick="event.stopPropagation();cardQtyChange('${p.id}',-1)" title="Decrease quantity" aria-label="Decrease quantity">
-                        <svg width="12" height="12"><use href="#icon-minus"/></svg>
-                    </button>
-                    <input type="number" min="${QTY_STEP}" step="${QTY_STEP}" value="${qty || QTY_STEP}"
-                        class="qty-input-card"
-                        id="qty-${p.id}"
-                        autocomplete="off"
-                        inputmode="numeric"
-                        onclick="event.stopPropagation()"
-                        placeholder=""
-                        data-step="${QTY_STEP}"
-                        aria-label="Quantity">
-                    <button class="card-qty-btn" onclick="event.stopPropagation();cardQtyChange('${p.id}',1)" title="Increase quantity" aria-label="Increase quantity">
-                        <svg width="12" height="12"><use href="#icon-plus"/></svg>
-                    </button>
-                    <button class="add-to-cart ${inCart ? 'in-cart-btn' : ''}"
-                        onclick="event.stopPropagation();handleCartClick('${p.id}')"
-                        aria-label="${inCart ? 'Added to cart' : 'Add to cart'}">
-                        ${inCart ? '&#10003;' : '+'}
-                    </button>
-                </div>
-            </div>
-        </div>`;
-    }).join('');
-    
-    // 如果还有更多产品，添加哨兵元素触发无限滚动
-    if (visibleCount < filteredProducts.length) {
-        html += `<div class="scroll-sentinel" id="scrollSentinel"></div>`;
+
+    // Remove old sentinel if present
+    const oldSentinel = document.getElementById('scrollSentinel');
+    if (oldSentinel) oldSentinel.remove();
+
+    if (appendOnly && renderedCount > 0) {
+        // Incremental append: only add new cards beyond what's already rendered
+        const startIdx = renderedCount;
+        const productsToAppend = filteredProducts.slice(startIdx, visibleCount);
+        if (productsToAppend.length === 0) {
+            // No new cards to add, just re-attach sentinel if needed
+            if (visibleCount < filteredProducts.length) {
+                const sentinel = document.createElement('div');
+                sentinel.className = 'scroll-sentinel';
+                sentinel.id = 'scrollSentinel';
+                grid.appendChild(sentinel);
+            }
+            setupScrollObserver();
+            return;
+        }
+        const frag = document.createDocumentFragment();
+        const tempDiv = document.createElement('div');
+        tempDiv.innerHTML = productsToAppend.map((p, i) => buildProductCardHTML(p, startIdx + i)).join('');
+        while (tempDiv.firstChild) {
+            frag.appendChild(tempDiv.firstChild);
+        }
+        grid.appendChild(frag);
+        renderedCount = visibleCount;
+    } else {
+        // Full rebuild (search/filter/category change)
+        const productsToShow = filteredProducts.slice(0, visibleCount);
+        grid.innerHTML = productsToShow.map((p, idx) => buildProductCardHTML(p, idx)).join('');
+        renderedCount = visibleCount;
     }
 
-    grid.innerHTML = html;
+    // If more products to load, add sentinel
+    if (visibleCount < filteredProducts.length) {
+        const sentinel = document.createElement('div');
+        sentinel.className = 'scroll-sentinel';
+        sentinel.id = 'scrollSentinel';
+        grid.appendChild(sentinel);
+    }
 
-    // 设置IntersectionObserver监听哨兵元素
     setupScrollObserver();
 }
+
+function buildProductCardHTML(p, idx) {
+    const inCart = cart.some(c => c.id === p.id);
+    const imgUrl = p.images && p.images[0] ? p.images[0] : '';
+    const cardImgUrl = thumbUrl(imgUrl); // Use thumbnail for card display
+    const imagesJson = encodeURIComponent(JSON.stringify(p.images || []));
+    const imgCount = p.images ? p.images.length : 0;
+    const imgDots = imgCount > 1 ? `<div class="img-dots"><span class="img-dot active"></span><span class="img-dot-more">+${imgCount-1}</span></div>` : '';
+    const isAboveFold = idx < 4; // first row for LCP
+    const imgAttrs = isAboveFold
+        ? `width="400" height="400" fetchpriority="high" decoding="async"`
+        : `width="400" height="400" loading="lazy" decoding="async"`;
+    // Tags徽章（hot/new）
+    const tags = p.tags || [];
+    const tagBadges = tags.map(t => {
+        if (t === 'hot') return '<span class="tag-hot">HOT</span>';
+        if (t === 'new') return '<span class="tag-new">NEW</span>';
+        return '';
+    }).join('');
+    const badge = p.badge ? `<span class="product-badge">${p.badge}</span>` : '';
+    const priceText = p.price ? `$${parseFloat(p.price).toFixed(2)} / unit` : (p.price_range || 'Price on request');
+    const cartItem = cart.find(c => c.id === p.id);
+    const qty = cartItem ? cartItem.qty : '';
+    const clickHandler = imgUrl ? `openLightbox('${imgUrl}', '${p.name.replace(/'/g,"\\'")}', '${(p.sku||'').replace(/'/g,"\\'")}', '${imagesJson}')` : '';
+    return `
+    <div class="product-card ${inCart ? 'in-cart' : ''}" data-id="${p.id}">
+        <div class="product-image" ${clickHandler ? `onclick="${clickHandler}"` : 'style="cursor:default"'}">
+            ${cardImgUrl ? `<img src="${cardImgUrl}" alt="${p.name}" ${imgAttrs} onerror="this.onerror=null;this.src='${imgUrl}'">` : `<div class="img-placeholder"><svg width="40" height="40" style="color:var(--text-light)"><use href="#icon-package"/></svg></div>`}
+            ${badge}
+            ${imgDots}
+            ${tagBadges ? `<div class="tag-badges">${tagBadges}</div>` : ''}
+        </div>
+        <div class="product-info">
+            ${p.sku ? `<div class="product-sku">${p.sku}</div>` : ''}
+            <a href="/product/${(p.sku||'').replace(/'/g,"\\'")}/" class="product-name" title="${p.name}" onclick="event.stopPropagation()">${p.name}</a>
+            <div class="product-price">${priceText}</div>
+            <div class="card-bottom">
+                <button class="card-qty-btn" onclick="event.stopPropagation();cardQtyChange('${p.id}',-1)" title="Decrease quantity" aria-label="Decrease quantity">
+                    <svg width="12" height="12"><use href="#icon-minus"/></svg>
+                </button>
+                <input type="number" min="${QTY_STEP}" step="${QTY_STEP}" value="${qty || QTY_STEP}"
+                    class="qty-input-card"
+                    id="qty-${p.id}"
+                    autocomplete="off"
+                    inputmode="numeric"
+                    onclick="event.stopPropagation()"
+                    placeholder=""
+                    data-step="${QTY_STEP}"
+                    aria-label="Quantity">
+                <button class="card-qty-btn" onclick="event.stopPropagation();cardQtyChange('${p.id}',1)" title="Increase quantity" aria-label="Increase quantity">
+                    <svg width="12" height="12"><use href="#icon-plus"/></svg>
+                </button>
+                <button class="add-to-cart ${inCart ? 'in-cart-btn' : ''}"
+                    onclick="event.stopPropagation();handleCartClick('${p.id}')"
+                    aria-label="${inCart ? 'Added to cart' : 'Add to cart'}">
+                    ${inCart ? '&#10003;' : '+'}
+                </button>
+            </div>
+        </div>
+    </div>`;
 
 // ============ INFINITE SCROLL ============
 function setupScrollObserver() {
@@ -371,7 +429,7 @@ function setupScrollObserver() {
     scrollObserver = new IntersectionObserver((entries) => {
         if (entries[0].isIntersecting) {
             visibleCount += PAGE_SIZE;
-            renderProducts();
+            renderProducts(true); // appendOnly = true for incremental scroll
         }
     }, { rootMargin: '200px' }); // 提前200px触发加载
 

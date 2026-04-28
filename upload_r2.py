@@ -14,6 +14,9 @@ from PIL import Image
 
 # WebP quality (85 = good balance of quality/size)
 WEBP_QUALITY = 85
+# Thumbnail settings
+THUMB_MAX_SIZE = 300  # max width/height in pixels
+THUMB_QUALITY = 75    # slightly lower quality for thumbnails
 
 # R2 Credentials
 R2_ENDPOINT = "https://cdd100719805df54e62bee48d165b2dd.r2.cloudflarestorage.com"
@@ -91,20 +94,39 @@ def find_matching_images(sku, all_files):
     return sorted(matches)
 
 def upload_single(client, local_path, r2_key):
-    """Upload single file to R2. Converts to WebP before upload. Returns webp_key if successful, None otherwise."""
+    """Upload single file to R2. Converts to WebP before upload. Also generates and uploads a thumbnail.
+    Returns (webp_key, thumb_key) if successful, (webp_key, None) if thumb fails, (None, None) on error."""
     try:
         # Convert to WebP
         webp_buf = convert_to_webp(local_path)
         if webp_buf is None:
-            return None
+            return None, None
         # Update r2_key to use .webp extension
         webp_key = r2_key.rsplit('.', 1)[0] + '.webp'
         client.upload_fileobj(webp_buf, BUCKET_NAME, webp_key,
                               ExtraArgs={'ContentType': 'image/webp'})
-        return webp_key
+
+        # Generate and upload thumbnail
+        thumb_key = None
+        try:
+            webp_buf.seek(0)
+            img = Image.open(webp_buf)
+            img.thumbnail((THUMB_MAX_SIZE, THUMB_MAX_SIZE), Image.LANCZOS)
+            thumb_buf = io.BytesIO()
+            img.save(thumb_buf, format='WEBP', quality=THUMB_QUALITY, optimize=True)
+            thumb_buf.seek(0)
+            # Thumbnail key: {SKU}/thumb/01.webp
+            thumb_key = webp_key.rsplit('/', 1)
+            thumb_key = thumb_key[0] + '/thumb/' + thumb_key[1]
+            client.upload_fileobj(thumb_buf, BUCKET_NAME, thumb_key,
+                                  ExtraArgs={'ContentType': 'image/webp'})
+        except Exception as e:
+            print(f"  Thumbnail generation failed for {local_path}: {e}")
+
+        return webp_key, thumb_key
     except ClientError as e:
         print(f"  ERROR uploading {local_path}: {e}")
-        return None
+        return None, None
 
 def upload_images_for_skus(excel_path, image_folder):
     """Main: Read Excel, match images, upload to R2"""
@@ -152,7 +174,7 @@ def upload_images_for_skus(excel_path, image_folder):
             local_path = os.path.join(image_folder, img_file)
             r2_key = f"{sku}/{i+1:02d}{os.path.splitext(img_file)[1].lower()}"
 
-            webp_key = upload_single(client, local_path, r2_key)
+            webp_key, thumb_key = upload_single(client, local_path, r2_key)
             if webp_key:
                 # Generate public URL using the actual webp_key
                 r2_url = f"{R2_ENDPOINT}/{BUCKET_NAME}/{webp_key}"

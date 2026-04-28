@@ -1356,8 +1356,21 @@ def main():
     print(f"\n[1] products-public.json: {len(public_products)} products, {pub_size/1024:.0f} KB")
 
     # === 1b. Generate embedded product data for index.html ===
+    # Only embed first-screen products (sorted: hot>new>name, same order as app.js)
+    # This keeps index.html small; remaining products are fetched from products-public.json
+    FIRST_SCREEN_COUNT = 24
+
+    # Sort products same way as app.js filterAndRender (hot > new > name)
+    def sort_key(p):
+        tags = p.get('tags', [])
+        if 'hot' in tags: return (0, p.get('name', ''))
+        if 'new' in tags: return (1, p.get('name', ''))
+        return (2, p.get('name', ''))
+
+    sorted_products = sorted(products, key=sort_key)
+
     slim_products = []
-    for p in products:
+    for p in sorted_products[:FIRST_SCREEN_COUNT]:
         slim = {}
         for key in EMBEDDED_FIELDS:
             val = p.get(key)
@@ -1366,7 +1379,7 @@ def main():
         slim_products.append(slim)
     embedded_js = "window.__PRODUCTS__=" + json.dumps(slim_products, ensure_ascii=False, separators=(',', ':')) + ";"
     embedded_size = len(embedded_js.encode('utf-8'))
-    print(f"[1b] Embedded product data: {len(slim_products)} products, {embedded_size/1024:.0f} KB (raw)")
+    print(f"[1b] Embedded product data: {len(slim_products)} products (first-screen), {embedded_size/1024:.0f} KB (raw)")
 
     # Inject embedded data into index.html
     index_file = WEBSITE_DIR / "index.html"
