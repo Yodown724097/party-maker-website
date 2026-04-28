@@ -150,13 +150,6 @@ PRODUCT_TEMPLATE = """\
             {specs_html}
             <div class="detail-actions">
                 <a href="/?p={sku}" class="btn-inquiry">&#128722; Inquire This Product</a>
-                <a href="mailto:info@partymaker.cn?subject=Inquiry: {sku} - {name_escaped}&body=Hi, I'm interested in SKU {sku}: {name_escaped}%0A%0APlease send me more details." class="btn-email">
-                    &#9993; Email Inquiry
-                </a>
-            </div>
-
-            <div class="detail-contact">
-                <p>Need a custom quote? <a href="https://wa.me/8617274613005?text=Hi, I'm interested in SKU {sku}: {name_escaped}" target="_blank">WhatsApp us</a> or <a href="mailto:info@partymaker.cn">email us</a>.</p>
             </div>
         </div>
     </div>

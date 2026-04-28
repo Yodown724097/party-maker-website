@@ -3,11 +3,13 @@ const R2_PRODUCTS_URL = '/products.json';
 // Direct to Cloudflare Pages Function (no CORS issues, no VPS needed)
 const WORKER_URL = '/api/generate';
 const QTY_STEP = 12;
+const PAGE_SIZE = 24;  // 分页加载每页产品数
 
 // ============ STATE ============
-    let allProducts = [];  // loaded via fetch
+let allProducts = [];  // loaded via fetch
 let filteredProducts = [];
 let cart = [];
+let visibleCount = PAGE_SIZE;  // 当前显示的产品数量
 let currentTheme = 'all';
 let currentSubcat = 'all';
 let searchQuery = '';
@@ -226,6 +228,7 @@ function setupSearch() {
 
 // ============ FILTER ============
 function filterAndRender() {
+    visibleCount = PAGE_SIZE;  // 重置分页显示数量
     filteredProducts = allProducts.filter(p => {
         const matchTheme = currentTheme === 'all' || (p.theme || '') === currentTheme;
         const matchSubcat = currentSubcat === 'all' || (p.subcategory || '') === currentSubcat;
@@ -272,7 +275,11 @@ function renderProducts() {
             </div>`;
         return;
     }
-    grid.innerHTML = filteredProducts.map(p => {
+    
+    // 只渲染当前可见的产品数量
+    const productsToShow = filteredProducts.slice(0, visibleCount);
+    
+    let html = productsToShow.map(p => {
         const inCart = cart.some(c => c.id === p.id);
         const imgUrl = p.images && p.images[0] ? p.images[0] : '';
         const imagesJson = encodeURIComponent(JSON.stringify(p.images || []));
@@ -325,6 +332,34 @@ function renderProducts() {
             </div>
         </div>`;
     }).join('');
+    
+    // 如果还有更多产品，添加“加载更多”按钮
+    if (visibleCount < filteredProducts.length) {
+        html += `
+            <div class="load-more-container" style="grid-column:1/-1; text-align:center; padding:2rem 0;">
+                <button class="load-more-btn" onclick="loadMoreProducts()" style="
+                    background: #9CAF88;
+                    color: white;
+                    border: none;
+                    padding: 0.75rem 2rem;
+                    border-radius: 8px;
+                    font-size: 0.9rem;
+                    font-weight: 600;
+                    cursor: pointer;
+                    transition: background 0.2s, transform 0.15s;
+                ">
+                    Load More (${filteredProducts.length - visibleCount} more)
+                </button>
+            </div>`;
+    }
+    
+    grid.innerHTML = html;
+}
+
+// 加载更多产品
+function loadMoreProducts() {
+    visibleCount += PAGE_SIZE;
+    renderProducts();
 }
 
 // ============ CART ============
