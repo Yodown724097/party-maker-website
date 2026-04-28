@@ -3,6 +3,7 @@ const R2_PRODUCTS_URL = '/products.json';
 // Direct to Cloudflare Pages Function (no CORS issues, no VPS needed)
 const WORKER_URL = '/api/generate';
 const QTY_STEP = 12;
+const PAGE_SIZE = 24;
 
 // ============ STATE ============
     let allProducts = [];  // loaded via fetch
@@ -11,6 +12,7 @@ let cart = [];
 let currentTheme = 'all';
 let currentSubcat = 'all';
 let searchQuery = '';
+let visibleCount = PAGE_SIZE;
 
 // ============ INIT ============
 async function init() {
@@ -257,6 +259,7 @@ function filterAndRender() {
 
     const productsCountEl = document.getElementById('productsCount');
     if (productsCountEl) productsCountEl.textContent = `${filteredProducts.length} products`;
+    visibleCount = PAGE_SIZE; // 重置分页显示数量
     renderProducts();
 }
 
@@ -272,7 +275,11 @@ function renderProducts() {
             </div>`;
         return;
     }
-    grid.innerHTML = filteredProducts.map(p => {
+    
+    // 只渲染当前可见的产品数量
+    const productsToShow = filteredProducts.slice(0, visibleCount);
+    
+    let html = productsToShow.map(p => {
         const inCart = cart.some(c => c.id === p.id);
         const imgUrl = p.images && p.images[0] ? p.images[0] : '';
         const imagesJson = encodeURIComponent(JSON.stringify(p.images || []));
@@ -325,6 +332,23 @@ function renderProducts() {
             </div>
         </div>`;
     }).join('');
+    
+    // 如果还有更多产品，添加"加载更多"按钮
+    if (visibleCount < filteredProducts.length) {
+        html += `
+            <div class="load-more-container">
+                <button class="load-more-btn" onclick="loadMoreProducts()">
+                    Load More (${filteredProducts.length - visibleCount} more)
+                </button>
+            </div>`;
+    }
+    
+    grid.innerHTML = html;
+}
+
+function loadMoreProducts() {
+    visibleCount += PAGE_SIZE;
+    renderProducts();
 }
 
 // ============ CART ============
