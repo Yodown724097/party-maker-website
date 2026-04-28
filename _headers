@@ -26,6 +26,8 @@
 # Cache product data for 1 hour
 /products.json
   Cache-Control: public, max-age=3600, must-revalidate
+/products-public.json
+  Cache-Control: public, max-age=3600, must-revalidate
 
 
 # Security headers for all assets
