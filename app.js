@@ -6,9 +6,10 @@ const QTY_STEP = 12;
 const PAGE_SIZE = 24;
 
 // ============ STATE ============
-    let allProducts = [];  // loaded via fetch
+let allProducts = [];  // loaded via fetch
 let filteredProducts = [];
 let cart = [];
+let visibleCount = PAGE_SIZE;  // 当前显示的产品数量
 let currentTheme = 'all';
 let currentSubcat = 'all';
 let searchQuery = '';
@@ -229,6 +230,7 @@ function setupSearch() {
 
 // ============ FILTER ============
 function filterAndRender() {
+    visibleCount = PAGE_SIZE;  // 重置分页显示数量
     filteredProducts = allProducts.filter(p => {
         const matchTheme = currentTheme === 'all' || (p.theme || '') === currentTheme;
         const matchSubcat = currentSubcat === 'all' || (p.subcategory || '') === currentSubcat;
