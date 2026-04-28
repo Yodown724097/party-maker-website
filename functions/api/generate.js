@@ -8,6 +8,8 @@
  *   3. 用 Resend 发客户通知邮件（HTML，无附件，无成本价）
  *   4. 用 Resend 发内部邮件给 info@（HTML + Excel 附件，含成本价）
  */
+import { PRODUCT_INTERNAL } from '../_shared/product-data.js';
+
 export async function onRequest({ request, env }) {
   const corsHeaders = {
     'Access-Control-Allow-Origin': '*',
@@ -185,11 +187,11 @@ function buildOwnerHtml(contact, cart, piNo, now, total) {
   cart.forEach((item, i) => {
     const qty = parseInt(item.quantity || 0);
     const price = parseFloat(item.price || 0);
-    const costPrice = parseFloat(item._costPrice || 0);
+    const costPrice = parseFloat((PRODUCT_INTERNAL[item.sku || item.id] || {})._costPrice || 0);
     const subtotal = qty * price;
     const sku = item.sku || item.id || '-';
     const name = item.name || '';
-    const unitSize = item._unitSize || '-';
+    const unitSize = (PRODUCT_INTERNAL[sku] || {})._unitSize || '-';
     rows += `<tr>
       <td style="padding:6px 10px;border-bottom:1px solid #eee;text-align:center;">${i+1}</td>
       <td style="padding:6px 10px;border-bottom:1px solid #eee;text-align:center;font-weight:bold;">${esc(sku)}</td>
@@ -323,18 +325,22 @@ function generateXlsxBase64(contact, cart, piNo, now, total) {
   cart.forEach((item, i) => {
     const qty = parseInt(item.quantity || 0) || 120;
     const price = parseFloat(item.price || 0);
-    const costPrice = parseFloat(item._costPrice || 0);
     const sku = item.sku || item.id || '-';
     const name = item.name || '';
     const desc = (item.description || '').replace(/\n/g, ' ');
     const images = Array.isArray(item.images) ? item.images : [];
     const imgUrl = images[0] || '';
 
-    // Helper: get internal field, return '' if no real data
+    // 从内嵌数据查找真实后台字段（前端products-public.json不含_字段）
+    const internal = PRODUCT_INTERNAL[sku] || {};
+    const costPrice = parseFloat(internal._costPrice || 0);
+
+    // Helper: get internal field from embedded data, return '' if no real data
     const getVal = (key, dashIfEmpty) => {
-      const v = item[key];
-      if (v == null || v === '' || v === 'nan' || v === 'None' || v === 'NaN') return '';
-      if (dashIfEmpty && (v === '-' || v === 0)) return '-';
+      const v = internal[key];
+      if (v == null || v === '' || v === 'nan' || v === 'None' || v === 'NaN') return dashIfEmpty ? '-' : '';
+      if (v === '-') return '-';
+      if (typeof v === 'number') return v;  // 0 is a valid number
       return v;
     };
 
@@ -381,10 +387,16 @@ function generateXlsxBase64(contact, cart, piNo, now, total) {
     rowNum++;
   });
 
-  // ---- Total row ----
+  // ---- Total row (with B-G empty cells for full border on merged range) ----
   const totalRow = rowNum;
   rows.push([
     [`A${totalRow}`, addString('TOTAL:'), 's', 'totalLabel'],
+    [`B${totalRow}`, '', 'e', 'totalLabel'],
+    [`C${totalRow}`, '', 'e', 'totalLabel'],
+    [`D${totalRow}`, '', 'e', 'totalLabel'],
+    [`E${totalRow}`, '', 'e', 'totalLabel'],
+    [`F${totalRow}`, '', 'e', 'totalLabel'],
+    [`G${totalRow}`, '', 'e', 'totalLabel'],
     [`H${totalRow}`, `SUM(H${dataStartRow}:H${totalRow - 1})`, 'f', 'totalFormula'],
   ]);
   rowNum = totalRow + 2;
@@ -419,8 +431,8 @@ function generateXlsxBase64(contact, cart, piNo, now, total) {
   ];
   bankInfo.forEach(([label, val]) => {
     rows.push([
-      [`A${rowNum}`, addString(label), 's', 'bankLabel'],
-      [`B${rowNum}`, addString(val), 's', 'bankValue'],
+      [`B${rowNum}`, addString(label), 's', 'bankLabel'],
+      [`C${rowNum}`, addString(val), 's', 'bankValue'],
     ]);
     rowNum++;
   });
@@ -438,8 +450,8 @@ function buildXlsx(strings, rows, productCount, totalRow, dataStartRow, termsRow
   });
   ssXml += '</sst>';
 
-  // Column widths (A-T, matching reference Excel)
-  const widths = [6.3, 12, 9.4, 28.3, 25, 11.7, 10.4, 12, 10, 8, 10, 13, 13, 8, 13, 13, 13, 13, 13, 13];
+  // Column widths (A-T) — A加宽容纳BENEFICIARY等标签
+  const widths = [14, 14, 9.4, 28.3, 25, 11.7, 10.4, 12, 10, 8, 10, 13, 13, 8, 13, 13, 13, 13, 13, 13];
   let colsXml = '<cols>';
   widths.forEach((w, i) => {
     colsXml += '<col min="' + (i+1) + '" max="' + (i+1) + '" width="' + w + '" customWidth="1"/>';
@@ -537,7 +549,7 @@ function buildXlsx(strings, rows, productCount, totalRow, dataStartRow, termsRow
   wsXml += '<mergeCell ref="A1:H1"/>';     // Title
   wsXml += '<mergeCell ref="A2:D2"/>';     // BUYER INFO
   wsXml += '<mergeCell ref="A' + totalRow + ':G' + totalRow + '"/>'; // TOTAL row
-  // Bank merges: B:E for rows with bankLabel where label is BENEFICIARY, BANK, ADDRESS, A/C NO., SWIFT
+  // Bank merges: C:F for bank value rows
   let bankMergeCount = 0;
   let bankMergeXml = '';
   for (let ri = 0; ri < rows.length; ri++) {
@@ -547,13 +559,8 @@ function buildXlsx(strings, rows, productCount, totalRow, dataStartRow, termsRow
     if (!Array.isArray(first) || first.length < 4) continue;
     if (first[3] === 'bankLabel') {
       const r = parseInt(String(first[0]).replace(/[A-Z]/g, ''));
-      const labelIdx = (typeof first[1] === 'number') ? first[1] : -1;
-      // Check label text
-      const labelText = labelIdx >= 0 ? strings[labelIdx] : '';
-      if (['BENEFICIARY:', 'BANK:', 'ADDRESS:', 'A/C NO.:', 'SWIFT:'].includes(labelText)) {
-        bankMergeXml += '<mergeCell ref="B' + r + ':E' + r + '"/>';
-        bankMergeCount++;
-      }
+      bankMergeXml += '<mergeCell ref="C' + r + ':F' + r + '"/>';
+      bankMergeCount++;
     }
   }
   // Update merge count
