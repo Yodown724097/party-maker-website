@@ -415,6 +415,7 @@ function buildProductCardHTML(p, idx) {
             </div>
         </div>
     </div>`;
+}
 
 // ============ INFINITE SCROLL ============
 function setupScrollObserver() {
