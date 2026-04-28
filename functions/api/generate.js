@@ -283,7 +283,7 @@ function generateXlsxBase64(contact, cart, piNo, now, total) {
   // ---- Row 2: BUYER INFO + PI No. ----
   rows.push([
     ['A2', addString('BUYER INFO:'), 's', 'label'],
-    ['F2', addString('NO.:'), 's', 'normal'],
+    ['F2', addString('NO.:'), 's', 'label'],
     ['G2', addString(piNo), 's', 'normal'],
   ]);
 
@@ -298,7 +298,10 @@ function generateXlsxBase64(contact, cart, piNo, now, total) {
   infoRows.forEach(infoRow => {
     const row = [];
     infoRow.forEach(([ref, val]) => {
-      row.push([ref, addString(val), 's', 'normal']);
+      // A/F columns are labels, B/G columns are values
+      const colLetter = ref.replace(/[0-9]/g, '');
+      const isLabel = (colLetter === 'A' || colLetter === 'F');
+      row.push([ref, addString(val), 's', isLabel ? 'label' : 'normal']);
     });
     rows.push(row);
   });
@@ -463,20 +466,6 @@ function buildXlsx(strings, rows, productCount, totalRow, dataStartRow, termsRow
 
   wsXml += '<sheetData>';
 
-  // Style mapping:
-  // 0 = default
-  // 1 = header (green fill #9CAF88, white bold 10pt, center, thin border, wrap)
-  // 2 = title (green fill #9CAF88, bold 16pt, center)
-  // 3 = bold label (bold 11pt)
-  // 4 = data cell center (thin border, center, wrap)
-  // 5 = data cell left (thin border, left, wrap)
-  // 6 = data cell right (thin border, right)
-  // 7 = total label (bold 11pt, fill #F7F9F5, thin border, right)
-  // 8 = total formula (bold 11pt, fill #F7F9F5, thin border, right)
-  // 9 = section header (bold 11pt)
-  // 10 = bank label (bold 11pt)
-  // 11 = bank value (11pt)
-
   const styleMap = {
     'title': 2,
     'label': 3,
@@ -579,10 +568,30 @@ function buildXlsx(strings, rows, productCount, totalRow, dataStartRow, termsRow
 }
 
 function buildXlsxZip(ssXml, wsXml) {
-  // Styles XML — 12 styles matching reference Excel
-  // 0=default, 1=header(green+white), 2=title, 3=bold label,
-  // 4=data center, 5=data left, 6=data right,
-  // 7=total label, 8=total formula, 9=section, 10=bank label, 11=bank value
+  // Styles XML — 完整样式匹配参考PI模板
+  // 字体: 0=default 10pt, 1=bold white 10pt(header), 2=bold 14pt(title),
+  //       3=bold 11pt(labels), 4=11pt(bank values), 5=bold 11pt(section),
+  //       6=bold red 11pt(cost label), 7=bold 10pt(green label)
+  // 填充: 0=none, 1=gray125(必需), 2=green #9CAF88, 3=light #F7F9F5,
+  //        4=light yellow #FFF8E1(备用)
+  // 边框: 0=none, 1=thin black
+  // cellXf索引:
+  //  0: default (10pt, no border)
+  //  1: header (green fill, white bold 10pt, center, thin border, wrap)
+  //  2: title (green fill, bold 14pt, center)
+  //  3: bold label (bold 11pt, left)
+  //  4: data center (thin border, center, wrap)
+  //  5: data left (thin border, left, wrap)
+  //  6: data right (thin border, right)
+  //  7: total label (bold 11pt, fill #F7F9F5, thin border, right)
+  //  8: total formula (bold 11pt, fill #F7F9F5, thin border, right, $#,##0.00)
+  //  9: section header (bold 11pt, left)
+  //  10: bank label (bold 11pt, left)
+  //  11: bank value (11pt, left)
+  //  12: price (thin border, right, $#,##0.00)
+  //  13: amount formula (thin border, right, $#,##0.00)
+  //  14: cost price (thin border, right, ¥#,##0.00, red font)
+  //  15: CBM/NW/GW (thin border, center, 0.000)
   const stylesXml = '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>' +
     '<styleSheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main">' +
     '<numFmts count="3">' +
@@ -590,42 +599,44 @@ function buildXlsxZip(ssXml, wsXml) {
     '<numFmt numFmtId="165" formatCode="&quot;¥&quot;#,##0.00"/>' +
     '<numFmt numFmtId="166" formatCode="0.000"/>' +
     '</numFmts>' +
-    '<fonts count="6">' +
-    '<font><sz val="10"/><name val="Arial"/></font>' +                                          // 0: default 10pt
-    '<font><b/><sz val="10"/><color rgb="FFFFFFFF"/><name val="Arial"/></font>' +                // 1: bold white 10pt (header)
-    '<font><b/><sz val="16"/><name val="Arial"/></font>' +                                       // 2: bold 16pt (title)
-    '<font><b/><sz val="11"/><name val="Arial"/></font>' +                                       // 3: bold 11pt (labels)
-    '<font><sz val="11"/><name val="Arial"/></font>' +                                           // 4: 11pt (normal)
-    '<font><b/><sz val="11"/><color rgb="FFFFFFFF"/><name val="Arial"/></font>' +                // 5: bold white 11pt (unused, reserved)
+    '<fonts count="8">' +
+    '<font><sz val="10"/><name val="Arial"/></font>' +                                                        // 0: default 10pt
+    '<font><b/><sz val="10"/><color rgb="FFFFFFFF"/><name val="Arial"/></font>' +                             // 1: bold white 10pt (header)
+    '<font><b/><sz val="14"/><color rgb="FFFFFFFF"/><name val="Arial"/></font>' +                             // 2: bold white 14pt (title)
+    '<font><b/><sz val="11"/><name val="Arial"/></font>' +                                                    // 3: bold 11pt (labels)
+    '<font><sz val="11"/><name val="Arial"/></font>' +                                                        // 4: 11pt normal (bank values)
+    '<font><b/><sz val="11"/><color rgb="FF1B5E20"/><name val="Arial"/></font>' +                             // 5: bold dark green 11pt (section)
+    '<font><b/><sz val="11"/><color rgb="FFC00000"/><name val="Arial"/></font>' +                             // 6: bold red 11pt (cost label)
+    '<font><b/><sz val="10"/><color rgb="FF1B5E20"/><name val="Arial"/></font>' +                             // 7: bold dark green 10pt (sub-label)
     '</fonts>' +
     '<fills count="4">' +
-    '<fill><patternFill patternType="none"/></fill>' +                                            // 0: none
-    '<fill><patternFill patternType="gray125"/></fill>' +                                        // 1: gray125 (required)
-    '<fill><patternFill patternType="solid"><fgColor rgb="FF9CAF88"/><bgColor rgb="FF9CAF88"/></patternFill></fill>' + // 2: green #9CAF88
-    '<fill><patternFill patternType="solid"><fgColor rgb="FFF7F9F5"/><bgColor rgb="FFF7F9F5"/></patternFill></fill>' + // 3: light green #F7F9F5
+    '<fill><patternFill patternType="none"/></fill>' +                                                        // 0: none
+    '<fill><patternFill patternType="gray125"/></fill>' +                                                     // 1: gray125 (required)
+    '<fill><patternFill patternType="solid"><fgColor rgb="FF9CAF88"/></patternFill></fill>' +                 // 2: green #9CAF88
+    '<fill><patternFill patternType="solid"><fgColor rgb="FFF7F9F5"/></patternFill></fill>' +                 // 3: light green #F7F9F5
     '</fills>' +
     '<borders count="2">' +
-    '<border/>' +                                                                                  // 0: no border
-    '<border><left style="thin"><color rgb="FF000000"/></left><right style="thin"><color rgb="FF000000"/></right><top style="thin"><color rgb="FF000000"/></top><bottom style="thin"><color rgb="FF000000"/></bottom></border>' + // 1: thin black
+    '<border><left/><right/><top/><bottom/><diagonal/></border>' +                                            // 0: no border
+    '<border><left style="thin"><color rgb="FF000000"/></left><right style="thin"><color rgb="FF000000"/></right><top style="thin"><color rgb="FF000000"/></top><bottom style="thin"><color rgb="FF000000"/></bottom><diagonal/></border>' + // 1: thin black all sides
     '</borders>' +
-    '<cellStyleXfs count="1"><xf/></cellStyleXfs>' +
+    '<cellStyleXfs count="1"><xf borderId="0" fillId="0" fontId="0" numFmtId="0"/></cellStyleXfs>' +
     '<cellXfs count="16">' +
-    '<xf/>' +                                                                                      // 0: default
-    '<xf numFmtId="0" fontId="1" fillId="2" borderId="1" applyFont="1" applyFill="1" applyBorder="1" applyAlignment="1"><alignment horizontal="center" vertical="center" wrapText="1"/></xf>' + // 1: header
-    '<xf numFmtId="0" fontId="2" fillId="2" borderId="0" applyFont="1" applyFill="1" applyAlignment="1"><alignment horizontal="center" vertical="center" wrapText="1"/></xf>' + // 2: title
-    '<xf numFmtId="0" fontId="3" borderId="0" applyFont="1"/>' +                             // 3: bold label
-    '<xf numFmtId="0" fontId="0" borderId="1" applyBorder="1" applyAlignment="1"><alignment horizontal="center" vertical="center" wrapText="1"/></xf>' + // 4: data center
-    '<xf numFmtId="0" fontId="0" borderId="1" applyBorder="1" applyAlignment="1"><alignment horizontal="left" vertical="center" wrapText="1"/></xf>' +   // 5: data left
-    '<xf numFmtId="0" fontId="0" borderId="1" applyBorder="1" applyAlignment="1"><alignment horizontal="right" vertical="center"/></xf>' +               // 6: data right (default numFmt)
-    '<xf numFmtId="0" fontId="3" fillId="3" borderId="1" applyFont="1" applyFill="1" applyBorder="1" applyAlignment="1"><alignment horizontal="right" vertical="center"/></xf>' + // 7: total label
-    '<xf numFmtId="164" fontId="3" fillId="3" borderId="1" applyFont="1" applyFill="1" applyBorder="1" applyNumberFormat="1" applyAlignment="1"><alignment horizontal="right" vertical="center"/></xf>' + // 8: total formula ($#,##0.00)
-    '<xf numFmtId="0" fontId="3" borderId="0" applyFont="1"/>' +                             // 9: section header
-    '<xf numFmtId="0" fontId="3" borderId="0" applyFont="1"/>' +                             // 10: bank label (same as 9)
-    '<xf numFmtId="0" fontId="4" borderId="0" applyFont="1"/>' +                             // 11: bank value
-    '<xf numFmtId="164" fontId="0" borderId="1" applyBorder="1" applyNumberFormat="1" applyAlignment="1"><alignment horizontal="right" vertical="center"/></xf>' + // 12: price ($#,##0.00)
-    '<xf numFmtId="164" fontId="0" borderId="1" applyBorder="1" applyNumberFormat="1" applyAlignment="1"><alignment horizontal="right" vertical="center"/></xf>' + // 13: amount formula ($#,##0.00)
-    '<xf numFmtId="165" fontId="0" borderId="1" applyBorder="1" applyNumberFormat="1" applyAlignment="1"><alignment horizontal="right" vertical="center"/></xf>' + // 14: cost price (¥#,##0.00)
-    '<xf numFmtId="166" fontId="0" borderId="1" applyBorder="1" applyNumberFormat="1" applyAlignment="1"><alignment horizontal="center" vertical="center"/></xf>' + // 15: CBM/NW/GW (0.000)
+    '<xf numFmtId="0" fontId="0" fillId="0" borderId="0" applyFont="1" applyFill="1" applyBorder="1" applyAlignment="1"><alignment vertical="center"/></xf>' +                                                             // 0: default
+    '<xf numFmtId="0" fontId="1" fillId="2" borderId="1" applyFont="1" applyFill="1" applyBorder="1" applyAlignment="1"><alignment horizontal="center" vertical="center" wrapText="1"/></xf>' +                          // 1: header
+    '<xf numFmtId="0" fontId="2" fillId="2" borderId="0" applyFont="1" applyFill="1" applyAlignment="1"><alignment horizontal="center" vertical="center"/></xf>' +                                                       // 2: title
+    '<xf numFmtId="0" fontId="3" fillId="0" borderId="0" applyFont="1" applyFill="1" applyBorder="1" applyAlignment="1"><alignment horizontal="left" vertical="center"/></xf>' +                                         // 3: bold label
+    '<xf numFmtId="0" fontId="0" fillId="0" borderId="1" applyFont="1" applyFill="1" applyBorder="1" applyAlignment="1"><alignment horizontal="center" vertical="center" wrapText="1"/></xf>' +                          // 4: data center
+    '<xf numFmtId="0" fontId="0" fillId="0" borderId="1" applyFont="1" applyFill="1" applyBorder="1" applyAlignment="1"><alignment horizontal="left" vertical="center" wrapText="1"/></xf>' +                            // 5: data left
+    '<xf numFmtId="0" fontId="0" fillId="0" borderId="1" applyFont="1" applyFill="1" applyBorder="1" applyAlignment="1"><alignment horizontal="right" vertical="center"/></xf>' +                                        // 6: data right
+    '<xf numFmtId="0" fontId="3" fillId="3" borderId="1" applyFont="1" applyFill="1" applyBorder="1" applyAlignment="1"><alignment horizontal="right" vertical="center"/></xf>' +                                         // 7: total label
+    '<xf numFmtId="164" fontId="3" fillId="3" borderId="1" applyFont="1" applyFill="1" applyBorder="1" applyNumberFormat="1" applyAlignment="1"><alignment horizontal="right" vertical="center"/></xf>' +                // 8: total formula
+    '<xf numFmtId="0" fontId="5" fillId="0" borderId="0" applyFont="1" applyFill="1" applyBorder="1" applyAlignment="1"><alignment horizontal="left" vertical="center"/></xf>' +                                         // 9: section header
+    '<xf numFmtId="0" fontId="3" fillId="0" borderId="0" applyFont="1" applyFill="1" applyBorder="1" applyAlignment="1"><alignment horizontal="left" vertical="center"/></xf>' +                                         // 10: bank label
+    '<xf numFmtId="0" fontId="4" fillId="0" borderId="0" applyFont="1" applyFill="1" applyBorder="1" applyAlignment="1"><alignment horizontal="left" vertical="center"/></xf>' +                                         // 11: bank value
+    '<xf numFmtId="164" fontId="0" fillId="0" borderId="1" applyFont="1" applyFill="1" applyBorder="1" applyNumberFormat="1" applyAlignment="1"><alignment horizontal="right" vertical="center"/></xf>' +                // 12: price
+    '<xf numFmtId="164" fontId="0" fillId="0" borderId="1" applyFont="1" applyFill="1" applyBorder="1" applyNumberFormat="1" applyAlignment="1"><alignment horizontal="right" vertical="center"/></xf>' +                // 13: amount formula
+    '<xf numFmtId="165" fontId="6" fillId="0" borderId="1" applyFont="1" applyFill="1" applyBorder="1" applyNumberFormat="1" applyAlignment="1"><alignment horizontal="right" vertical="center"/></xf>' +                // 14: cost price (red, ¥)
+    '<xf numFmtId="166" fontId="0" fillId="0" borderId="1" applyFont="1" applyFill="1" applyBorder="1" applyNumberFormat="1" applyAlignment="1"><alignment horizontal="center" vertical="center"/></xf>' +               // 15: CBM/NW/GW
     '</cellXfs>' +
     '<cellStyles count="1"><cellStyle name="Normal" xfId="0"/></cellStyles>' +
     '</styleSheet>';
@@ -638,6 +649,7 @@ function buildXlsxZip(ssXml, wsXml) {
       '<Override PartName="/xl/workbook.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet.main+xml"/>' +
       '<Override PartName="/xl/worksheets/sheet1.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.worksheet+xml"/>' +
       '<Override PartName="/xl/sharedStrings.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.sharedStrings+xml"/>' +
+      '<Override PartName="/xl/styles.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.styles+xml"/>' +
       '</Types>'
     },
     { path: '_rels/.rels', content: '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>' +
@@ -654,6 +666,7 @@ function buildXlsxZip(ssXml, wsXml) {
       '<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">' +
       '<Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/worksheet" Target="worksheets/sheet1.xml"/>' +
       '<Relationship Id="rId2" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/sharedStrings" Target="sharedStrings.xml"/>' +
+      '<Relationship Id="rId3" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/styles" Target="styles.xml"/>' +
       '</Relationships>'
     },
     { path: 'xl/worksheets/sheet1.xml', content: wsXml },
