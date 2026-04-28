@@ -3,17 +3,21 @@ const R2_PRODUCTS_URL = '/products.json';
 // Direct to Cloudflare Pages Function (no CORS issues, no VPS needed)
 const WORKER_URL = '/api/generate';
 const QTY_STEP = 12;
+<<<<<<< HEAD
 const PAGE_SIZE = 24;
+=======
+const PAGE_SIZE = 24;  // 分页加载每页产品数
+>>>>>>> 7a4d75e7639ba89c2ffde2c9d3c94d691508a738
 
 // ============ STATE ============
-    let allProducts = [];  // loaded via fetch
+let allProducts = [];  // loaded via fetch
 let filteredProducts = [];
 let cart = [];
+let visibleCount = PAGE_SIZE;  // 当前显示的产品数量
 let currentTheme = 'all';
 let currentSubcat = 'all';
 let searchQuery = '';
 let visibleCount = PAGE_SIZE;
-let scrollObserver = null; // IntersectionObserver for infinite scroll
 
 // ============ INIT ============
 async function init() {
@@ -229,6 +233,7 @@ function setupSearch() {
 
 // ============ FILTER ============
 function filterAndRender() {
+    visibleCount = PAGE_SIZE;  // 重置分页显示数量
     filteredProducts = allProducts.filter(p => {
         const matchTheme = currentTheme === 'all' || (p.theme || '') === currentTheme;
         const matchSubcat = currentSubcat === 'all' || (p.subcategory || '') === currentSubcat;
@@ -334,35 +339,44 @@ function renderProducts() {
         </div>`;
     }).join('');
     
-    // 如果还有更多产品，添加哨兵元素触发无限滚动
+<<<<<<< HEAD
+    // 如果还有更多产品，添加"加载更多"按钮
     if (visibleCount < filteredProducts.length) {
-        html += `<div class="scroll-sentinel" id="scrollSentinel"></div>`;
+        html += `
+            <div class="load-more-container">
+                <button class="load-more-btn" onclick="loadMoreProducts()">
+=======
+    // 如果还有更多产品，添加“加载更多”按钮
+    if (visibleCount < filteredProducts.length) {
+        html += `
+            <div class="load-more-container" style="grid-column:1/-1; text-align:center; padding:2rem 0;">
+                <button class="load-more-btn" onclick="loadMoreProducts()" style="
+                    background: #9CAF88;
+                    color: white;
+                    border: none;
+                    padding: 0.75rem 2rem;
+                    border-radius: 8px;
+                    font-size: 0.9rem;
+                    font-weight: 600;
+                    cursor: pointer;
+                    transition: background 0.2s, transform 0.15s;
+                ">
+>>>>>>> 7a4d75e7639ba89c2ffde2c9d3c94d691508a738
+                    Load More (${filteredProducts.length - visibleCount} more)
+                </button>
+            </div>`;
     }
-
+    
     grid.innerHTML = html;
-
-    // 设置IntersectionObserver监听哨兵元素
-    setupScrollObserver();
 }
 
-// ============ INFINITE SCROLL ============
-function setupScrollObserver() {
-    // 断开旧的observer
-    if (scrollObserver) {
-        scrollObserver.disconnect();
-        scrollObserver = null;
-    }
-    const sentinel = document.getElementById('scrollSentinel');
-    if (!sentinel) return;
-
-    scrollObserver = new IntersectionObserver((entries) => {
-        if (entries[0].isIntersecting) {
-            visibleCount += PAGE_SIZE;
-            renderProducts();
-        }
-    }, { rootMargin: '200px' }); // 提前200px触发加载
-
-    scrollObserver.observe(sentinel);
+<<<<<<< HEAD
+=======
+// 加载更多产品
+>>>>>>> 7a4d75e7639ba89c2ffde2c9d3c94d691508a738
+function loadMoreProducts() {
+    visibleCount += PAGE_SIZE;
+    renderProducts();
 }
 
 // ============ CART ============

@@ -1411,3 +1411,10 @@ footer {
 .lb-nav-btn:hover { background: white; }
 .lb-prev { left: -54px; }
 .lb-next { right: -54px; }
+
+/* ========== INFINITE SCROLL SENTINEL ========== */
+.scroll-sentinel {
+    grid-column: 1 / -1;
+    height: 1px;
+    visibility: hidden;
+}
