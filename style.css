@@ -1255,6 +1255,7 @@ footer {
     background: var(--primary-dark);
     color: var(--accent-light);
     padding: 2rem;
+    padding-bottom: calc(2rem + env(safe-area-inset-bottom, 0px));
     margin-top: 3rem;
     font-size: 0.85rem;
 }

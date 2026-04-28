@@ -42,7 +42,9 @@ PRODUCT_TEMPLATE = """\
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <meta name="theme-color" content="#9CAF88">
+    <meta name="format-detection" content="telephone=no">
     <title>{title}</title>
     <meta name="description" content="{meta_desc}">
     <link rel="canonical" href="{canonical}">
@@ -89,6 +91,8 @@ PRODUCT_TEMPLATE = """\
     }}
     </script>
     <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link rel="dns-prefetch" href="https://pub-1fd965ab66464286847edcb540254451.r2.dev">
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="{css_path}">
 </head>
@@ -335,7 +339,9 @@ CATEGORY_TEMPLATE = """\
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <meta name="theme-color" content="#9CAF88">
+    <meta name="format-detection" content="telephone=no">
     <title>{title}</title>
     <meta name="description" content="{meta_desc}">
     <link rel="canonical" href="{canonical}">
@@ -366,6 +372,8 @@ CATEGORY_TEMPLATE = """\
     }}
     </script>
     <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link rel="dns-prefetch" href="https://pub-1fd965ab66464286847edcb540254451.r2.dev">
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="{css_path}">
 </head>
