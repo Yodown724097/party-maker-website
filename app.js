@@ -24,6 +24,7 @@ let currentTheme = 'all';
 let currentSubcat = 'all';
 let searchQuery = '';
 let scrollObserver = null; // IntersectionObserver for infinite scroll
+const preloadedUrls = new Set(); // Track preloaded image URLs
 
 // ============ INIT ============
 async function init() {
@@ -255,6 +256,32 @@ function setupSearch() {
     });
 }
 
+// ============ IMAGE PRELOAD ============
+// Preload thumbnail images for the first page of products
+function preloadFirstPage(products) {
+    return new Promise(resolve => {
+        const urls = products.slice(0, PAGE_SIZE).map(p => {
+            const imgUrl = p.images && p.images[0] ? p.images[0] : '';
+            return imgUrl ? thumbUrl(imgUrl) : '';
+        }).filter(u => u && !preloadedUrls.has(u));
+
+        if (urls.length === 0) { resolve(); return; }
+
+        let loaded = 0;
+        const done = () => { loaded++; if (loaded >= urls.length) resolve(); };
+
+        urls.forEach(url => {
+            const img = new Image();
+            img.onload = () => { preloadedUrls.add(url); done(); };
+            img.onerror = () => { preloadedUrls.add(url); done(); }; // mark as tried even on error
+            img.src = url;
+        });
+
+        // Timeout after 2s — don't block forever
+        setTimeout(resolve, 2000);
+    });
+}
+
 // ============ FILTER ============
 function filterAndRender() {
     visibleCount = PAGE_SIZE;  // 重置分页显示数量
@@ -291,7 +318,20 @@ function filterAndRender() {
     const productsCountEl = document.getElementById('productsCount');
     if (productsCountEl) productsCountEl.textContent = `${filteredProducts.length} products`;
     visibleCount = PAGE_SIZE; // 重置分页显示数量
-    renderProducts();
+
+    // Preload first page thumbnails, then render with transition
+    const grid = document.getElementById('productsGrid');
+    if (grid && filteredProducts.length > 0) {
+        grid.classList.add('grid-switching');
+        preloadFirstPage(filteredProducts).then(() => {
+            renderProducts();
+            requestAnimationFrame(() => {
+                grid.classList.remove('grid-switching');
+            });
+        });
+    } else {
+        renderProducts();
+    }
 }
 
 // ============ RENDER PRODUCTS ============
