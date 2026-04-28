@@ -48,6 +48,10 @@ def generate_seo_desc(products):
             "A stunning {name} to decorate your space for the blessed month",
             "Make this Ramadan memorable with this {name}",
             "Adorn your home with this {name} for the holy month of Ramadan",
+            "Elevate your Islamic celebrations with this {name}",
+            "Perfect {name} for Muslim festival and Eid decorations",
+            "Add elegance to your Ramadan and Eid gatherings with this {name}",
+            "This {name} brings Islamic artistry to your festive celebrations",
         ],
         'Christmas': [
             "Add holiday magic with this {name}",

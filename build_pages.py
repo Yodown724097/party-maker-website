@@ -15,7 +15,7 @@ from pathlib import Path
 # ========== CONFIG ==========
 SITE_URL = "https://www.partymaker.cn"
 SITE_NAME = "Party Maker"
-SITE_DESC = "Wholesale party supplies sourcing from Yiwu, China. Ramadan, Easter, Birthday, Chinese New Year and more."
+SITE_DESC = "Wholesale Ramadan & Eid decorations, Islamic party supplies from Yiwu factory. Muslim festival decorations, custom packaging, global shipping."
 WEBSITE_DIR = Path(__file__).parent  # party-maker-website/
 PRODUCTS_JSON = WEBSITE_DIR / "products.json"
 PUBLIC_JSON = WEBSITE_DIR / "products-public.json"
@@ -47,6 +47,7 @@ PRODUCT_TEMPLATE = """\
     <meta name="format-detection" content="telephone=no">
     <title>{title}</title>
     <meta name="description" content="{meta_desc}">
+    <meta name="keywords" content="{keywords}">
     <link rel="canonical" href="{canonical}">
     <meta name="robots" content="index, follow">
     <meta property="og:type" content="product">
@@ -90,6 +91,7 @@ PRODUCT_TEMPLATE = """\
         "category": {category_json}
     }}
     </script>
+    {breadcrumb_ld_json}
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link rel="dns-prefetch" href="https://pub-1fd965ab66464286847edcb540254451.r2.dev">
@@ -345,6 +347,7 @@ CATEGORY_TEMPLATE = """\
     <meta name="format-detection" content="telephone=no">
     <title>{title}</title>
     <meta name="description" content="{meta_desc}">
+    <meta name="keywords" content="{keywords}">
     <link rel="canonical" href="{canonical}">
     <meta name="robots" content="index, follow">
     <meta property="og:type" content="website">
@@ -372,6 +375,7 @@ CATEGORY_TEMPLATE = """\
         {item_list_json}
     }}
     </script>
+    {breadcrumb_ld_json}
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link rel="dns-prefetch" href="https://pub-1fd965ab66464286847edcb540254451.r2.dev">
@@ -515,13 +519,22 @@ def generate_product_page(product, all_products, css_path="/style.css"):
     subcat_slug = slugify(subcategory)
     first_image = images[0] if images else ''
 
-    # Title
-    title = f"{name} - {sku} | {SITE_NAME}"
+    # Title - include theme & subcategory for keyword coverage
+    title = f"{name} - {theme} {subcategory} | {SITE_NAME}"
 
     # Meta description - use seo_desc (fallback to description)
     desc_for_meta = seo_desc if seo_desc else description
-    desc_text = f"{desc_for_meta} SKU {sku}. Wholesale from Yiwu, China. MOQ flexible."
+    if theme == "Ramadan":
+        desc_text = f"{desc_for_meta} Wholesale Ramadan & Eid decorations from Yiwu factory. SKU {sku}."
+    else:
+        desc_text = f"{desc_for_meta} Wholesale {theme} supplies from Yiwu, China. SKU {sku}."
     meta_desc = escape_html(desc_text[:160])
+
+    # Keywords
+    kw_parts = [theme, subcategory, name[:60], "wholesale", "Yiwu factory"]
+    if theme == "Ramadan":
+        kw_parts.extend(["Eid", "Islamic", "Muslim", "festival decorations", "party supplies"])
+    keywords = ", ".join(dict.fromkeys(kw_parts))  # deduplicate preserving order
 
     # Canonical
     canonical = f"{SITE_URL}/product/{sku}/"
@@ -585,10 +598,28 @@ def generate_product_page(product, all_products, css_path="/style.css"):
     sku_json = json_str(sku)
     canonical_json = json_str(canonical)
     category_json = json_str(f"{theme} > {subcategory}")
+    theme_json = json_str(theme)
+    subcat_json = json_str(subcategory)
+    theme_url_json = json_str(f"{SITE_URL}/{theme_slug}/")
+    subcat_url_json = json_str(f"{SITE_URL}/{theme_slug}/{subcat_slug}/")
+
+    # BreadcrumbList JSON-LD (generated in Python to avoid format conflicts)
+    breadcrumb_data = {
+        "@context": "https://schema.org",
+        "@type": "BreadcrumbList",
+        "itemListElement": [
+            {"@type": "ListItem", "position": 1, "name": "Home", "item": "https://www.partymaker.cn/"},
+            {"@type": "ListItem", "position": 2, "name": theme, "item": f"{SITE_URL}/{theme_slug}/"},
+            {"@type": "ListItem", "position": 3, "name": subcategory, "item": f"{SITE_URL}/{theme_slug}/{subcat_slug}/"},
+            {"@type": "ListItem", "position": 4, "name": name}
+        ]
+    }
+    breadcrumb_ld_json = f'<script type="application/ld+json">\n{json.dumps(breadcrumb_data, ensure_ascii=False, indent=4)}\n</script>'
 
     page_html = PRODUCT_TEMPLATE.format(
         title=escape_html(title),
         meta_desc=meta_desc,
+        keywords=escape_html(keywords),
         canonical=canonical,
         site_name=SITE_NAME,
         og_image=first_image,
@@ -615,12 +646,17 @@ def generate_product_page(product, all_products, css_path="/style.css"):
         sku_json=sku_json,
         canonical_json=canonical_json,
         category_json=category_json,
+        theme_json=theme_json,
+        subcat_json=subcat_json,
+        breadcrumb_ld_json=breadcrumb_ld_json,
     )
     return page_html
 
 
 def generate_category_page(theme, subcategory, products, all_products, css_path="/style.css"):
     """Generate a category listing HTML page."""
+    is_ramadan = (theme == "Ramadan")
+
     if subcategory:
         page_name = f"{theme} - {subcategory}"
         slug = f"/{slugify(theme)}/{slugify(subcategory)}/"
@@ -631,9 +667,57 @@ def generate_category_page(theme, subcategory, products, all_products, css_path=
         breadcrumb_extra = ''
 
     canonical = f"{SITE_URL}{slug}"
-    title = f"{page_name} Wholesale Products | {SITE_NAME}"
-    desc_text = f"Browse {len(products)} wholesale {page_name} products. Factory-direct pricing from Yiwu, China. Flexible MOQ, global shipping."
+
+    # Title - enriched for Ramadan
+    if is_ramadan:
+        if subcategory:
+            title = f"Wholesale Ramadan & Eid {subcategory} Decorations | {SITE_NAME}"
+        else:
+            title = f"Wholesale Ramadan & Eid Decorations & Party Supplies | {SITE_NAME}"
+    else:
+        title = f"{page_name} Wholesale Products | {SITE_NAME}"
+
+    # Meta description - enriched for Ramadan
+    if is_ramadan:
+        if subcategory:
+            desc_text = f"Browse {len(products)} wholesale Ramadan & Eid {subcategory} decorations. Islamic party supplies factory-direct from Yiwu. Flexible MOQ, custom packaging, global shipping."
+        else:
+            desc_text = f"Browse {len(products)} wholesale Ramadan & Eid decorations and Islamic party supplies. Muslim festival decorations factory-direct from Yiwu. Flexible MOQ, custom packaging, global shipping."
+    else:
+        desc_text = f"Browse {len(products)} wholesale {page_name} products. Factory-direct pricing from Yiwu, China. Flexible MOQ, global shipping."
     meta_desc = escape_html(desc_text[:160])
+
+    # Keywords
+    kw_parts = [theme]
+    if subcategory:
+        kw_parts.append(subcategory)
+    kw_parts.extend(["wholesale", "decorations", "party supplies", "Yiwu factory"])
+    if is_ramadan:
+        kw_parts.extend(["Eid", "Islamic", "Muslim", "festival decorations", "Eid al-Fitr", "Eid al-Adha"])
+    keywords = ", ".join(dict.fromkeys(kw_parts))
+
+    # H1 - enriched for Ramadan
+    if is_ramadan:
+        if subcategory:
+            h1_text = f"Ramadan & Eid {subcategory} Decorations"
+        else:
+            h1_text = "Ramadan & Eid Decorations & Party Supplies"
+    else:
+        h1_text = page_name
+
+    # BreadcrumbList JSON-LD (generated in Python to avoid format conflicts)
+    theme_slug_str = slugify(theme)
+    breadcrumb_items = [
+        {"@type": "ListItem", "position": 1, "name": "Home", "item": "https://www.partymaker.cn/"}
+    ]
+    if subcategory:
+        subcat_slug_str = slugify(subcategory)
+        breadcrumb_items.append({"@type": "ListItem", "position": 2, "name": theme, "item": f"https://www.partymaker.cn/{theme_slug_str}/"})
+        breadcrumb_items.append({"@type": "ListItem", "position": 3, "name": subcategory})
+    else:
+        breadcrumb_items.append({"@type": "ListItem", "position": 2, "name": theme})
+    breadcrumb_data = {"@context": "https://schema.org", "@type": "BreadcrumbList", "itemListElement": breadcrumb_items}
+    breadcrumb_ld_json = f'<script type="application/ld+json">\n{json.dumps(breadcrumb_data, ensure_ascii=False, indent=4)}\n</script>'
 
     # Build product cards
     products_html = '\n'.join(build_product_card(p, css_path) for p in products)
@@ -647,19 +731,21 @@ def generate_category_page(theme, subcategory, products, all_products, css_path=
     page_html = CATEGORY_TEMPLATE.format(
         title=escape_html(title),
         meta_desc=meta_desc,
+        keywords=escape_html(keywords),
         canonical=canonical,
         site_name=SITE_NAME,
         og_image=products[0]['images'][0] if products and products[0].get('images') else '',
-        page_name=escape_html(page_name),
+        page_name=escape_html(h1_text),
         breadcrumb_extra=breadcrumb_extra,
         count=len(products),
         products_grid_html=products_html,
         css_path=css_path,
         detail_css=DETAIL_CSS,
-        name_json=json_str(page_name),
+        name_json=json_str(h1_text),
         desc_json=json_str(desc_text),
         canonical_json=json_str(canonical),
         item_list_json=item_list_json,
+        breadcrumb_ld_json=breadcrumb_ld_json,
     )
     return page_html
 
