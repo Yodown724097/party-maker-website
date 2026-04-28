@@ -287,12 +287,16 @@ function renderProducts() {
     // 只渲染当前可见的产品数量
     const productsToShow = filteredProducts.slice(0, visibleCount);
     
-    let html = productsToShow.map(p => {
+    let html = productsToShow.map((p, idx) => {
         const inCart = cart.some(c => c.id === p.id);
         const imgUrl = p.images && p.images[0] ? p.images[0] : '';
         const imagesJson = encodeURIComponent(JSON.stringify(p.images || []));
         const imgCount = p.images ? p.images.length : 0;
         const imgDots = imgCount > 1 ? `<div class="img-dots"><span class="img-dot active"></span><span class="img-dot-more">+${imgCount-1}</span></div>` : '';
+        const isAboveFold = idx < 4; // first row for LCP
+        const imgAttrs = isAboveFold
+            ? `width="400" height="400" fetchpriority="high" decoding="async"`
+            : `width="400" height="400" loading="lazy" decoding="async"`;
         // Tags徽章（hot/new）
         const tags = p.tags || [];
         const tagBadges = tags.map(t => {
@@ -308,7 +312,7 @@ function renderProducts() {
         return `
         <div class="product-card ${inCart ? 'in-cart' : ''}" data-id="${p.id}">
             <div class="product-image" ${clickHandler ? `onclick="${clickHandler}"` : 'style="cursor:default"'}">
-                ${imgUrl ? `<img src="${imgUrl}" alt="${p.name}" width="400" height="400" loading="lazy" decoding="async" onerror="this.parentElement.innerHTML='<div class=img-placeholder><svg width=40 height=40 style=\\'color:var(--text-light)\\'><use href=\\'#icon-package\\'></use></svg></div>'">` : `<div class="img-placeholder"><svg width="40" height="40" style="color:var(--text-light)"><use href="#icon-package"/></svg></div>`}
+                ${imgUrl ? `<img src="${imgUrl}" alt="${p.name}" ${imgAttrs} onerror="this.parentElement.innerHTML='<div class=img-placeholder><svg width=40 height=40 style=\\'color:var(--text-light)\\'><use href=\\'#icon-package\\'></use></svg></div>'">` : `<div class="img-placeholder"><svg width="40" height="40" style="color:var(--text-light)"><use href="#icon-package"/></svg></div>`}
                 ${badge}
                 ${imgDots}
                 ${tagBadges ? `<div class="tag-badges">${tagBadges}</div>` : ''}
@@ -318,7 +322,7 @@ function renderProducts() {
                 <a href="/product/${(p.sku||'').replace(/'/g,"\\'")}/" class="product-name" title="${p.name}" onclick="event.stopPropagation()">${p.name}</a>
                 <div class="product-price">${priceText}</div>
                 <div class="card-bottom">
-                    <button class="card-qty-btn" onclick="event.stopPropagation();cardQtyChange('${p.id}',-1)" title="-${QTY_STEP}">
+                    <button class="card-qty-btn" onclick="event.stopPropagation();cardQtyChange('${p.id}',-1)" title="Decrease quantity" aria-label="Decrease quantity">
                         <svg width="12" height="12"><use href="#icon-minus"/></svg>
                     </button>
                     <input type="number" min="${QTY_STEP}" step="${QTY_STEP}" value="${qty || QTY_STEP}"
@@ -328,12 +332,14 @@ function renderProducts() {
                         inputmode="numeric"
                         onclick="event.stopPropagation()"
                         placeholder=""
-                        data-step="${QTY_STEP}">
-                    <button class="card-qty-btn" onclick="event.stopPropagation();cardQtyChange('${p.id}',1)" title="+${QTY_STEP}">
+                        data-step="${QTY_STEP}"
+                        aria-label="Quantity">
+                    <button class="card-qty-btn" onclick="event.stopPropagation();cardQtyChange('${p.id}',1)" title="Increase quantity" aria-label="Increase quantity">
                         <svg width="12" height="12"><use href="#icon-plus"/></svg>
                     </button>
                     <button class="add-to-cart ${inCart ? 'in-cart-btn' : ''}"
-                        onclick="event.stopPropagation();handleCartClick('${p.id}')">
+                        onclick="event.stopPropagation();handleCartClick('${p.id}')"
+                        aria-label="${inCart ? 'Added to cart' : 'Add to cart'}">
                         ${inCart ? '&#10003;' : '+'}
                     </button>
                 </div>
@@ -463,17 +469,17 @@ function updateCartUI() {
                 ${item.sku ? `<div class="cart-item-sku">${item.sku}</div>` : ''}
                 <div class="cart-item-price">${item.price ? '$' + parseFloat(item.price).toFixed(2) + ' / unit' : 'Price on request'}</div>
                 <div class="cart-item-controls">
-                    <button class="qty-btn" onclick="changeQty('${item.id}', -1)">
+                    <button class="qty-btn" onclick="changeQty('${item.id}', -1)" aria-label="Decrease quantity">
                         <svg width="14" height="14"><use href="#icon-minus"/></svg>
                     </button>
-                    <input type="number" min="${QTY_STEP}" step="${QTY_STEP}" class="qty-input" value="${item.qty}" onchange="updateQty('${item.id}', this.value)">
-                    <button class="qty-btn" onclick="changeQty('${item.id}', 1)">
+                    <input type="number" min="${QTY_STEP}" step="${QTY_STEP}" class="qty-input" value="${item.qty}" onchange="updateQty('${item.id}', this.value)" aria-label="Quantity">
+                    <button class="qty-btn" onclick="changeQty('${item.id}', 1)" aria-label="Increase quantity">
                         <svg width="14" height="14"><use href="#icon-plus"/></svg>
                     </button>
                 </div>
                 ${item.price ? `<div class="cart-item-subtotal">Subtotal: $${itemSubtotal.toFixed(2)}</div>` : ''}
             </div>
-            <button class="cart-item-remove" onclick="removeFromCart('${item.id}')">Remove</button>
+            <button class="cart-item-remove" onclick="removeFromCart('${item.id}')" aria-label="Remove ${item.name}">Remove</button>
         </div>`;
     }).join('');
 

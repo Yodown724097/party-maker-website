@@ -2,14 +2,14 @@
 :root {
     /* 品牌色 - 鼠尾草绿 + 金色 + 香槟金 */
     --primary: #9CAF88;
-    --primary-dark: #7A8B6E;
+    --primary-dark: #4E5E42;
     --primary-light: #E8EEE3;
     --accent: #D4AF37;
     --accent-dark: #B8960F;
     --accent-light: #F7E7CE;
     --text: #4A5A3A;
     --text-mid: #5A6A4A;
-    --text-light: #7A8A6A;
+    --text-light: #627252;
     --bg: #FFFFFF;
     --bg-alt: #F7F9F5;
     --bg-card: #FFFFFF;
@@ -425,6 +425,42 @@ header {
     gap: 1.25rem;
 }
 
+/* Skeleton loading placeholders — prevents CLS */
+.products-grid:empty {
+    min-height: 800px;
+}
+.skeleton-card {
+    background: var(--bg-alt);
+    border: 1.5px solid var(--border);
+    border-radius: var(--radius);
+    overflow: hidden;
+}
+.skeleton-card .skel-img {
+    aspect-ratio: 1 / 1;
+    background: linear-gradient(110deg, var(--bg-alt) 30%, #e8ede3 50%, var(--bg-alt) 70%);
+    background-size: 200% 100%;
+    animation: skel-shimmer 1.5s infinite;
+}
+.skeleton-card .skel-text {
+    padding: 0.75rem;
+}
+.skeleton-card .skel-line {
+    height: 10px;
+    border-radius: 5px;
+    background: linear-gradient(110deg, var(--bg-alt) 30%, #e8ede3 50%, var(--bg-alt) 70%);
+    background-size: 200% 100%;
+    animation: skel-shimmer 1.5s infinite;
+    margin-bottom: 0.4rem;
+}
+.skeleton-card .skel-line:last-child {
+    width: 60%;
+    margin-bottom: 0;
+}
+@keyframes skel-shimmer {
+    0% { background-position: 200% 0; }
+    100% { background-position: -200% 0; }
+}
+
 /* ========== PRODUCT CARD ========== */
 .product-card {
     background: var(--bg-card);
@@ -531,7 +567,9 @@ header {
     display: -webkit-box;
     -webkit-line-clamp: 2;
     -webkit-box-orient: vertical;
-    text-decoration: none;
+    text-decoration: underline;
+    text-decoration-style: dotted;
+    text-underline-offset: 3px;
     transition: color 0.15s;
 }
 .product-name:hover, .product-name a:hover {
