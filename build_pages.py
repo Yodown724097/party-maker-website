@@ -93,7 +93,8 @@ PRODUCT_TEMPLATE = """\
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link rel="dns-prefetch" href="https://pub-1fd965ab66464286847edcb540254451.r2.dev">
-    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" media="print" onload="this.media='all'">
+    <noscript><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap"></noscript>
     <link rel="stylesheet" href="{css_path}">
 </head>
 <body>
@@ -141,7 +142,7 @@ PRODUCT_TEMPLATE = """\
     <div class="detail-layout">
         <div class="detail-gallery">
             <div class="main-image">
-                <img id="mainImg" src="{first_image}" alt="{name_escaped}" loading="eager">
+                <img id="mainImg" src="{first_image}" alt="{name_escaped}" width="800" height="800" loading="eager" decoding="async">
             </div>
             {thumbs_html}
         </div>
@@ -176,7 +177,7 @@ PRODUCT_TEMPLATE = """\
 <div class="pdp-inquiry-modal" id="pdpInquiryModal">
 <div class="pdp-inquiry-header">
 <div class="pdp-inquiry-product">
-<div class="pdp-inquiry-thumb"><img src="{first_image}" alt="{name_escaped}" id="pdpThumb"></div>
+<div class="pdp-inquiry-thumb"><img src="{first_image}" alt="{name_escaped}" id="pdpThumb" width="60" height="60" loading="lazy" decoding="async"></div>
 <div><div class="pdp-inquiry-name" id="pdpProductName">{name_escaped}</div>
 <div class="pdp-inquiry-sku">SKU: {sku}</div></div>
 </div>
@@ -374,7 +375,8 @@ CATEGORY_TEMPLATE = """\
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link rel="dns-prefetch" href="https://pub-1fd965ab66464286847edcb540254451.r2.dev">
-    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" media="print" onload="this.media='all'">
+    <noscript><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap"></noscript>
     <link rel="stylesheet" href="{css_path}">
 </head>
 <body>
@@ -486,7 +488,7 @@ def build_product_card(p, css_path="/style.css"):
     return f"""\
     <a href="/product/{p['sku']}/" class="product-card">
         <div class="product-image">
-            <img src="{img}" alt="{name}" loading="lazy">
+            <img src="{img}" alt="{name}" width="400" height="400" loading="lazy" decoding="async">
             {tags}
         </div>
         <div class="product-info">
@@ -530,7 +532,7 @@ def generate_product_page(product, all_products, css_path="/style.css"):
         thumb_items = []
         for i, img in enumerate(images):
             active = ' active' if i == 0 else ''
-            thumb_items.append(f'<img class="thumb{active}" src="{img}" data-full="{img}" alt="{name} photo {i+1}" loading="lazy">')
+            thumb_items.append(f'<img class="thumb{active}" src="{img}" data-full="{img}" alt="{name} photo {i+1}" width="80" height="80" loading="lazy" decoding="async">')
         thumbs_html = f'<div class="thumb-strip">{"".join(thumb_items)}</div>'
 
     # Tags

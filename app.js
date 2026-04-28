@@ -308,7 +308,7 @@ function renderProducts() {
         return `
         <div class="product-card ${inCart ? 'in-cart' : ''}" data-id="${p.id}">
             <div class="product-image" ${clickHandler ? `onclick="${clickHandler}"` : 'style="cursor:default"'}">
-                ${imgUrl ? `<img src="${imgUrl}" alt="${p.name}" width="800" height="800" loading="lazy" onerror="this.parentElement.innerHTML='<div class=img-placeholder><svg width=40 height=40 style=\\'color:var(--text-light)\\'><use href=\\'#icon-package\\'></use></svg></div>'">` : `<div class="img-placeholder"><svg width="40" height="40" style="color:var(--text-light)"><use href="#icon-package"/></svg></div>`}
+                ${imgUrl ? `<img src="${imgUrl}" alt="${p.name}" width="400" height="400" loading="lazy" decoding="async" onerror="this.parentElement.innerHTML='<div class=img-placeholder><svg width=40 height=40 style=\\'color:var(--text-light)\\'><use href=\\'#icon-package\\'></use></svg></div>'">` : `<div class="img-placeholder"><svg width="40" height="40" style="color:var(--text-light)"><use href="#icon-package"/></svg></div>`}
                 ${badge}
                 ${imgDots}
                 ${tagBadges ? `<div class="tag-badges">${tagBadges}</div>` : ''}
