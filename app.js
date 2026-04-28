@@ -13,7 +13,6 @@ let visibleCount = PAGE_SIZE;  // 当前显示的产品数量
 let currentTheme = 'all';
 let currentSubcat = 'all';
 let searchQuery = '';
-let visibleCount = PAGE_SIZE;
 let scrollObserver = null; // IntersectionObserver for infinite scroll
 
 // ============ INIT ============
@@ -27,22 +26,28 @@ async function init() {
 // ============ INIT ============
     // ============ LOAD PRODUCTS (embedded) ============
 async function loadProducts() {
-    // Fetch product data from products.json
-    try {
-        const resp = await fetch('/products-public.json');
-        if (!resp.ok) throw new Error('Failed to load products: ' + resp.status);
-        const data = await resp.json();
-        allProducts = data.products || data || [];
-        console.log('Loaded ' + allProducts.length + ' products');
-    } catch (err) {
-        console.error('Error loading products:', err);
-        const productsGridEl = document.getElementById('productsGrid');
-        if (productsGridEl) {
-            productsGridEl.innerHTML =
-                '<div style="text-align:center;padding:4rem 1rem;color:var(--text-light);grid-column:1/-1;">' +
-                '<p>Failed to load products. Please refresh the page.</p></div>';
+    // Priority 1: Read embedded data from HTML (zero network request)
+    if (window.__PRODUCTS__ && window.__PRODUCTS__.length > 0) {
+        allProducts = window.__PRODUCTS__;
+        console.log('Loaded ' + allProducts.length + ' products (embedded)');
+    } else {
+        // Priority 2: Fetch from JSON as fallback
+        try {
+            const resp = await fetch('/products-public.json');
+            if (!resp.ok) throw new Error('Failed to load products: ' + resp.status);
+            const data = await resp.json();
+            allProducts = data.products || data || [];
+            console.log('Loaded ' + allProducts.length + ' products (fetch)');
+        } catch (err) {
+            console.error('Error loading products:', err);
+            const productsGridEl = document.getElementById('productsGrid');
+            if (productsGridEl) {
+                productsGridEl.innerHTML =
+                    '<div style="text-align:center;padding:4rem 1rem;color:var(--text-light);grid-column:1/-1;">' +
+                    '<p>Failed to load products. Please refresh the page.</p></div>';
+            }
+            return;
         }
-        return;
     }
     buildCategoryList();
     // Ramadan: active pill + expanded sidebar

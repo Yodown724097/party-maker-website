@@ -31,6 +31,11 @@ PUBLIC_LIST_FIELDS = (
     "theme", "subcategory", "images", "tags", "badge",
 )
 
+# Minimal fields for embedded homepage data (keeps HTML size small)
+EMBEDDED_FIELDS = (
+    "id", "sku", "name", "price", "theme", "subcategory", "tags", "images",
+)
+
 # Product page template
 PRODUCT_TEMPLATE = """\
 <!DOCTYPE html>
@@ -1252,6 +1257,37 @@ def main():
     PUBLIC_JSON.write_text(json.dumps(public_data, ensure_ascii=False, separators=(',', ':')), encoding='utf-8')
     pub_size = PUBLIC_JSON.stat().st_size
     print(f"\n[1] products-public.json: {len(public_products)} products, {pub_size/1024:.0f} KB")
+
+    # === 1b. Generate embedded product data for index.html ===
+    slim_products = []
+    for p in products:
+        slim = {}
+        for key in EMBEDDED_FIELDS:
+            val = p.get(key)
+            if val is not None:
+                slim[key] = val
+        slim_products.append(slim)
+    embedded_js = "window.__PRODUCTS__=" + json.dumps(slim_products, ensure_ascii=False, separators=(',', ':')) + ";"
+    embedded_size = len(embedded_js.encode('utf-8'))
+    print(f"[1b] Embedded product data: {len(slim_products)} products, {embedded_size/1024:.0f} KB (raw)")
+
+    # Inject embedded data into index.html
+    index_file = WEBSITE_DIR / "index.html"
+    index_html = index_file.read_text(encoding='utf-8')
+    # Remove old embedded data if present
+    index_html = re.sub(r'\n*<script id="embedded-products">.*?</script>\n*', '\n', index_html, flags=re.DOTALL)
+    # Insert new embedded data before app.js
+    embed_tag = f'<script id="embedded-products">{embedded_js}</script>'
+    index_html = index_html.replace(
+        '<script src="app.js',
+        embed_tag + '\n<script src="app.js'
+    )
+    # Update app.js cache buster
+    cache_ver = str(len(products)) + str(int(datetime.now().timestamp()))
+    index_html = re.sub(r'app\.js\?v=\d+', f'app.js?v={cache_ver}', index_html)
+    index_html = re.sub(r'style\.css\?v=\d+', f'style.css?v={cache_ver}', index_html)
+    index_file.write_text(index_html, encoding='utf-8')
+    print(f"[1c] index.html: embedded data injected, cache buster v={cache_ver}")
 
     # === 2. Build category index ===
     # structure: {theme: {subcategory: [products]}}
