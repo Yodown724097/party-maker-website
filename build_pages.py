@@ -1384,13 +1384,35 @@ def main():
     # Inject embedded data into index.html
     index_file = WEBSITE_DIR / "index.html"
     index_html = index_file.read_text(encoding='utf-8')
-    # Remove old embedded data if present
+    # Remove old embedded data + first-paint bootstrap if present
     index_html = re.sub(r'\n*<script id="embedded-products">.*?</script>\n*', '\n', index_html, flags=re.DOTALL)
-    # Insert new embedded data before app.js
+    index_html = re.sub(r'\n*<script id="fp-render">.*?</script>\n*', '\n', index_html, flags=re.DOTALL)
+    # Insert embedded data before app.js
     embed_tag = f'<script id="embedded-products">{embedded_js}</script>'
+    # First-paint bootstrap: renders first 24 products inline before app.js loads
+    bootstrap_js = (
+        '<script id="fp-render">'
+        '(function(){'
+        'var p=window.__PRODUCTS__,g=document.getElementById(\'productsGrid\');'
+        'if(!p||!p.length||!g)return;'
+        'var h=\'\',m=Math.min(p.length,24);'
+        'for(var i=0;i<m;i++){'
+        'var d=p[i],im=d.images&&d.images[0]?d.images[0]:\'\',sk=d.sku||\'\',nm=d.name||\'\','
+        'pr=d.price?\'$\'+d.price.toFixed(2):\'\',tg=\'\';'
+        'if(d.tags&&d.tags.indexOf(\'hot\')!==-1)tg+=\'<span class="tag-hot">HOT</span>\';'
+        'if(d.tags&&d.tags.indexOf(\'new\')!==-1)tg+=\'<span class="tag-new">NEW</span>\';'
+        'h+=\'<div class="product-card" data-id="\'+(d.id||\'\')+\'">'
+        '<div class="product-image">\'+(im?\'<a href="/product/\'+sk+\'/">'
+        '<img src="\'+im+\'" alt="\'+nm.replace(/"/g,\'&quot;\')+\'" width="400" height="400"></a>\':'
+        '\'<div class="img-placeholder">--</div>\')+(tg?\'<div class="tag-badges">\'+tg+\'</div>\':\'\')+\'</div>'
+        '<div class="product-info">\'+(sk?\'<div class="product-sku">\'+sk+\'</div>\':\'\')+'
+        '\'<a href="/product/\'+sk+\'/" class="product-name">\'+nm+\'</a>'
+        '\'<div class="product-price">\'+pr+\'</div></div></div>\'}'
+        'g.innerHTML=h;})();</script>'
+    )
     index_html = index_html.replace(
         '<script src="app.js',
-        embed_tag + '\n<script src="app.js'
+        embed_tag + '\n' + bootstrap_js + '\n<script src="app.js'
     )
     # Update app.js cache buster
     cache_ver = str(len(products)) + str(int(datetime.now().timestamp()))
