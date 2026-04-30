@@ -349,7 +349,6 @@ function filterAndRender() {
     const productsCountEl = document.getElementById('productsCount');
     if (productsCountEl) productsCountEl.textContent = `${filteredProducts.length} products`;
     visibleCount = PAGE_SIZE; // 重置分页显示数量
-    updateNewArrivalsSection();
 
     // Preload first page thumbnails, then render with transition
     const grid = document.getElementById('productsGrid');
@@ -364,43 +363,6 @@ function filterAndRender() {
     } else {
         renderProducts();
     }
-}
-
-// ============ NEW ARRIVALS SECTION ============
-function updateNewArrivalsSection() {
-    const section = document.getElementById('newArrivalsSection');
-    const scroller = document.getElementById('newArrivalsScroller');
-    if (!section || !scroller) return;
-
-    // Only show on "All Products" view (no special filter, no theme/subcat filter, no search)
-    const isAllProductsView = currentTheme === 'all' && currentSubcat === 'all' && !currentSpecial && !searchQuery;
-    if (!isAllProductsView) {
-        section.style.display = 'none';
-        return;
-    }
-
-    const newProducts = allProducts.filter(p => p.tags && p.tags.includes('new') && p.images && p.images.length > 0);
-    if (newProducts.length === 0) {
-        section.style.display = 'none';
-        return;
-    }
-
-    section.style.display = '';
-    scroller.innerHTML = newProducts.map(p => {
-        const imgUrl = p.images && p.images[0] ? p.images[0] : '';
-        const priceText = p.price ? `$${parseFloat(p.price).toFixed(2)}` : '';
-        return `
-        <a href="/product/${(p.sku||'')}/" class="new-arrival-card" onclick="event.stopPropagation()">
-            <div class="new-arrival-img">
-                ${imgUrl ? `<img src="${imgUrl}" alt="${p.name}" width="400" height="400" loading="lazy">` : ''}
-                <span class="tag-new">NEW</span>
-            </div>
-            <div class="new-arrival-info">
-                <div class="new-arrival-name">${p.name || ''}</div>
-                ${priceText ? `<div class="new-arrival-price">${priceText}</div>` : ''}
-            </div>
-        </a>`;
-    }).join('');
 }
 
 // ============ RENDER PRODUCTS ============
