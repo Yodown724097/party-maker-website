@@ -22,6 +22,7 @@ let cart = [];
 let visibleCount = PAGE_SIZE;  // 当前显示的产品数量
 let currentTheme = 'all';
 let currentSubcat = 'all';
+let currentSpecial = ''; // 'new' for New Arrivals filter
 let searchQuery = '';
 let scrollObserver = null; // IntersectionObserver for infinite scroll
 const preloadedUrls = new Set(); // Track preloaded image URLs
@@ -116,12 +117,19 @@ function buildCategoryList() {
     }
 
     // Desktop
+    const newCount = allProducts.filter(p => p.tags && p.tags.includes('new')).length;
     const list = document.getElementById('categoryList');
     list.innerHTML = `
         <div class="theme-group">
             <div class="theme-label" onclick="setCategory('all','all')">
                 All Products
                 <span class="count">${total}</span>
+            </div>
+        </div>
+        <div class="theme-group">
+            <div class="theme-label special-label new-label" onclick="setSpecialFilter('new')">
+                🆕 New Arrivals
+                <span class="count">${newCount}</span>
             </div>
         </div>`;
     themes.forEach(theme => {
@@ -164,6 +172,11 @@ function buildCategoryList() {
             <div class="theme-label" style="cursor:pointer;" onclick="setCategory('all','all')">
                 All Products <span class="count">${total}</span>
             </div>
+        </div>
+        <div class="theme-group" style="margin-bottom:0.75rem;">
+            <div class="theme-label special-label new-label" style="cursor:pointer;" onclick="setSpecialFilter('new')">
+                🆕 New Arrivals <span class="count">${newCount}</span>
+            </div>
         </div>`;
     themes.forEach(theme => {
         const subcats = Object.keys(structure[theme]).sort();
@@ -196,6 +209,7 @@ function toggleTheme(theme) {
 function setCategory(theme, subcat) {
     currentTheme = theme;
     currentSubcat = subcat !== undefined ? subcat : 'all';
+    currentSpecial = ''; // clear special filter
     document.querySelectorAll('.subcat-list a').forEach(a => {
         a.classList.toggle('active', a.dataset.theme === theme && a.dataset.subcat === currentSubcat);
     });
@@ -208,6 +222,19 @@ function setCategory(theme, subcat) {
     updateUrlFromState();
 }
 
+function setSpecialFilter(type) {
+    currentTheme = 'all';
+    currentSubcat = 'all';
+    currentSpecial = type;
+    document.querySelectorAll('.subcat-list a').forEach(a => a.classList.remove('active'));
+    document.querySelectorAll('.theme-pill').forEach(p => p.classList.remove('active'));
+    updateSectionTitle();
+    filterAndRender();
+    updateUrlFromState();
+    toggleMobileMenu(false);
+    scrollToTop();
+}
+
 function scrollToTop() {
     window.scrollTo({ top: 0, behavior: 'smooth' });
 }
@@ -216,7 +243,10 @@ function updateSectionTitle() {
     const el = document.getElementById('sectionTitle');
     const bc = document.querySelector('.breadcrumb');
     if (!el || !bc) return; // 如果元素不存在，直接返回
-    if (currentTheme === 'all') {
+    if (currentSpecial === 'new') {
+        el.textContent = '🆕 New Arrivals';
+        bc.innerHTML = '<span onclick="setCategory(\'all\',\'all\')">All Products</span> <span class="sep">&rsaquo;</span> <span>New Arrivals</span>';
+    } else if (currentTheme === 'all') {
         el.textContent = 'All Products';
         bc.innerHTML = '<span>All Products</span>';
     } else if (currentSubcat === 'all') {
@@ -287,6 +317,7 @@ function filterAndRender() {
     visibleCount = PAGE_SIZE;  // 重置分页显示数量
     renderedCount = 0;  // 重置已渲染计数，强制全量重建
     filteredProducts = allProducts.filter(p => {
+        const matchSpecial = !currentSpecial || (p.tags && p.tags.includes(currentSpecial));
         const matchTheme = currentTheme === 'all' || (p.theme || '') === currentTheme;
         const matchSubcat = currentSubcat === 'all' || (p.subcategory || '') === currentSubcat;
         const q = searchQuery;
@@ -296,7 +327,7 @@ function filterAndRender() {
             (p.theme || '').toLowerCase().includes(q) ||
             (p.subcategory || '').toLowerCase().includes(q) ||
             (p.description || '').toLowerCase().includes(q);
-        return matchTheme && matchSubcat && matchSearch;
+        return matchSpecial && matchTheme && matchSubcat && matchSearch;
     });
 
     // 过滤掉无图产品
@@ -318,6 +349,7 @@ function filterAndRender() {
     const productsCountEl = document.getElementById('productsCount');
     if (productsCountEl) productsCountEl.textContent = `${filteredProducts.length} products`;
     visibleCount = PAGE_SIZE; // 重置分页显示数量
+    updateNewArrivalsSection();
 
     // Preload first page thumbnails, then render with transition
     const grid = document.getElementById('productsGrid');
@@ -332,6 +364,43 @@ function filterAndRender() {
     } else {
         renderProducts();
     }
+}
+
+// ============ NEW ARRIVALS SECTION ============
+function updateNewArrivalsSection() {
+    const section = document.getElementById('newArrivalsSection');
+    const scroller = document.getElementById('newArrivalsScroller');
+    if (!section || !scroller) return;
+
+    // Only show on "All Products" view (no special filter, no theme/subcat filter, no search)
+    const isAllProductsView = currentTheme === 'all' && currentSubcat === 'all' && !currentSpecial && !searchQuery;
+    if (!isAllProductsView) {
+        section.style.display = 'none';
+        return;
+    }
+
+    const newProducts = allProducts.filter(p => p.tags && p.tags.includes('new') && p.images && p.images.length > 0);
+    if (newProducts.length === 0) {
+        section.style.display = 'none';
+        return;
+    }
+
+    section.style.display = '';
+    scroller.innerHTML = newProducts.map(p => {
+        const imgUrl = p.images && p.images[0] ? p.images[0] : '';
+        const priceText = p.price ? `$${parseFloat(p.price).toFixed(2)}` : '';
+        return `
+        <a href="/product/${(p.sku||'')}/" class="new-arrival-card" onclick="event.stopPropagation()">
+            <div class="new-arrival-img">
+                ${imgUrl ? `<img src="${imgUrl}" alt="${p.name}" width="400" height="400" loading="lazy">` : ''}
+                <span class="tag-new">NEW</span>
+            </div>
+            <div class="new-arrival-info">
+                <div class="new-arrival-name">${p.name || ''}</div>
+                ${priceText ? `<div class="new-arrival-price">${priceText}</div>` : ''}
+            </div>
+        </a>`;
+    }).join('');
 }
 
 // ============ RENDER PRODUCTS ============
