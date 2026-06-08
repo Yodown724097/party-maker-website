@@ -1487,11 +1487,20 @@ def main():
 
     print(f"[3] Category pages: {cat_count} generated")
 
-    # === 5. Add product URLs to sitemap ===
+    # === 5. Add product URLs to sitemap (quality filter: must have name + images + price) ===
+    sitemap_products = 0
+    skipped_products = 0
     for p in products:
-        sitemap_urls.append((f"{SITE_URL}/product/{p['sku']}/", "0.6", "monthly"))
+        has_name = bool((p.get('name') or '').strip())
+        has_images = bool(p.get('images') or [])
+        has_price = bool(p.get('price'))
+        if has_name and has_images and has_price:
+            sitemap_urls.append((f"{SITE_URL}/product/{p['sku']}/", "0.6", "monthly"))
+            sitemap_products += 1
+        else:
+            skipped_products += 1
 
-    print(f"[4] Sitemap URLs: {len(sitemap_urls)} total")
+    print(f"[4] Sitemap URLs: {len(sitemap_urls)} total ({sitemap_products} products, {skipped_products} skipped — need name+image+price)")
 
     # === 6. Generate sitemap.xml ===
     generate_sitemap(sitemap_urls, SITEMAP_FILE)
