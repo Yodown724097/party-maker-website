@@ -502,6 +502,13 @@ BLOG_POST_TEMPLATE = """\
         .blog-post p {{ color: #4A5A3A; line-height: 1.8; margin-bottom: 1rem; }}
         .blog-post ul {{ margin: 0.5rem 0 1rem 1.5rem; color: #4A5A3A; }}
         .blog-post ul li {{ margin-bottom: 0.4rem; }}
+        .blog-figure {{ margin: 1.5rem 0; }}
+        .blog-figure img {{ max-width: 100%; border-radius: 8px; }}
+        .blog-figure figcaption {{ font-size: 0.82rem; color: #7A8A6A; margin-top: 0.4rem; }}
+        .blog-product-links {{ background: #F7F9F5; padding: 1.2rem 1.5rem; border-radius: 8px; margin: 1.5rem 0; }}
+        .blog-product-link {{ padding: 0.5rem 0; border-bottom: 1px solid #D9E0D1; }}
+        .blog-product-link:last-child {{ border-bottom: none; }}
+        .blog-product-link a {{ color: #9CAF88; text-decoration: underline; }}
     </style>
 </head>
 <body>
@@ -1524,11 +1531,12 @@ def generate_blog_posts(blog_json_path, output_dir, css_path="/style.css"):
         canonical = f"{SITE_URL}/blog/{slug}/"
         css = f"/{css_path}" if not css_path.startswith('/') else css_path
 
-        # Build body HTML
+        # Build body HTML (supports h2, p, ul, img, product_links, a types)
         body_parts = []
         for block in post.get('body', []):
             t = block['type']
-            content = escape_html(block['content'])
+            if t in ('h2', 'p', 'ul'):
+                content = escape_html(block['content'])
             if t == 'h2':
                 body_parts.append(f'<h2>{content}</h2>')
             elif t == 'p':
@@ -1536,6 +1544,18 @@ def generate_blog_posts(blog_json_path, output_dir, css_path="/style.css"):
             elif t == 'ul':
                 items = ''.join(f'<li>{escape_html(i.strip())}</li>' for i in content.split(';'))
                 body_parts.append(f'<ul>{items}</ul>')
+            elif t == 'img':
+                src = block.get('src', '')
+                alt = escape_html(block.get('alt', 'Product image'))
+                body_parts.append(f'<figure class="blog-figure"><img src="{src}" alt="{alt}" loading="lazy" decoding="async"><figcaption>{alt}</figcaption></figure>')
+            elif t == 'product_links':
+                items_html = ''.join(
+                    f'<div class="blog-product-link"><strong>{escape_html(i.get("name",""))}</strong> '
+                    f'&mdash; SKU <a href="/product/{escape_html(str(i.get("sku","")))}/">{escape_html(str(i.get("sku","")))}</a> '
+                    f'&middot; ${float(i.get("price",0)):.2f}/unit</div>'
+                    for i in block.get('items', [])
+                )
+                body_parts.append(f'<div class="blog-product-links">{items_html}</div>')
         body_html = '\n'.join(body_parts)
 
         # JSON-LD values

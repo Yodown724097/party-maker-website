@@ -12,68 +12,128 @@
         "content": "Why Lanterns Are the Heart of Ramadan Decor"
       },
       {
-        "type": "p",
-        "content": "Lanterns — or fanoos — are the most iconic symbol of Ramadan and Eid celebrations. For wholesale buyers, they consistently rank among the top-selling categories year after year. A well-curated lantern selection can anchor your entire Ramadan product line and drive repeat purchases from event planners, mosque suppliers, and retail chains."
+        "type": "img",
+        "src": "https://pub-1fd965ab66464286847edcb540254451.r2.dev/641158/01.webp",
+        "alt": "Bronze Moroccan-style Ramadan lantern ornament"
       },
       {
         "type": "p",
-        "content": "We analyzed our 2026 sales data and customer feedback to identify the 7 lantern designs that wholesale buyers are reordering most frequently. Each listing includes the SKU, unit wholesale price, and what makes it a strong seller."
+        "content": "Lanterns — or fanoos — are the most iconic symbol of Ramadan and Eid celebrations. For wholesale buyers, they consistently rank among the top-selling categories year after year. A well-curated lantern selection can anchor your entire Ramadan product line."
+      },
+      {
+        "type": "p",
+        "content": "We analyzed our 2026 sales data to identify the 7 lantern designs that wholesale buyers are reordering most. Each listing includes SKU, wholesale price, and sourcing tips."
       },
       {
         "type": "h2",
-        "content": "1. Bronze Moroccan-Style Lantern — SKU 641158 ($2.28/unit)"
+        "content": "1. Bronze Moroccan-Style Lantern — $2.28"
+      },
+      {
+        "type": "img",
+        "src": "https://pub-1fd965ab66464286847edcb540254451.r2.dev/641158/01.webp",
+        "alt": "Ramadan Lantern Ornament Bronze Color SKU 641158"
       },
       {
         "type": "p",
-        "content": "The bronze Moroccan lantern is the top seller in our ornament category. Its distressed metal finish gives an authentic, handcrafted look that premium retailers love. At $2.28 per unit, it delivers excellent perceived value — retail markup typically reaches $7.99-9.99. Available in 4 color variants (bronze, silver, black, gold), this series alone can fill a retail display."
+        "content": "The top seller. Distressed metal finish gives an authentic handcrafted look. Retail markup $7.99-9.99. Available in 4 color variants — browse the full Lantern section for silver, black, and gold options."
       },
       {
         "type": "h2",
-        "content": "2. Silver & Black Finishes — SKU 641159 ($2.28) & 641160 ($2.28)"
+        "content": "2. Silver & Black Finishes — $2.28 each"
       },
       {
         "type": "p",
-        "content": "The silver and black variants of the Moroccan lantern sell especially well in modern and minimalist home decor markets. European buyers prefer the silver for its elegant, understated look, while Middle Eastern buyers gravitate toward black and gold combinations. Stocking all four colors covers the full market spectrum."
+        "content": "SKU 641159 (Silver) and 641160 (Black) sell well in modern decor markets. European buyers prefer silver; Middle Eastern markets favor black and gold. Stocking all four colors covers the full spectrum."
       },
       {
         "type": "h2",
-        "content": "3. White & Gold Mini Lanterns — SKU 641161 ($0.69) & 641162 ($0.69)"
+        "content": "3. White & Gold Mini Lanterns — $0.69 each"
+      },
+      {
+        "type": "img",
+        "src": "https://pub-1fd965ab66464286847edcb540254451.r2.dev/641161/01.webp",
+        "alt": "White mini Ramadan lantern ornament SKU 641161"
       },
       {
         "type": "p",
-        "content": "These compact lanterns at $0.69/unit are the volume play. Their low price point makes them perfect for party favor bags, table scatter decorations, and budget-friendly retail displays. At this price, retailers can sell them at $2.99 with a 77% margin or bundle 3 for $7.99. The white and gold are the two most ordered colors."
+        "content": "The volume play at $0.69/unit. Perfect for party favor bags and table scatter. Retail at $2.99 (77% margin) or bundle 3 for $7.99. White (641161) and Gold (641162) are the most ordered colors."
       },
       {
         "type": "h2",
-        "content": "4. LED Candle Lantern 9x18cm — SKU 641267 ($1.88)"
+        "content": "4. LED Candle Lantern — $1.88"
       },
       {
         "type": "p",
-        "content": "This LED-lit lantern combines the traditional fanoos shape with modern illumination. At $1.88 wholesale, it hits the sweet spot between affordable and premium. The built-in LED creates ambient lighting that photographs beautifully — critical for online retailers selling on Amazon, Etsy, or Instagram. Packed 12 per carton for efficient shipping."
+        "content": "SKU 641267 combines traditional fanoos shape with LED lighting. The soft illumination photographs beautifully — critical for online retailers on Amazon and Instagram. Packed 12 per carton."
       },
       {
         "type": "h2",
-        "content": "5. Hanging Lantern Decoration — SKU 614110 ($0.34)"
+        "content": "5. Hanging Lantern Decoration — $0.34"
+      },
+      {
+        "type": "img",
+        "src": "https://pub-1fd965ab66464286847edcb540254451.r2.dev/614110/01.webp",
+        "alt": "Ramadan Lantern Hanging Decoration SKU 614110"
       },
       {
         "type": "p",
-        "content": "At just $0.34 per piece, this is the highest-margin lantern in our catalog. These lightweight hanging decorations work as ceiling displays, window accents, or tree ornaments. Because they're compact, you can pack over 1,000 units per carton — per-unit shipping cost is negligible. A $0.34 item that retails at $1.99 gives you an 83% margin."
+        "content": "The highest-margin lantern at $0.34 wholesale. Lightweight — over 1,000 units per carton, so per-unit shipping is minimal. Retail at $1.99 = 83% margin. Ideal for ceiling displays and window accents."
       },
       {
         "type": "h2",
-        "content": "Ordering & Logistics Tips"
+        "content": "Top Lantern SKUs at a Glance"
       },
       {
-        "type": "p",
-        "content": "Lanterns are mostly hollow metal or lightweight plastic, which means they cube out before weighing out in shipping containers. Optimize your order by mixing heavy lanterns (SKU 641158-641160) with lightweight hanging decorations (SKU 614110) to balance container weight. MOQ starts at one carton for stock colors — custom colors or packaging require 600 pcs minimum per design. Most buyers order 2-3 color variants to test their market before scaling up."
+        "type": "product_links",
+        "items": [
+          {
+            "name": "Ramadan Lantern Ornament Bronze",
+            "sku": "641158",
+            "price": 2.28
+          },
+          {
+            "name": "Ramadan Lantern Ornament Silver",
+            "sku": "641159",
+            "price": 2.28
+          },
+          {
+            "name": "Ramadan Lantern Ornament Black",
+            "sku": "641160",
+            "price": 2.28
+          },
+          {
+            "name": "Ramadan Lantern Ornament White",
+            "sku": "641161",
+            "price": 0.69
+          },
+          {
+            "name": "Ramadan Lantern Ornament Gold",
+            "sku": "641162",
+            "price": 0.69
+          },
+          {
+            "name": "EID Candle Lantern LED 9x18cm",
+            "sku": "641267",
+            "price": 1.88
+          },
+          {
+            "name": "Ramadan Lantern Hanging Decoration",
+            "sku": "614110",
+            "price": 0.34
+          }
+        ]
       },
       {
         "type": "h2",
-        "content": "Browse All 57 Lantern Designs"
+        "content": "Ordering & Logistics"
       },
       {
         "type": "p",
-        "content": "This spotlight covered 7 top sellers, but our full lantern collection has 57 designs across Moroccan metal, LED, hanging, and tabletop categories. Visit our Ramadan Lantern section to see the complete range with current wholesale pricing and stock availability."
+        "content": "Lanterns are hollow metal or lightweight plastic — they cube out before weighing out. Mix heavy lanterns with lightweight hanging decorations to balance container costs. MOQ starts at one carton for stock colors. Custom colors or packaging: 600 pcs minimum. Most buyers test 2-3 colors before scaling."
+      },
+      {
+        "type": "p",
+        "content": "Ready to browse the full collection? Visit our <a href=\"/ramadan/lantern/\">Ramadan Lantern category</a> for all 57 designs with current wholesale pricing."
       }
     ]
   },
