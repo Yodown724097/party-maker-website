@@ -767,6 +767,9 @@ def generate_robots(sitemap_url, output_path):
     text = f"""User-agent: *
 Allow: /
 
+# Block query params to prevent duplicate content (product pages served at /product/SKU/)
+Disallow: /*?p=*
+
 Sitemap: {sitemap_url}
 
 # Block AI crawlers from API endpoints
@@ -1406,7 +1409,7 @@ def main():
         '<img src="\'+im+\'" alt="\'+nm.replace(/"/g,\'&quot;\')+\'" width="400" height="400"></a>\':'
         '\'<div class="img-placeholder">--</div>\')+(tg?\'<div class="tag-badges">\'+tg+\'</div>\':\'\')+\'</div>'
         '<div class="product-info">\'+(sk?\'<div class="product-sku">\'+sk+\'</div>\':\'\')+'
-        '\'<a href="/product/\'+sk+\'/" class="product-name">\'+nm+\'</a>'
+        '\'<a href="/product/\'+sk+\'/" class="product-name">\'+nm+\'</a>\'+'
         '\'<div class="product-price">\'+pr+\'</div></div></div>\'}'
         'g.innerHTML=h;})();</script>'
     )

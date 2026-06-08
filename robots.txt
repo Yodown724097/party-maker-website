@@ -1,6 +1,9 @@
 User-agent: *
 Allow: /
 
+# Block query params to prevent duplicate content (product pages served at /product/SKU/)
+Disallow: /*?p=*
+
 Sitemap: https://www.partymaker.cn/sitemap.xml
 
 # Block AI crawlers from API endpoints
