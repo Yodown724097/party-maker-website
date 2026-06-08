@@ -21,6 +21,8 @@ PRODUCTS_JSON = WEBSITE_DIR / "products.json"
 PUBLIC_JSON = WEBSITE_DIR / "products-public.json"
 SITEMAP_FILE = WEBSITE_DIR / "sitemap.xml"
 ROBOTS_FILE = WEBSITE_DIR / "robots.txt"
+BLOG_JSON = WEBSITE_DIR / "blog.json"
+BLOG_DIR = WEBSITE_DIR / "blog"
 
 # Only _costPrice is truly internal; packaging specs are useful for buyers
 INTERNAL_FIELDS = ("_costPrice",)
@@ -449,6 +451,154 @@ CATEGORY_TEMPLATE = """\
 </body>
 </html>"""
 
+# ========== BLOG TEMPLATES ==========
+
+BLOG_POST_TEMPLATE = """\
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{title}</title>
+    <meta name="description" content="{meta_desc}">
+    <link rel="canonical" href="{canonical}">
+    <meta name="robots" content="index, follow">
+    <meta property="og:type" content="article">
+    <meta property="og:title" content="{title}">
+    <meta property="og:description" content="{meta_desc}">
+    <meta property="og:url" content="{canonical}">
+    <meta property="og:image" content="{image}">
+    <meta property="og:site_name" content="Party Maker">
+    <meta property="article:published_time" content="{date_iso}">
+    <meta name="twitter:card" content="summary_large_image">
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🎉</text></svg>">
+    <script type="application/ld+json">
+    {{
+        "@context": "https://schema.org",
+        "@type": "BlogPosting",
+        "headline": {title_json},
+        "description": {desc_json},
+        "image": "{image}",
+        "datePublished": "{date_iso}",
+        "dateModified": "{date_iso}",
+        "author": {{
+            "@type": "Organization",
+            "name": "Party Maker",
+            "url": "https://www.partymaker.cn"
+        }},
+        "publisher": {{
+            "@type": "Organization",
+            "name": "Party Maker",
+            "url": "https://www.partymaker.cn"
+        }}
+    }}
+    </script>
+    <link rel="stylesheet" href="{css_path}">
+    <style>
+        .blog-post {{ max-width: 800px; margin: 2rem auto; padding: 0 1.5rem 4rem; }}
+        .blog-post h1 {{ font-size: 2rem; margin-bottom: 0.5rem; color: #4A5A3A; }}
+        .blog-meta {{ color: #7A8A6A; font-size: 0.85rem; margin-bottom: 2rem; padding-bottom: 1rem; border-bottom: 1px solid #D9E0D1; }}
+        .blog-post h2 {{ font-size: 1.3rem; margin: 2rem 0 0.75rem; color: #4A5A3A; }}
+        .blog-post p {{ color: #4A5A3A; line-height: 1.8; margin-bottom: 1rem; }}
+        .blog-post ul {{ margin: 0.5rem 0 1rem 1.5rem; color: #4A5A3A; }}
+        .blog-post ul li {{ margin-bottom: 0.4rem; }}
+    </style>
+</head>
+<body>
+<header>
+    <div class="header-inner">
+        <a href="/" class="logo">Party <em>Maker</em></a>
+        <nav class="header-nav">
+            <a href="/" class="nav-link">Home</a>
+            <a href="/blog/" class="nav-link">Blog</a>
+        </nav>
+    </div>
+</header>
+<article class="blog-post">
+    <h1>{h1}</h1>
+    <div class="blog-meta">{date} &middot; {category} &middot; Party Maker</div>
+    {body_html}
+</article>
+<footer>
+    <div class="footer-inner">
+        <div>
+            <div class="footer-brand">Party <em>Maker</em></div>
+            <small>Wholesale Party Supplies &mdash; Yiwu, China</small>
+        </div>
+        <div class="footer-links">
+            <a href="/">Home</a>
+            <a href="/blog/">Blog</a>
+            <a href="mailto:info@partymaker.cn">Contact</a>
+        </div>
+    </div>
+    <div class="footer-copy">&copy; 2026 Party Maker. All rights reserved. | <a href="mailto:info@partymaker.cn">info@partymaker.cn</a></div>
+</footer>
+</body>
+</html>"""
+
+BLOG_INDEX_TEMPLATE = """\
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{title}</title>
+    <meta name="description" content="{meta_desc}">
+    <link rel="canonical" href="{canonical}">
+    <meta name="robots" content="index, follow">
+    <meta property="og:type" content="website">
+    <meta property="og:title" content="{title}">
+    <meta property="og:description" content="{meta_desc}">
+    <meta property="og:url" content="{canonical}">
+    <meta property="og:site_name" content="Party Maker">
+    <meta name="twitter:card" content="summary_large_image">
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🎉</text></svg>">
+    <link rel="stylesheet" href="{css_path}">
+    <style>
+        .blog-index {{ max-width: 800px; margin: 2rem auto; padding: 0 1.5rem 4rem; }}
+        .blog-index h1 {{ font-size: 2rem; margin-bottom: 0.5rem; color: #4A5A3A; }}
+        .blog-index .intro {{ color: #5A6A4A; margin-bottom: 2rem; line-height: 1.7; }}
+        .blog-card {{ padding: 1.5rem 0; border-bottom: 1px solid #D9E0D1; }}
+        .blog-card:last-child {{ border-bottom: none; }}
+        .blog-card h2 {{ font-size: 1.15rem; margin-bottom: 0.3rem; }}
+        .blog-card h2 a {{ color: #4A5A3A; text-decoration: none; }}
+        .blog-card h2 a:hover {{ color: #9CAF88; }}
+        .blog-card .card-meta {{ color: #7A8A6A; font-size: 0.82rem; margin-bottom: 0.3rem; }}
+        .blog-card .card-desc {{ color: #5A6A4A; font-size: 0.9rem; line-height: 1.6; }}
+    </style>
+</head>
+<body>
+<header>
+    <div class="header-inner">
+        <a href="/" class="logo">Party <em>Maker</em></a>
+        <nav class="header-nav">
+            <a href="/" class="nav-link">Home</a>
+            <a href="/blog/" class="nav-link">Blog</a>
+        </nav>
+    </div>
+</header>
+<main class="blog-index">
+    <h1>{h1}</h1>
+    <p class="intro">{intro}</p>
+    {posts_html}
+</main>
+<footer>
+    <div class="footer-inner">
+        <div>
+            <div class="footer-brand">Party <em>Maker</em></div>
+            <small>Wholesale Party Supplies &mdash; Yiwu, China</small>
+        </div>
+        <div class="footer-links">
+            <a href="/">Home</a>
+            <a href="/blog/">Blog</a>
+            <a href="mailto:info@partymaker.cn">Contact</a>
+        </div>
+    </div>
+    <div class="footer-copy">&copy; 2026 Party Maker. All rights reserved. | <a href="mailto:info@partymaker.cn">info@partymaker.cn</a></div>
+</footer>
+</body>
+</html>"""
+
 
 def slugify(text):
     """Convert text to URL-safe slug."""
@@ -668,42 +818,50 @@ def generate_category_page(theme, subcategory, products, all_products, css_path=
 
     canonical = f"{SITE_URL}{slug}"
 
-    # Title - enriched for Ramadan
+    # Title - enriched for all themes
     if is_ramadan:
         if subcategory:
             title = f"Wholesale Ramadan & Eid {subcategory} Decorations | {SITE_NAME}"
         else:
             title = f"Wholesale Ramadan & Eid Decorations & Party Supplies | {SITE_NAME}"
+    elif subcategory:
+        title = f"Wholesale {theme} {subcategory} Decorations | Party Supplies | {SITE_NAME}"
     else:
-        title = f"{page_name} Wholesale Products | {SITE_NAME}"
+        title = f"Wholesale {theme} Decorations & Party Supplies | {SITE_NAME}"
 
-    # Meta description - enriched for Ramadan
+    # Meta description - enriched for all themes
     if is_ramadan:
         if subcategory:
             desc_text = f"Browse {len(products)} wholesale Ramadan & Eid {subcategory} decorations. Islamic party supplies factory-direct from Yiwu. Flexible MOQ, custom packaging, global shipping."
         else:
             desc_text = f"Browse {len(products)} wholesale Ramadan & Eid decorations and Islamic party supplies. Muslim festival decorations factory-direct from Yiwu. Flexible MOQ, custom packaging, global shipping."
+    elif subcategory:
+        desc_text = f"Shop {len(products)} wholesale {theme} {subcategory} decorations and party supplies. Factory-direct pricing from Yiwu, China. Low MOQ, custom packaging available, worldwide shipping."
     else:
-        desc_text = f"Browse {len(products)} wholesale {page_name} products. Factory-direct pricing from Yiwu, China. Flexible MOQ, global shipping."
+        desc_text = f"Browse our complete {theme} wholesale party supplies collection — {len(products)} products. Factory-direct prices from Yiwu, China. No minimum order on stock items, custom orders from 600 pcs."
     meta_desc = escape_html(desc_text[:160])
 
     # Keywords
     kw_parts = [theme]
     if subcategory:
         kw_parts.append(subcategory)
-    kw_parts.extend(["wholesale", "decorations", "party supplies", "Yiwu factory"])
+    kw_parts.extend(["wholesale", "decorations", "party supplies", "Yiwu factory", "China manufacturer"])
     if is_ramadan:
         kw_parts.extend(["Eid", "Islamic", "Muslim", "festival decorations", "Eid al-Fitr", "Eid al-Adha"])
+    else:
+        kw_parts.extend([f"{theme} decorations", f"{theme} party supplies", "bulk purchase", "custom packaging"])
     keywords = ", ".join(dict.fromkeys(kw_parts))
 
-    # H1 - enriched for Ramadan
+    # H1
     if is_ramadan:
         if subcategory:
             h1_text = f"Ramadan & Eid {subcategory} Decorations"
         else:
             h1_text = "Ramadan & Eid Decorations & Party Supplies"
+    elif subcategory:
+        h1_text = f"Wholesale {theme} {subcategory}"
     else:
-        h1_text = page_name
+        h1_text = f"Wholesale {theme} Party Supplies & Decorations"
 
     # BreadcrumbList JSON-LD (generated in Python to avoid format conflicts)
     theme_slug_str = slugify(theme)
@@ -1341,6 +1499,105 @@ header {
 """
 
 
+# ========== BLOG GENERATION ==========
+
+def generate_blog_posts(blog_json_path, output_dir, css_path="/style.css"):
+    """Generate blog post pages and blog index from blog.json."""
+    if not blog_json_path.exists():
+        print("[Blog] No blog.json found, skipping")
+        return []
+
+    with open(blog_json_path, 'r', encoding='utf-8') as f:
+        posts = json.load(f)
+
+    output_dir.mkdir(parents=True, exist_ok=True)
+    blog_urls = []
+    post_count = 0
+
+    for post in posts:
+        slug = post['slug']
+        title = post['title']
+        meta_desc = post['meta_desc'][:160]
+        date = post['date']
+        category = post['category']
+        image = post.get('image', '')
+        canonical = f"{SITE_URL}/blog/{slug}/"
+        css = f"/{css_path}" if not css_path.startswith('/') else css_path
+
+        # Build body HTML
+        body_parts = []
+        for block in post.get('body', []):
+            t = block['type']
+            content = escape_html(block['content'])
+            if t == 'h2':
+                body_parts.append(f'<h2>{content}</h2>')
+            elif t == 'p':
+                body_parts.append(f'<p>{content}</p>')
+            elif t == 'ul':
+                items = ''.join(f'<li>{escape_html(i.strip())}</li>' for i in content.split(';'))
+                body_parts.append(f'<ul>{items}</ul>')
+        body_html = '\n'.join(body_parts)
+
+        # JSON-LD values
+        title_json = json_str(title)
+        desc_json = json_str(meta_desc)
+
+        html = BLOG_POST_TEMPLATE.format(
+            title=escape_html(title),
+            meta_desc=meta_desc,
+            canonical=canonical,
+            css_path=css,
+            h1=escape_html(title),
+            date=date,
+            category=category,
+            image=image,
+            date_iso=date,
+            body_html=body_html,
+            title_json=title_json,
+            desc_json=desc_json,
+        )
+
+        post_dir = output_dir / slug
+        post_dir.mkdir(parents=True, exist_ok=True)
+        (post_dir / "index.html").write_text(html, encoding='utf-8')
+        blog_urls.append((canonical, "0.7", "monthly"))
+        post_count += 1
+
+    # Generate blog index page
+    posts_sorted = sorted(posts, key=lambda p: p['date'], reverse=True)
+    posts_html_parts = []
+    for post in posts_sorted:
+        date = post['date']
+        title = post['title']
+        slug = post['slug']
+        desc = post['meta_desc'][:200]
+        category = post['category']
+        posts_html_parts.append(
+            f'<div class="blog-card">'
+            f'<div class="card-meta">{date} &middot; {category}</div>'
+            f'<h2><a href="/blog/{slug}/">{escape_html(title)}</a></h2>'
+            f'<p class="card-desc">{escape_html(desc)}</p>'
+            f'</div>'
+        )
+
+    index_html = BLOG_INDEX_TEMPLATE.format(
+        title=f"Party Maker Blog — Wholesale Party Supplies Guides & Tips",
+        meta_desc=f"Expert guides for wholesale party supplies buyers. Import tips, market trends, shipping advice, and business strategies for party decoration importers.",
+        canonical=f"{SITE_URL}/blog/",
+        css_path="/style.css",
+        h1="Party Maker Blog",
+        intro="Expert guides and insights for wholesale party supplies buyers. Import tips, market trends, and business strategies to help you source better and sell more.",
+        posts_html='\n'.join(posts_html_parts),
+    )
+
+    (output_dir / "index.html").write_text(index_html, encoding='utf-8')
+    blog_urls.append((f"{SITE_URL}/blog/", "0.8", "weekly"))
+
+    print(f"[Blog] {post_count} posts + index generated")
+
+    return blog_urls
+
+
 def main():
     import sys
     demo_mode = '--demo' in sys.argv
@@ -1487,6 +1744,11 @@ def main():
 
     print(f"[3] Category pages: {cat_count} generated")
 
+    # === 4. Generate blog pages ===
+    blog_urls = generate_blog_posts(BLOG_JSON, BLOG_DIR)
+    sitemap_urls.extend(blog_urls)
+    print(f"[4] Blog: {len(blog_urls)} pages added to sitemap")
+
     # === 5. Add product URLs to sitemap (quality filter: must have name + images + price) ===
     sitemap_products = 0
     skipped_products = 0
@@ -1510,7 +1772,7 @@ def main():
     generate_robots(f"{SITE_URL}/sitemap.xml", ROBOTS_FILE)
     print(f"[6] robots.txt: updated")
 
-    print(f"\nDone! Generated {count} product pages + {cat_count} category pages.")
+    print(f"\nDone! Generated {count} product pages + {cat_count} category pages + {len(blog_urls)} blog pages.")
     if demo_mode:
         print("  (DEMO MODE: only 3 product pages generated)")
 
