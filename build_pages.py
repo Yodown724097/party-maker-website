@@ -111,6 +111,7 @@ PRODUCT_TEMPLATE = """\
         </div>
         <nav class="header-nav">
             <a href="/" class="nav-link">Home</a>
+            <a href="/blog/" class="nav-link">Blog</a>
         </nav>
         <div class="social-links">
             <a href="https://x.com/partymakercn" class="social-link" target="_blank" title="X (Twitter)">
@@ -395,6 +396,7 @@ CATEGORY_TEMPLATE = """\
         </div>
         <nav class="header-nav">
             <a href="/" class="nav-link">Home</a>
+            <a href="/blog/" class="nav-link">Blog</a>
         </nav>
         <div class="social-links">
             <a href="https://x.com/partymakercn" class="social-link" target="_blank" title="X (Twitter)">
@@ -519,6 +521,7 @@ BLOG_POST_TEMPLATE = """\
         <nav class="header-nav">
             <a href="/" class="nav-link">Home</a>
             <a href="/blog/" class="nav-link">Blog</a>
+            <a href="/blog/" class="nav-link">Blog</a>
         </nav>
     </div>
 </header>
@@ -584,6 +587,7 @@ BLOG_INDEX_TEMPLATE = """\
         <a href="/" class="logo">Party <em>Maker</em></a>
         <nav class="header-nav">
             <a href="/" class="nav-link">Home</a>
+            <a href="/blog/" class="nav-link">Blog</a>
             <a href="/blog/" class="nav-link">Blog</a>
         </nav>
     </div>
