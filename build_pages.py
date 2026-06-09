@@ -503,18 +503,12 @@ BLOG_POST_TEMPLATE = """\
         .blog-post ul {{ margin: 0.5rem 0 1rem 1.5rem; color: #4A5A3A; }}
         .blog-post ul li {{ margin-bottom: 0.4rem; }}
         .blog-figure {{ margin: 1.5rem 0; }}
-        .blog-figure img {{ max-width: 100%; border-radius: 8px; }}
+        .blog-figure img {{ max-width: 400px; border-radius: 8px; }}
         .blog-figure figcaption {{ font-size: 0.82rem; color: #7A8A6A; margin-top: 0.4rem; }}
         .blog-product-links {{ background: #F7F9F5; padding: 1.2rem 1.5rem; border-radius: 8px; margin: 1.5rem 0; }}
         .blog-product-link {{ padding: 0.5rem 0; border-bottom: 1px solid #D9E0D1; }}
         .blog-product-link:last-child {{ border-bottom: none; }}
         .blog-product-link a {{ color: #9CAF88; text-decoration: underline; }}
-        .blog-toc {{ background: #F7F9F5; border-left: 3px solid #9CAF88; padding: 1rem 1.3rem; margin: 1.5rem 0; border-radius: 0 8px 8px 0; }}
-        .blog-toc h3 {{ font-size: 0.9rem; color: #4A5A3A; margin-bottom: 0.6rem; text-transform: uppercase; letter-spacing: 0.05em; }}
-        .blog-toc ul {{ list-style: none; margin: 0; }}
-        .blog-toc li {{ padding: 0.25rem 0; }}
-        .blog-toc li a {{ color: #5A6A4A; text-decoration: none; font-size: 0.88rem; }}
-        .blog-toc li a:hover {{ color: #9CAF88; }}
         h2 {{ scroll-margin-top: 1rem; }}
     </style>
 </head>
@@ -531,7 +525,6 @@ BLOG_POST_TEMPLATE = """\
 <article class="blog-post">
     <h1>{h1}</h1>
     <div class="blog-meta">{date} &middot; {category} &middot; Party Maker</div>
-    {toc_html}
     {body_html}
 </article>
 <footer>
@@ -572,18 +565,14 @@ BLOG_INDEX_TEMPLATE = """\
     <style>
         .blog-index {{ max-width: 800px; margin: 2rem auto; padding: 0 1.5rem 4rem; }}
         .blog-index h1 {{ font-size: 2rem; margin-bottom: 0.3rem; color: #4A5A3A; }}
-        .blog-index .intro {{ color: #5A6A4A; margin-bottom: 1.5rem; line-height: 1.7; }}
-        .cat-pills-nav {{ display: flex; gap: 0.5rem; flex-wrap: wrap; margin-bottom: 2rem; }}
-        .cat-pill {{ background: #E8EEE3; color: #4E5E42; border: none; padding: 0.35rem 0.9rem; border-radius: 20px; font-size: 0.82rem; cursor: pointer; font-family: inherit; }}
-        .cat-pill:hover {{ background: #9CAF88; color: #fff; }}
-        .blog-cat-section {{ margin-bottom: 2.5rem; }}
-        .cat-heading {{ font-size: 1.1rem; color: #4A5A3A; border-bottom: 2px solid #9CAF88; padding-bottom: 0.4rem; margin-bottom: 1rem; }}
+        .blog-index .intro {{ color: #5A6A4A; margin-bottom: 2rem; line-height: 1.7; }}
         .blog-card {{ padding: 1.2rem 0; border-bottom: 1px solid #D9E0D1; }}
         .blog-card:last-child {{ border-bottom: none; }}
-        .blog-card h2 {{ font-size: 1.1rem; margin-bottom: 0.2rem; }}
+        .blog-card h2 {{ font-size: 1.1rem; margin: 0.25rem 0; }}
         .blog-card h2 a {{ color: #4A5A3A; text-decoration: none; }}
         .blog-card h2 a:hover {{ color: #9CAF88; }}
         .card-date {{ color: #7A8A6A; font-size: 0.78rem; }}
+        .card-cat {{ color: #9CAF88; font-size: 0.78rem; }}
         .card-desc {{ color: #5A6A4A; font-size: 0.88rem; line-height: 1.6; margin: 0.3rem 0; }}
         .card-read {{ color: #9CAF88; font-size: 0.85rem; text-decoration: none; font-weight: 500; }}
         .card-read:hover {{ text-decoration: underline; }}
@@ -602,8 +591,7 @@ BLOG_INDEX_TEMPLATE = """\
 <main class="blog-index">
     <h1>{h1}</h1>
     <p class="intro">{intro}</p>
-    <nav class="cat-pills-nav">{cat_pills}</nav>
-    {cat_sections}
+    {posts_html}
 </main>
 <footer>
     <div class="footer-inner">
@@ -1610,45 +1598,23 @@ def generate_blog_posts(blog_json_path, output_dir, css_path="/style.css"):
         blog_urls.append((canonical, "0.7", "monthly"))
         post_count += 1
 
-    # Generate blog index page with category sections
+    # Generate blog index page
     posts_sorted = sorted(posts, key=lambda p: p['date'], reverse=True)
-    
-    # Group by category
-    from collections import OrderedDict
-    cat_groups = OrderedDict()
+    posts_html_parts = []
     for post in posts_sorted:
-        cat = post.get('category', 'General')
-        cat_groups.setdefault(cat, []).append(post)
-    
-    cat_sections = []
-    for cat, cat_posts in cat_groups.items():
-        cat_slug = cat.lower().replace(' ', '-')
-        cat_posts_html = []
-        for post in cat_posts:
-            date = post['date']
-            title = post['title']
-            slug = post['slug']
-            desc = post['meta_desc'][:200]
-            cat_posts_html.append(
-                f'<article class="blog-card">'
-                f'<time class="card-date">{date}</time>'
-                f'<h2><a href="/blog/{slug}/">{escape_html(title)}</a></h2>'
-                f'<p class="card-desc">{escape_html(desc)}</p>'
-                f'<a href="/blog/{slug}/" class="card-read">Read more &rarr;</a>'
-                f'</article>'
-            )
-        cat_sections.append(
-            f'<section class="blog-cat-section" id="cat-{cat_slug}">'
-            f'<h2 class="cat-heading">{escape_html(cat)}</h2>'
-            f'{"".join(cat_posts_html)}'
-            f'</section>'
+        date = post['date']
+        title = post['title']
+        slug = post['slug']
+        desc = post['meta_desc'][:200]
+        category = post['category']
+        posts_html_parts.append(
+            f'<article class="blog-card">'
+            f'<time class="card-date">{date}</time> &middot; <span class="card-cat">{escape_html(category)}</span>'
+            f'<h2><a href="/blog/{slug}/">{escape_html(title)}</a></h2>'
+            f'<p class="card-desc">{escape_html(desc)}</p>'
+            f'<a href="/blog/{slug}/" class="card-read">Read more &rarr;</a>'
+            f'</article>'
         )
-
-    # Category filter pills
-    cat_pills = ''.join(
-        f'<button class="cat-pill" onclick="document.getElementById(\'cat-{c.lower().replace(" ","-")}\').scrollIntoView()">{escape_html(c)} ({len(p)})</button>'
-        for c, p in cat_groups.items()
-    )
 
     index_html = BLOG_INDEX_TEMPLATE.format(
         title=f"Party Maker Blog — Wholesale Party Supplies Guides & Tips",
@@ -1657,8 +1623,7 @@ def generate_blog_posts(blog_json_path, output_dir, css_path="/style.css"):
         css_path="/style.css",
         h1="Party Maker Blog",
         intro="Expert guides, product spotlights, and sourcing strategies for wholesale party supplies buyers.",
-        cat_pills=cat_pills,
-        cat_sections='\n'.join(cat_sections),
+        posts_html='\n'.join(posts_html_parts),
     )
 
     (output_dir / "index.html").write_text(index_html, encoding='utf-8')
