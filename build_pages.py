@@ -336,6 +336,13 @@ if (window.location.hash) {{
     window.location.hash = '';
 }}
 </script>
+<!-- 小满 Okki CRM 访客追踪 & 询盘表单 -->
+<script>
+  window.okkiConfigs = window.okkiConfigs || [];
+  function okkiAdd() {{ okkiConfigs.push(arguments); }};
+  okkiAdd("analytics", {{ siteId: "9027-3494", gId: "UA-187433997-46" }});
+</script>
+<script async src="//tfile.xiaoman.cn/okki/analyze.js?id=9027-3494-UA-187433997-46"></script>
 </body>
 </html>"""
 
@@ -450,6 +457,13 @@ CATEGORY_TEMPLATE = """\
 <style>
 {detail_css}
 </style>
+<!-- 小满 Okki CRM 访客追踪 & 询盘表单 -->
+<script>
+  window.okkiConfigs = window.okkiConfigs || [];
+  function okkiAdd() {{ okkiConfigs.push(arguments); }};
+  okkiAdd("analytics", {{ siteId: "9027-3494", gId: "UA-187433997-46" }});
+</script>
+<script async src="//tfile.xiaoman.cn/okki/analyze.js?id=9027-3494-UA-187433997-46"></script>
 </body>
 </html>"""
 
@@ -544,6 +558,13 @@ BLOG_POST_TEMPLATE = """\
     </div>
     <div class="footer-copy">&copy; 2026 Party Maker. All rights reserved. | <a href="mailto:info@partymaker.cn">info@partymaker.cn</a></div>
 </footer>
+<!-- 小满 Okki CRM 访客追踪 & 询盘表单 -->
+<script>
+  window.okkiConfigs = window.okkiConfigs || [];
+  function okkiAdd() {{ okkiConfigs.push(arguments); }};
+  okkiAdd("analytics", {{ siteId: "9027-3494", gId: "UA-187433997-46" }});
+</script>
+<script async src="//tfile.xiaoman.cn/okki/analyze.js?id=9027-3494-UA-187433997-46"></script>
 </body>
 </html>"""
 
@@ -611,6 +632,13 @@ BLOG_INDEX_TEMPLATE = """\
     </div>
     <div class="footer-copy">&copy; 2026 Party Maker. All rights reserved. | <a href="mailto:info@partymaker.cn">info@partymaker.cn</a></div>
 </footer>
+<!-- 小满 Okki CRM 访客追踪 & 询盘表单 -->
+<script>
+  window.okkiConfigs = window.okkiConfigs || [];
+  function okkiAdd() {{ okkiConfigs.push(arguments); }};
+  okkiAdd("analytics", {{ siteId: "9027-3494", gId: "UA-187433997-46" }});
+</script>
+<script async src="//tfile.xiaoman.cn/okki/analyze.js?id=9027-3494-UA-187433997-46"></script>
 </body>
 </html>"""
 
