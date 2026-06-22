@@ -169,6 +169,18 @@ PRODUCT_TEMPLATE = """\
         </div>
     </div>
 
+    {specs_html}
+    {procurement_html}
+    {scenarios_html}
+
+    <h2 class="section-title">&#9670; Ordering Information</h2>
+    <div class="ordering-info">
+        <p><strong>MOQ:</strong> No minimum for spot goods. Custom orders from 600 pcs.</p>
+        <p><strong>Customization:</strong> Private labeling, custom packaging, and color/size variations available.</p>
+        <p><strong>Shipping:</strong> Air freight (5–10 days) and sea freight (20–35 days) to worldwide ports.</p>
+        <p><strong>Payment:</strong> T/T, L/C, Western Union. Sample orders available before bulk purchase.</p>
+    </div>
+
     <div class="related-products">
         <h2>More {subcategory} Products</h2>
         <div class="products-grid">
@@ -773,7 +785,58 @@ def generate_product_page(product, all_products, css_path="/style.css"):
     specs_html = ''
     if specs:
         rows = ''.join(f'<tr><td class="spec-label">{label}</td><td class="spec-value">{val}</td></tr>' for label, val in specs)
-        specs_html = f'<div class="detail-specs"><h3>Packaging Details</h3><table class="specs-table">{rows}</table></div>'
+        specs_html = f'<h2 class="section-title">&#9670; Product Specifications</h2><table class="specs-table">{rows}</table>'
+
+    # Procurement Analysis
+    procurement_html = ''
+    try:
+        price_f = float(price)
+        if price_f > 0:
+            retail_low = round(price_f * 2.8, 2)
+            retail_high = round(price_f * 3.5, 2)
+            margin = round((retail_high - price_f) / retail_high * 100)
+            rows = f'<tr><td class="spec-label">Wholesale Price</td><td class="spec-value">${price}</td></tr>'
+            rows += f'<tr><td class="spec-label">Suggested Retail</td><td class="spec-value">${retail_low} – ${retail_high}</td></tr>'
+            rows += f'<tr><td class="spec-label">Retail Margin</td><td class="spec-value">~{margin}%</td></tr>'
+            if pcs_per_ctn and pcs_per_ctn > 0:
+                ctn_value = pcs_per_ctn * price_f
+                rows += f'<tr><td class="spec-label">Carton Value</td><td class="spec-value">${ctn_value:,.0f} ({int(pcs_per_ctn)} pcs)</td></tr>'
+            if cbm and cbm > 0 and pcs_per_ctn and pcs_per_ctn > 0:
+                units_per_cbm = int(pcs_per_ctn / cbm)
+                rows += f'<tr><td class="spec-label">Units per CBM</td><td class="spec-value">~{units_per_cbm}</td></tr>'
+            procurement_html = f'<h2 class="section-title">&#9670; Procurement Analysis</h2><table class="specs-table">{rows}</table>'
+    except Exception:
+        pass
+
+    # Usage Scenarios
+    SUBSCENARIOS = {
+        'Garland': 'Draped across tables, walls, doorways, or ceilings. Ideal for banquet halls, restaurant decor, and retail window displays.',
+        'Deco-Wood': 'Wall-mounted displays, table centerpieces, shelf accents. Perfect for home decor stores, gift shops, and cultural retailers.',
+        'LED Light': 'Ambient lighting for festive tables, window displays, and event spaces. Popular with hospitality and event venues.',
+        'Lantern': 'Tabletop decor, hanging installations, retail seasonal displays. Traditional celebration staple for importers and wholesalers.',
+        'Tablecloth': 'Iftar table settings, restaurant dining, event catering. Bulk-bought by hospitality suppliers and rental services.',
+        'Backdrop': 'Photo booth backgrounds, stage decor, retail display walls. Used by event planners and party supply retailers.',
+        'Party Set': 'Complete celebration kits for retailers and event companies. Ready-to-display packaging ideal for retail shelves.',
+        'Paper Plate': 'Disposable tableware for large gatherings and events. Wholesale bulk packs for catering and event supply.',
+        'Napkin': 'Coordinated table settings for dinners and celebrations. Pair with matching tablecloths and plates.',
+        'Cup': 'Disposable cups for beverage service at large gatherings. Event catering and restaurant supply.',
+        'Picks': 'Cupcake toppers, food decoration picks, dessert accents. Used by bakeries and catering services.',
+        'Straw': 'Decorative straws for drinks and party beverages. Food service and catering supply.',
+        'Box': 'Gift boxes, favor boxes, packaging for giveaways. Retail gift shops and corporate event supply.',
+        'Bag': 'Party favor bags, gift bags for celebrations. Retail packaging and event supply.',
+        'Wrapping': 'Gift wrapping paper and decoration wrap for presents. Retail gift shops and party supply stores.',
+        'Balloon': 'Party balloon displays, celebration arches, event staging. Event planners, party rental companies, and retail stores.',
+        'Balloon-acce': 'Balloon accessories for professional installations. Balloon artists and event decorators.',
+        'Balloon-foil': 'Foil balloons for themed celebrations and retail party supply stores.',
+        'Balloon-kit': 'Complete balloon decoration kits for events and celebrations.',
+        'Deco-Hanging': 'Hanging decorations for ceilings, doorways, and event spaces. Retail display and event planning.',
+        'Deco-Table': 'Tabletop decorations and centerpieces for dinners and retail seasonal displays.',
+        'Deco': 'General decorations suitable for multi-purpose event styling and retail display.',
+        'General': 'Versatile party supplies for wholesale distributors and retail stores.',
+        'Other': 'Multi-purpose celebration supplies for diverse event applications.',
+    }
+    scenario_text = SUBSCENARIOS.get(subcategory, f'Versatile {theme.lower()} decoration for retail display, event setup, and wholesale distribution.')
+    scenarios_html = f'<h2 class="section-title">&#9670; Usage Scenarios</h2><div class="scenarios-box"><p>{scenario_text}</p></div>'
 
     # Related products (same subcategory, exclude self, max 8)
     related = [p for p in all_products
@@ -830,6 +893,8 @@ def generate_product_page(product, all_products, css_path="/style.css"):
         thumbs_html=thumbs_html,
         tags_html=tags_html,
         specs_html=specs_html,
+        procurement_html=procurement_html,
+        scenarios_html=scenarios_html,
         related_html=related_html,
         css_path=css_path,
         detail_css=DETAIL_CSS,
