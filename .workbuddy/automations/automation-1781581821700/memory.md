@@ -1,10 +1,10 @@
 # 每日产品博文自动化 — 执行记录
 
-## 2026-06-16: Deco-Hanging Product Spotlight
-- **子分类**: Ramadan/Deco-Hanging (81 products)
-- **Slug**: top-ramadan-hanging-decorations-wholesale-2026
-- **SKUs**: 8 (642030, 614109, 614097, 614098, 613098, 613097, 614094, 642087)
-- **价格区间**: $0.27 - $4.92
+## 2026-06-18: General Deco Product Spotlight
+- **子分类**: Ramadan/Deco (92 products)
+- **Slug**: top-ramadan-general-decorations-wholesale-2026
+- **SKUs**: 8 (631780, 631134, 631133, 629106, 642194, 613081, 642179, 642090)
+- **价格区间**: $0.17 - $4.98
 - **状态**: 已生成、构建、部署
 
 ## 覆盖进度
@@ -14,8 +14,8 @@
 - ✅ Deco-Table (73 products)
 - ✅ Deco-Wood (111 products)
 - ✅ Deco-Hanging (81 products)
-- ⬜ Deco (92 products) — next candidate
-- ⬜ Food Storage (64 products)
+- ✅ Deco (92 products)
+- ⬜ Food Storage (64 products) — next candidate
 - ⬜ Bag (45 products)
 - ⬜ Wrapping (26 products)
 - ⬜ Box (24 products)

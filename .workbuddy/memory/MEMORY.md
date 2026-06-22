@@ -19,6 +19,13 @@
 - Chrome works, some Edge instances fail — likely proxy/VPN/DNS routing issue
 - R2 public access domain may be intermittently blocked in China
 
+## Blog Coverage Progress (as of 2026-06-18)
+- 14 total blog posts generated
+- ✅ Bunting (17p) | ✅ Lantern (64p) | ✅ LED Light (184p) | ✅ Deco-Table (73p)
+- ✅ Deco-Wood (111p) | ✅ Deco-Hanging (81p) | ✅ Deco (92p)
+- ⬜ Food Storage (64p) | ⬜ Bag (45p) | ⬜ Wrapping (26p) | ⬜ Box (24p)
+- ⬜ Backdrop (17p) + 20 more small subcategories
+
 ## Build System Notes
 - `build_pages.py` generates: product pages, category pages, sitemap.xml, robots.txt, products-public.json
 - `fp-render` inline script in index.html has JS syntax bug (missing `+` operator between string concatenations) — fixed 2026-06-05
