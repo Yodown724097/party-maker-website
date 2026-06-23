@@ -1885,8 +1885,9 @@ def main():
             new_cache['__asset_hash_raw__'] = new_asset_hash
     except Exception:
         pass
-    index_html = re.sub(r'app\.js\?v=\d+', f'app.js?v={cache_ver}', index_html)
-    index_html = re.sub(r'style\.css\?v=\d+', f'style.css?v={cache_ver}', index_html)
+    # Cache buster replacement — ensure absolute paths (/style.css, /app.js) so fallback works
+    index_html = re.sub(r'(?:/)?app\.js\?v=[^\"\s]+', f'/app.js?v={cache_ver}', index_html)
+    index_html = re.sub(r'(?:/)?style\.css\?v=[^\"\s]+', f'/style.css?v={cache_ver}', index_html)
     index_file.write_text(index_html, encoding='utf-8')
     print(f"[1c] index.html: embedded data injected, cache buster v={cache_ver}")
 
