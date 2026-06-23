@@ -23,6 +23,13 @@ SITEMAP_FILE = WEBSITE_DIR / "sitemap.xml"
 ROBOTS_FILE = WEBSITE_DIR / "robots.txt"
 BLOG_JSON = WEBSITE_DIR / "blog.json"
 BLOG_DIR = WEBSITE_DIR / "blog"
+BUILD_CACHE = WEBSITE_DIR / ".build_cache.json"
+# Product fields that affect HTML output (hash these to detect changes)
+HASH_FIELDS = (
+    "name", "price", "description", "seo_desc", "theme", "subcategory",
+    "images", "tags", "_unitSize", "_pcsPerCtn", "_ctnL", "_ctnW", "_ctnH",
+    "_cbm", "_nw", "_gw",
+)
 
 # Only _costPrice is truly internal; packaging specs are useful for buyers
 INTERNAL_FIELDS = ("_costPrice",)
@@ -1016,15 +1023,39 @@ def generate_category_page(theme, subcategory, products, all_products, css_path=
     return page_html
 
 
-def generate_sitemap(urls, output_path):
-    """Generate sitemap.xml."""
+def generate_sitemap(urls, output_path, changed_skus=None):
+    """Generate sitemap.xml with smart lastmod — only updates for changed/new URLs."""
+    from datetime import datetime, timezone
     today = datetime.now(timezone.utc).strftime('%Y-%m-%d')
+
+    # Read previous sitemap to preserve lastmod for unchanged URLs
+    prev_lastmod = {}
+    if output_path.exists() and changed_skus is not None:
+        prev_text = output_path.read_text(encoding='utf-8')
+        for m in re.finditer(r'<loc>([^<]+)</loc>\s*<lastmod>([^<]+)</lastmod>', prev_text, re.DOTALL):
+            prev_lastmod[m.group(1)] = m.group(2)
+
     xml_lines = ['<?xml version="1.0" encoding="UTF-8"?>',
                  '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">']
     for loc, priority, changefreq in urls:
-        xml_lines.append(f'  <url><loc>{loc}</loc><lastmod>{today}</lastmod>'
+        # Determine lastmod: use today if this URL belongs to a changed product, else keep previous
+        if changed_skus is not None:
+            # Check if this URL is for a changed product
+            m = re.match(r'https://www\.partymaker\.cn/product/(\w+)/', loc)
+            if m:
+                sku = m.group(1)
+                lm = today if sku in changed_skus else prev_lastmod.get(loc, today)
+            else:
+                # Category/home/blog pages: only update if there are actual changes
+                # For now, update category pages only if any product in that category changed
+                lm = prev_lastmod.get(loc, today)
+        else:
+            lm = today
+
+        xml_lines.append(f'  <url><loc>{loc}</loc><lastmod>{lm}</lastmod>'
                         f'<changefreq>{changefreq}</changefreq><priority>{priority}</priority></url>')
     xml_lines.append('</urlset>')
+
     output_path.write_text('\n'.join(xml_lines), encoding='utf-8')
 
 
@@ -1731,8 +1762,21 @@ def generate_blog_posts(blog_json_path, output_dir, css_path="/style.css"):
     return blog_urls
 
 
+def compute_product_hash(p):
+    """Compute a deterministic hash of fields that affect product page HTML."""
+    import hashlib
+    raw = []
+    for key in sorted(HASH_FIELDS):
+        val = p.get(key)
+        if isinstance(val, (list, dict)):
+            raw.append(json.dumps(val, sort_keys=True, ensure_ascii=False, default=str))
+        else:
+            raw.append(str(val))
+    return hashlib.md5('|'.join(raw).encode('utf-8')).hexdigest()
+
+
 def main():
-    import sys
+    import sys, hashlib
     demo_mode = '--demo' in sys.argv
 
     print(f"Loading {PRODUCTS_JSON}...")
@@ -1740,6 +1784,26 @@ def main():
         data = json.load(f)
     products = data.get('products', data) if isinstance(data, dict) else data
     print(f"  Found {len(products)} products")
+
+    # Load previous build cache to detect actual changes
+    prev_cache = {}
+    if BUILD_CACHE.exists():
+        with open(BUILD_CACHE, 'r', encoding='utf-8') as f:
+            prev_cache = json.load(f)
+    print(f"  Build cache: {len(prev_cache)} entries loaded")
+
+    # Compute hashes for all products NOW (needed by multiple sections below)
+    new_cache = {}
+    changed_skus = set()
+    if not demo_mode:
+        for p in products:
+            h = compute_product_hash(p)
+            new_cache[p['sku']] = h
+            if prev_cache.get(p['sku']) != h:
+                changed_skus.add(p['sku'])
+        print(f"  Changed products detected: {len(changed_skus)}")
+    else:
+        changed_skus = {p['sku'] for p in products[:3]}
 
     # === 1. Generate products-public.json (strip internal fields) ===
     public_products = [clean_public_product(p) for p in products]
@@ -1807,8 +1871,20 @@ def main():
         '<script src="app.js',
         embed_tag + '\n' + bootstrap_js + '\n<script src="app.js'
     )
-    # Update app.js cache buster
-    cache_ver = str(len(products)) + str(int(datetime.now().timestamp()))
+    # Cache buster: only bump when app.js or style.css content actually changed
+    cache_ver = prev_cache.get('__asset_hash__', str(len(products)) + str(int(datetime.now().timestamp())))
+    app_js = WEBSITE_DIR / "app.js"
+    style_css = WEBSITE_DIR / "style.css"
+    try:
+        new_asset_hash = hashlib.md5(
+            (app_js.read_bytes() + style_css.read_bytes())
+        ).hexdigest()[:12]
+        if new_asset_hash != prev_cache.get('__asset_hash_raw__', ''):
+            cache_ver = str(len(products)) + new_asset_hash
+            new_cache['__asset_hash__'] = cache_ver
+            new_cache['__asset_hash_raw__'] = new_asset_hash
+    except Exception:
+        pass
     index_html = re.sub(r'app\.js\?v=\d+', f'app.js?v={cache_ver}', index_html)
     index_html = re.sub(r'style\.css\?v=\d+', f'style.css?v={cache_ver}', index_html)
     index_file.write_text(index_html, encoding='utf-8')
@@ -1826,24 +1902,34 @@ def main():
             cat_index[theme][subcat] = []
         cat_index[theme][subcat].append(p)
 
-    # === 3. Generate product pages ===
+    # === 3. Generate product pages (incremental — only changed products) ===
     if demo_mode:
-        # Only first 3 products
         products_to_gen = products[:3]
+        rebuilt = len(products_to_gen)
     else:
         products_to_gen = products
+        rebuilt = len(changed_skus)
 
     product_dir = WEBSITE_DIR / "product"
     count = 0
     for p in products_to_gen:
         sku = p['sku']
+        if not demo_mode and sku not in changed_skus:
+            count += 1
+            continue
         out_dir = product_dir / sku
         out_dir.mkdir(parents=True, exist_ok=True)
         page_html = generate_product_page(p, products)
         (out_dir / "index.html").write_text(page_html, encoding='utf-8')
         count += 1
 
-    print(f"\n[2] Product pages: {count} generated in {product_dir}/")
+    # Save new cache for next build
+    if not demo_mode:
+        with open(BUILD_CACHE, 'w', encoding='utf-8') as f:
+            json.dump(new_cache, f, ensure_ascii=False, indent=2)
+
+    skipped = len(products_to_gen) - rebuilt if not demo_mode else 0
+    print(f"\n[2] Product pages: {rebuilt} rebuilt, {skipped} unchanged — output in {product_dir}/")
 
     # === 4. Generate category pages ===
     cat_count = 0
@@ -1898,12 +1984,40 @@ def main():
     print(f"[4] Sitemap URLs: {len(sitemap_urls)} total ({sitemap_products} products, {skipped_products} skipped — need name+image+price)")
 
     # === 6. Generate sitemap.xml ===
-    generate_sitemap(sitemap_urls, SITEMAP_FILE)
+    generate_sitemap(sitemap_urls, SITEMAP_FILE, changed_skus=(changed_skus if not demo_mode else None))
     print(f"[5] sitemap.xml: updated ({len(sitemap_urls)} URLs)")
 
-    # === 7. Generate robots.txt ===
-    generate_robots(f"{SITE_URL}/sitemap.xml", ROBOTS_FILE)
-    print(f"[6] robots.txt: updated")
+    # === 7. Generate robots.txt (only if changed) ===
+    new_robots = f"""User-agent: *
+Allow: /
+
+# Block query params to prevent duplicate content (product pages served at /product/SKU/)
+Disallow: /*?p=*
+
+Sitemap: {SITE_URL}/sitemap.xml
+
+# Block AI crawlers from API endpoints
+User-agent: GPTBot
+Disallow: /api/
+
+User-agent: ChatGPT-User
+Disallow: /api/
+
+User-agent: ClaudeBot
+Disallow: /api/
+
+User-agent: Bytespider
+Disallow: /api/
+
+User-agent: Applebot-Extended
+Disallow: /api/
+"""
+    old_robots = ROBOTS_FILE.read_text(encoding='utf-8') if ROBOTS_FILE.exists() else ''
+    if new_robots.strip() != old_robots.strip():
+        ROBOTS_FILE.write_text(new_robots, encoding='utf-8')
+        print(f"[6] robots.txt: updated")
+    else:
+        print(f"[6] robots.txt: unchanged, skipped")
 
     print(f"\nDone! Generated {count} product pages + {cat_count} category pages + {len(blog_urls)} blog pages.")
     if demo_mode:
