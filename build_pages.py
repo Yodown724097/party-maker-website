@@ -21,6 +21,23 @@ PRODUCTS_JSON = WEBSITE_DIR / "products.json"
 PUBLIC_JSON = WEBSITE_DIR / "products-public.json"
 SITEMAP_FILE = WEBSITE_DIR / "sitemap.xml"
 ROBOTS_FILE = WEBSITE_DIR / "robots.txt"
+# Image proxy: serve R2 images through partymaker.cn to fix MaxHub and restricted networks
+IMG_PROXY = "https://www.partymaker.cn/img"
+R2_PUBLIC_RAW = "https://pub-1fd965ab66464286847edcb540254451.r2.dev"
+
+def to_proxy(url):
+    """Convert R2 raw URL to proxy URL under partymaker.cn."""
+    if not url:
+        return ""
+    if url.startswith(IMG_PROXY):
+        return url
+    if url.startswith(R2_PUBLIC_RAW):
+        return url.replace(R2_PUBLIC_RAW, IMG_PROXY)
+    return url
+
+def proxy_images(images):
+    """Convert all image URLs in a list to proxy URLs."""
+    return [to_proxy(img) for img in images] if images else []
 BLOG_JSON = WEBSITE_DIR / "blog.json"
 BLOG_DIR = WEBSITE_DIR / "blog"
 BUILD_CACHE = WEBSITE_DIR / ".build_cache.json"
@@ -103,7 +120,7 @@ PRODUCT_TEMPLATE = """\
     {breadcrumb_ld_json}
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link rel="dns-prefetch" href="https://pub-1fd965ab66464286847edcb540254451.r2.dev">
+    <link rel="dns-prefetch" href="https://www.partymaker.cn">
     <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" media="print" onload="this.media='all'">
     <noscript><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap"></noscript>
     <link rel="stylesheet" href="{css_path}">
@@ -407,7 +424,7 @@ CATEGORY_TEMPLATE = """\
     {breadcrumb_ld_json}
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link rel="dns-prefetch" href="https://pub-1fd965ab66464286847edcb540254451.r2.dev">
+    <link rel="dns-prefetch" href="https://www.partymaker.cn">
     <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" media="print" onload="this.media='all'">
     <noscript><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap"></noscript>
     <link rel="stylesheet" href="{css_path}">
@@ -694,7 +711,7 @@ def clean_public_product(p):
 
 def build_product_card(p, css_path="/style.css"):
     """Build a product card HTML snippet for category pages."""
-    img = p['images'][0] if p.get('images') else ''
+    img = to_proxy(p['images'][0]) if p.get('images') else ''
     tags = ''
     if 'hot' in (p.get('tags') or []):
         tags = '<span class="tag-hot tag-badges-item">HOT</span>'
@@ -725,6 +742,7 @@ def generate_product_page(product, all_products, css_path="/style.css"):
     theme = product.get('theme', '').strip()
     subcategory = product.get('subcategory', '').strip()
     images = product.get('images', [])
+    images = proxy_images(images)  # Use proxy URLs for cross-browser compatibility
     tags = product.get('tags', []) or []
 
     theme_slug = slugify(theme)
@@ -1007,7 +1025,7 @@ def generate_category_page(theme, subcategory, products, all_products, css_path=
         keywords=escape_html(keywords),
         canonical=canonical,
         site_name=SITE_NAME,
-        og_image=products[0]['images'][0] if products and products[0].get('images') else '',
+        og_image=to_proxy(products[0]['images'][0]) if products and products[0].get('images') else '',
         page_name=escape_html(h1_text),
         breadcrumb_extra=breadcrumb_extra,
         count=len(products),
@@ -1659,7 +1677,7 @@ def generate_blog_posts(blog_json_path, output_dir, css_path="/style.css"):
         meta_desc = post['meta_desc'][:160]
         date = post['date']
         category = post['category']
-        image = post.get('image', '')
+        image = to_proxy(post.get('image', ''))
         canonical = f"{SITE_URL}/blog/{slug}/"
         css = f"/{css_path}" if not css_path.startswith('/') else css_path
 
@@ -1682,7 +1700,7 @@ def generate_blog_posts(blog_json_path, output_dir, css_path="/style.css"):
                 items = ''.join(f'<li>{escape_html(i.strip())}</li>' for i in content.split(';'))
                 body_parts.append(f'<ul>{items}</ul>')
             elif t == 'img':
-                src = block.get('src', '')
+                src = to_proxy(block.get('src', ''))
                 alt = escape_html(block.get('alt', 'Product image'))
                 body_parts.append(f'<figure class="blog-figure"><img src="{src}" alt="{alt}" loading="lazy" decoding="async"><figcaption>{alt}</figcaption></figure>')
             elif t == 'product_links':
@@ -1807,6 +1825,10 @@ def main():
 
     # === 1. Generate products-public.json (strip internal fields) ===
     public_products = [clean_public_product(p) for p in products]
+    # Convert all image URLs to proxy paths for cross-browser compatibility
+    for p in public_products:
+        if 'images' in p and p['images']:
+            p['images'] = proxy_images(p['images'])
     public_data = {"products": public_products}
     PUBLIC_JSON.write_text(json.dumps(public_data, ensure_ascii=False, separators=(',', ':')), encoding='utf-8')
     pub_size = PUBLIC_JSON.stat().st_size
@@ -1833,6 +1855,9 @@ def main():
             val = p.get(key)
             if val is not None:
                 slim[key] = val
+        # Replace raw R2 image URLs with proxy URLs
+        if 'images' in slim and slim['images']:
+            slim['images'] = proxy_images(slim['images'])
         slim_products.append(slim)
     embedded_js = "window.__PRODUCTS__=" + json.dumps(slim_products, ensure_ascii=False, separators=(',', ':')) + ";"
     embedded_size = len(embedded_js.encode('utf-8'))
@@ -1868,8 +1893,8 @@ def main():
         'g.innerHTML=h;})();</script>'
     )
     index_html = index_html.replace(
-        '<script src="app.js',
-        embed_tag + '\n' + bootstrap_js + '\n<script src="app.js'
+        '<script src="/app.js',
+        embed_tag + '\n' + bootstrap_js + '\n<script src="/app.js'
     )
     # Cache buster: only bump when app.js or style.css content actually changed
     cache_ver = prev_cache.get('__asset_hash__', str(len(products)) + str(int(datetime.now().timestamp())))

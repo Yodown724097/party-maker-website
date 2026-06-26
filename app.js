@@ -3,16 +3,43 @@ const R2_PRODUCTS_URL = '/products.json';
 // Direct to Cloudflare Pages Function (no CORS issues, no VPS needed)
 const WORKER_URL = '/api/generate';
 const QTY_STEP = 12;
-const R2_PUBLIC = 'https://pub-1fd965ab66464286847edcb540254451.r2.dev';
+// Image proxy — avoids R2 domain unreachable on MaxHub, certain browsers, and China networks
+const IMG_PROXY = 'https://www.partymaker.cn/img';
+const R2_PUBLIC_RAW = 'https://pub-1fd965ab66464286847edcb540254451.r2.dev';
+// Use proxy by default; fallback to raw R2 for direct access
+const R2_PUBLIC = IMG_PROXY;
+
+/** Convert a raw R2 URL to proxy path (handles existing product data) */
+function toProxy(url) {
+    if (!url) return '';
+    if (url.startsWith(IMG_PROXY)) return url;
+    if (url.startsWith(R2_PUBLIC_RAW)) return url.replace(R2_PUBLIC_RAW, IMG_PROXY);
+    return url;
+}
 
 function thumbUrl(originalUrl) {
     // Convert {SKU}/01.webp -> {SKU}/thumb/01.webp
-    if (!originalUrl || !originalUrl.startsWith(R2_PUBLIC)) return originalUrl;
-    const path = originalUrl.replace(R2_PUBLIC + '/', '');
+    // Works with both proxy and raw URLs
+    if (!originalUrl) return originalUrl;
+    const base = originalUrl.startsWith(IMG_PROXY) ? IMG_PROXY : 
+                 originalUrl.startsWith(R2_PUBLIC_RAW) ? R2_PUBLIC_RAW : null;
+    if (!base) return toProxy(originalUrl); // try proxy
+    const path = originalUrl.replace(base + '/', '');
     const lastSlash = path.lastIndexOf('/');
-    if (lastSlash === -1) return originalUrl;
-    return R2_PUBLIC + '/' + path.substring(0, lastSlash) + '/thumb/' + path.substring(lastSlash + 1);
+    if (lastSlash === -1) return toProxy(originalUrl);
+    return base + '/' + path.substring(0, lastSlash) + '/thumb/' + path.substring(lastSlash + 1);
 }
+
+/** Normalize all product image URLs to use proxy path */
+function normalizeImageUrls(products) {
+    if (!products || !products.length) return;
+    for (const p of products) {
+        if (p.images && p.images.length) {
+            p.images = p.images.map(toProxy);
+        }
+    }
+}
+
 const PAGE_SIZE = 24;
 
 // ============ STATE ============
@@ -42,6 +69,7 @@ async function loadProducts() {
     if (window.__PRODUCTS__ && window.__PRODUCTS__.length > 0) {
         allProducts = window.__PRODUCTS__;
         embeddedCount = allProducts.length;
+        normalizeImageUrls(allProducts); // Convert R2 URLs to proxy
         console.log('Loaded ' + embeddedCount + ' products (embedded first-screen)');
     }
 
@@ -70,6 +98,7 @@ async function loadProducts() {
         // Only update if we got more products than embedded
         if (fullList.length > embeddedCount) {
             allProducts = fullList;
+            normalizeImageUrls(allProducts); // Convert R2 URLs to proxy
             console.log('Loaded ' + allProducts.length + ' products (full fetch)');
             // Rebuild category list with full data & re-render
             buildCategoryList();
@@ -453,7 +482,7 @@ function buildProductCardHTML(p, idx) {
     return `
     <div class="product-card ${inCart ? 'in-cart' : ''}" data-id="${p.id}">
         <div class="product-image" ${clickHandler ? `onclick="${clickHandler}"` : 'style="cursor:default"'}">
-            ${cardImgUrl ? `<img src="${cardImgUrl}" alt="${p.name}" ${imgAttrs} onerror="this.onerror=null;this.src='${imgUrl}'">` : `<div class="img-placeholder"><svg width="40" height="40" style="color:var(--text-light)"><use href="#icon-package"/></svg></div>`}
+            ${cardImgUrl ? `<img src="${cardImgUrl}" alt="${p.name}" ${imgAttrs} onerror="this.onerror=null;this.parentElement.classList.add('img-failed');this.outerHTML='<div class=\\'img-placeholder\\'><svg width=\\'40\\' height=\\'40\\' style=\\'color:var(--text-light)\\'><use href=\\'#icon-package\\'/></svg></div>'">` : `<div class="img-placeholder"><svg width="40" height="40" style="color:var(--text-light)"><use href="#icon-package"/></svg></div>`}
             ${badge}
             ${imgDots}
             ${tagBadges ? `<div class="tag-badges">${tagBadges}</div>` : ''}
