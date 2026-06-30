@@ -2,12 +2,15 @@
 
 ## Batch 1 — 2026-06-23
 - **Products enriched**: 24 (SKUs: 605040–617193, all Ramadan hot+img priority)
-- **Cumulative**: 24 / 339 unoptimized (7.1%)
-- **Remaining**: 315 products
-- **Batch**: 1 / ~15
+- **Cumulative**: 24
+- **Batch**: 1 / 40
 - **Deploy**: git push to main, Cloudflare Pages auto-deploy
 
-### Notes
-- All 24 products were hot sellers with images and packing data
-- Descriptions use actual spec, price, carton economics — no template filler
-- Next batch will pick remaining hot+img (146 left), then packing-data products
+## Batch 2 — 2026-06-24
+- **Products enriched**: 24 (SKUs: 613101–623222, all Ramadan hot+img)
+- **Cumulative**: 48 / 473 unoptimized (10.1%)
+- **Remaining**: 449 products
+- **Batch**: 2 / ~20
+- **Deploy**: git push to main, 30 files changed
+- **Priority breakdown**: all hot sellers with images (24/24)
+- **Packing**: 20/24 had full carton data; 3 products had zero price/carton data (623169, 623210, 623222) — handled gracefully
