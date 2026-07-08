@@ -65,6 +65,10 @@ for item in post['body']:
     elif item['type'] == 'p':
         body_html.append(f'<p>{item["content"]}</p>')
 
+# Fix: use today's actual date for publish date, not the hardcoded generation date
+publish_date = datetime.now().strftime('%Y-%m-%d')
+post['date'] = publish_date
+
 html_content = f"""<!DOCTYPE html>
 <html lang="en">
 <head>
@@ -78,7 +82,7 @@ html_content = f"""<!DOCTYPE html>
 <body>
 <article>
 <h1>{post['title']}</h1>
-<p class="date">{post['date']} | {post['category']}</p>
+<p class="date">{publish_date} | {post['category']}</p>
 {chr(10).join(body_html)}
 <p class="cta">For wholesale inquiries, custom orders, or samples, contact <a href="mailto:info@partymaker.cn">info@partymaker.cn</a></p>
 </article>
