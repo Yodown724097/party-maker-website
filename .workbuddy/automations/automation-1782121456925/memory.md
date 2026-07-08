@@ -23,3 +23,18 @@
 - **Deploy**: git push to main, 32 files changed
 - **Priority breakdown**: all hot sellers with images (24/24)
 - **Note**: 794 total unoptimized reflects expanded template detection covering more phrases
+
+## Batch 4 — 2026-07-08
+- **Products enriched**: 24 (SKUs: 624148–641286, all Ramadan hot+img)
+- **Cumulative**: 96 / 306 unoptimized (31.4%)
+- **Remaining**: 282 products
+- **Batch**: 4 / ~13
+- **Deploy**: git push to main, 30 files changed
+- **Priority breakdown**: all hot sellers with images (24/24); remaining hot+img: 113
+- **Build**: rebuild 24 product pages, 972 unchanged
+
+## Architecture Change — 2026-07-08
+- **NEW**: seo_queue.json stores all 282 remaining pre-generated AI descriptions
+- **NEW**: vps_seo_daily.py — VPS cron script that takes 24 from queue daily, updates products.json, build_pages.py, git push
+- **Old DAILY automation** should be PAUSED (WorkBuddy no longer needed for this task)
+- **VPS setup needed**: clone repo, install Python, set cron `0 8 * * * cd /path/repo && python3 .workbuddy/vps_seo_daily.py`
