@@ -2,7 +2,7 @@
 """
 VPS Daily SEO Deploy Script
 - Pulls latest seo_queue.json from git
-- Takes 24 products from the queue
+- Takes 18 products from the queue (slower pace, looks more natural to search engines)
 - Updates products.json with new seo_desc
 - Runs build_pages.py
 - Git commit + push
@@ -15,7 +15,7 @@ Cron: 0 8 * * * cd /path/to/repo && python3 .workbuddy/vps_seo_daily.py
 import json, sys, os, subprocess
 from datetime import datetime
 
-BATCH_SIZE = int(sys.argv[2]) if len(sys.argv) > 2 and sys.argv[1] == '--batch-size' else 24
+BATCH_SIZE = int(sys.argv[2]) if len(sys.argv) > 2 and sys.argv[1] == '--batch-size' else 18
 QUEUE_FILE = '.workbuddy/seo_queue.json'
 PROGRESS_FILE = '.workbuddy/content_progress.json'
 PRODUCTS_FILE = 'products.json'
