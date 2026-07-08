@@ -1,0 +1,1609 @@
+{
+  "Garland": [
+    {
+      "sku": "605040",
+      "name": "Paper Fan Set- Gold 1pcs",
+      "price": 2.68,
+      "subcategory": "Garland",
+      "description": "8 pcs paper fans+6 pcs stickers=1 set",
+      "tags": [
+        "hot"
+      ],
+      "image": "https://pub-1fd965ab66464286847edcb540254451.r2.dev/605040/01.webp",
+      "images": 5,
+      "_pcsPerCtn": 75.0,
+      "_cbm": 0.05
+    },
+    {
+      "sku": "608231",
+      "name": "Eid Lettering Garland 1ct",
+      "price": 0.52,
+      "subcategory": "Garland",
+      "description": "Size:300cm\nPacking:1pcs/opp+header",
+      "tags": [
+        "hot"
+      ],
+      "image": "https://pub-1fd965ab66464286847edcb540254451.r2.dev/608231/01.webp",
+      "images": 5,
+      "_pcsPerCtn": 252.0,
+      "_cbm": 0.06
+    },
+    {
+      "sku": "608232",
+      "name": "Ramadan  Lettering Garland 1ct",
+      "price": 0.52,
+      "subcategory": "Garland",
+      "description": "Size:300cm\nPacking:1pcs",
+      "tags": [
+        "hot"
+      ],
+      "image": "https://pub-1fd965ab66464286847edcb540254451.r2.dev/608232/01.webp",
+      "images": 4,
+      "_pcsPerCtn": 252.0,
+      "_cbm": 0.06
+    },
+    {
+      "sku": "608287",
+      "name": "Hajj Glitter Lettering Garland Gold 300cm",
+      "price": 0.47,
+      "subcategory": "Garland",
+      "description": "glitter card\n3m ribbon\n1pcs/opp+header",
+      "tags": [
+        "hot"
+      ],
+      "image": "https://pub-1fd965ab66464286847edcb540254451.r2.dev/608287/01.webp",
+      "images": 1,
+      "_pcsPerCtn": 192.0,
+      "_cbm": 0.06
+    },
+    {
+      "sku": "642037",
+      "name": "Holy Quran Storage Box k 12pcs",
+      "price": 23.96,
+      "subcategory": "Garland",
+      "description": "metal\n29.5*22.5cm\n4 color options\n1pc/box",
+      "tags": [
+        "hot"
+      ],
+      "image": "https://pub-1fd965ab66464286847edcb540254451.r2.dev/642037/01.webp",
+      "images": 1,
+      "_pcsPerCtn": 6.0,
+      "_cbm": 0.03
+    },
+    {
+      "sku": "642169",
+      "name": "Ramadan Mubarak Wooden Bead Wall Hanging round wooden bead garland",
+      "price": 0.77,
+      "subcategory": "Garland",
+      "description": "Sticker, 1pcs",
+      "tags": [
+        "hot"
+      ],
+      "image": "https://pub-1fd965ab66464286847edcb540254451.r2.dev/642169/01.webp",
+      "images": 1,
+      "_pcsPerCtn": 240.0,
+      "_cbm": 0.07
+    },
+    {
+      "sku": "642171",
+      "name": "Ramadan Mubarak Wooden Bead Wall Hanging gourd wooden bead garland",
+      "price": 0.73,
+      "subcategory": "Garland",
+      "description": "Sticker, 1pcs",
+      "tags": [
+        "hot"
+      ],
+      "image": "https://pub-1fd965ab66464286847edcb540254451.r2.dev/642171/01.webp",
+      "images": 1,
+      "_pcsPerCtn": 240.0,
+      "_cbm": 0.08
+    },
+    {
+      "sku": "605041",
+      "name": "Ramadan Paper Fan set 6ct",
+      "price": 2.68,
+      "subcategory": "Garland",
+      "description": "8 pcs paper fans+8 pcs stickers=1 set",
+      "tags": [],
+      "image": "https://pub-1fd965ab66464286847edcb540254451.r2.dev/605041/01.webp",
+      "images": 5,
+      "_pcsPerCtn": 75.0,
+      "_cbm": 0.05
+    }
+  ],
+  "Confetti": [
+    {
+      "sku": "612128",
+      "name": "Ramadan Confetti",
+      "price": 0.24,
+      "subcategory": "Confetti",
+      "description": "15g",
+      "tags": [],
+      "image": "https://pub-1fd965ab66464286847edcb540254451.r2.dev/612128/01.webp",
+      "images": 1,
+      "_pcsPerCtn": 0,
+      "_cbm": 0
+    }
+  ],
+  "Curtain": [
+    {
+      "sku": "613085",
+      "name": "Eid Polyester Cloth  Backdrop",
+      "price": 1.6,
+      "subcategory": "Curtain",
+      "description": "90x148cm\n1pc",
+      "tags": [
+        "hot"
+      ],
+      "image": "https://pub-1fd965ab66464286847edcb540254451.r2.dev/613085/01.webp",
+      "images": 7,
+      "_pcsPerCtn": 120.0,
+      "_cbm": 0.05
+    },
+    {
+      "sku": "613087",
+      "name": "Ramadan Polyester Cloth Backdrop",
+      "price": 0.58,
+      "subcategory": "Curtain",
+      "description": "24x30cm\n1pc",
+      "tags": [
+        "hot"
+      ],
+      "image": "https://pub-1fd965ab66464286847edcb540254451.r2.dev/613087/01.webp",
+      "images": 5,
+      "_pcsPerCtn": 600.0,
+      "_cbm": 0.06
+    },
+    {
+      "sku": "642118",
+      "name": "RAMADAN BACKDROP 1pcs",
+      "price": 1.11,
+      "subcategory": "Curtain",
+      "description": "Backdrop, 1pcs",
+      "tags": [
+        "hot"
+      ],
+      "image": "https://pub-1fd965ab66464286847edcb540254451.r2.dev/642118/01.webp",
+      "images": 1,
+      "_pcsPerCtn": 108.0,
+      "_cbm": 0.06
+    },
+    {
+      "sku": "642119",
+      "name": "RAMADAN BACKDROP 1pcs",
+      "price": 1.97,
+      "subcategory": "Curtain",
+      "description": "Backdrop, 1pcs",
+      "tags": [
+        "hot"
+      ],
+      "image": "https://pub-1fd965ab66464286847edcb540254451.r2.dev/642119/01.webp",
+      "images": 1,
+      "_pcsPerCtn": 108.0,
+      "_cbm": 0.06
+    },
+    {
+      "sku": "626073",
+      "name": "Ramadan Backdrop-blue",
+      "price": 2.65,
+      "subcategory": "Curtain",
+      "description": "8*10cm\n1pc\nvarious design",
+      "tags": [],
+      "image": "https://pub-1fd965ab66464286847edcb540254451.r2.dev/626073/01.webp",
+      "images": 2,
+      "_pcsPerCtn": 24.0,
+      "_cbm": 0.02
+    },
+    {
+      "sku": "642079",
+      "name": "HAPPY DIWALI backdrop 1pc",
+      "price": 1.797833333,
+      "subcategory": "Curtain",
+      "description": "250*50cm 1pcs+header card",
+      "tags": [],
+      "image": "",
+      "images": 0,
+      "_pcsPerCtn": 120,
+      "_cbm": 0.0434
+    },
+    {
+      "sku": "ZY-02",
+      "name": "Ramadan Backdrop-gold",
+      "price": 1.62,
+      "subcategory": "Curtain",
+      "description": "1.0*1.6m",
+      "tags": [],
+      "image": "",
+      "images": 0,
+      "_pcsPerCtn": 0,
+      "_cbm": 0
+    },
+    {
+      "sku": "ZY-03",
+      "name": "Ramadan Backdrop-blue",
+      "price": 1.62,
+      "subcategory": "Curtain",
+      "description": "1.0*1.6m",
+      "tags": [],
+      "image": "",
+      "images": 0,
+      "_pcsPerCtn": 0,
+      "_cbm": 0
+    }
+  ],
+  "Backdrop": [
+    {
+      "sku": "642075",
+      "name": "EID cloth Banner",
+      "price": 3.84,
+      "subcategory": "Backdrop",
+      "description": "210*150cm\n1pc",
+      "tags": [
+        "hot"
+      ],
+      "image": "https://pub-1fd965ab66464286847edcb540254451.r2.dev/642075/01.webp",
+      "images": 1,
+      "_pcsPerCtn": 60.0,
+      "_cbm": 0.04
+    },
+    {
+      "sku": "642077",
+      "name": "EID MUBARAK BANNER 1pcs",
+      "price": 0.83,
+      "subcategory": "Backdrop",
+      "description": "Bunting, 1pcs",
+      "tags": [
+        "hot"
+      ],
+      "image": "https://pub-1fd965ab66464286847edcb540254451.r2.dev/642077/01.webp",
+      "images": 1,
+      "_pcsPerCtn": 156.0,
+      "_cbm": 0.04
+    },
+    {
+      "sku": "642080",
+      "name": "EID cloth Banner",
+      "price": 1.71,
+      "subcategory": "Backdrop",
+      "description": "150*100cm\n1pc",
+      "tags": [
+        "hot"
+      ],
+      "image": "https://pub-1fd965ab66464286847edcb540254451.r2.dev/642080/01.webp",
+      "images": 1,
+      "_pcsPerCtn": 96.0,
+      "_cbm": 0.04
+    },
+    {
+      "sku": "642183",
+      "name": "Black and Gold Islamic Scroll Bannerblack gold scroll banner",
+      "price": 2.56,
+      "subcategory": "Backdrop",
+      "description": "Bunting, Gold, Black, 1pcs",
+      "tags": [
+        "hot"
+      ],
+      "image": "https://pub-1fd965ab66464286847edcb540254451.r2.dev/642183/01.webp",
+      "images": 1,
+      "_pcsPerCtn": 100.0,
+      "_cbm": 0.06
+    },
+    {
+      "sku": "642209",
+      "name": "Silver Candy Jar 1pcs",
+      "price": 6.32,
+      "subcategory": "Backdrop",
+      "description": "Jar, Silver, 1pcs",
+      "tags": [
+        "hot"
+      ],
+      "image": "https://pub-1fd965ab66464286847edcb540254451.r2.dev/642209/01.webp",
+      "images": 1,
+      "_pcsPerCtn": 36.0,
+      "_cbm": 0.22
+    },
+    {
+      "sku": "642210",
+      "name": "Gold Candy Jar 1pcs",
+      "price": 6.32,
+      "subcategory": "Backdrop",
+      "description": "Jar, Gold, 1pcs",
+      "tags": [
+        "hot"
+      ],
+      "image": "https://pub-1fd965ab66464286847edcb540254451.r2.dev/642210/01.webp",
+      "images": 1,
+      "_pcsPerCtn": 36.0,
+      "_cbm": 0.22
+    },
+    {
+      "sku": "650067",
+      "name": "Wood Gliter Lettering Ormanant Alhamdulillah Gold",
+      "price": 1.21,
+      "subcategory": "Backdrop",
+      "description": "31x8x1 cm\nMDF+double sided acrylic",
+      "tags": [
+        "hot"
+      ],
+      "image": "https://pub-1fd965ab66464286847edcb540254451.r2.dev/650067/01.webp",
+      "images": 1,
+      "_pcsPerCtn": 75.0,
+      "_cbm": 0.06
+    },
+    {
+      "sku": "613088",
+      "name": "Ramadan Polyester Cloth  Flag",
+      "price": 1.6,
+      "subcategory": "Backdrop",
+      "description": "90x148cm\n1pc",
+      "tags": [],
+      "image": "https://pub-1fd965ab66464286847edcb540254451.r2.dev/613088/01.webp",
+      "images": 5,
+      "_pcsPerCtn": 120.0,
+      "_cbm": 0.05
+    }
+  ],
+  "Cup": [
+    {
+      "sku": "615189",
+      "name": "9 EID Mubarak Cups 12pcs",
+      "price": 0.55,
+      "subcategory": "Cup",
+      "description": "Plate, 12pcs",
+      "tags": [
+        "hot"
+      ],
+      "image": "https://pub-1fd965ab66464286847edcb540254451.r2.dev/615189/01.webp",
+      "images": 2,
+      "_pcsPerCtn": 168.0,
+      "_cbm": 0.06
+    },
+    {
+      "sku": "615204",
+      "name": "PS CUP WITH GOLDEN PAINTING 300ML 1pcs",
+      "price": 0.24,
+      "subcategory": "Cup",
+      "description": "PS\n8*10.5cm\n34g",
+      "tags": [
+        "hot"
+      ],
+      "image": "https://pub-1fd965ab66464286847edcb540254451.r2.dev/615204/01.webp",
+      "images": 2,
+      "_pcsPerCtn": 36.0,
+      "_cbm": 0.01
+    },
+    {
+      "sku": "615121",
+      "name": "Eid Paper Cup Gold White 12oz 8ct",
+      "price": 0.41,
+      "subcategory": "Cup",
+      "description": "Size:12oz\nPacking:8pcs",
+      "tags": [
+        "hot"
+      ],
+      "image": "https://pub-1fd965ab66464286847edcb540254451.r2.dev/615121/01.webp",
+      "images": 1,
+      "_pcsPerCtn": 72.0,
+      "_cbm": 0.06
+    },
+    {
+      "sku": "615131",
+      "name": "Eid Mubarak cups 8pcs",
+      "price": 0.45,
+      "subcategory": "Cup",
+      "description": "Size:12oz\nPacking:8pcs",
+      "tags": [
+        "hot"
+      ],
+      "image": "https://pub-1fd965ab66464286847edcb540254451.r2.dev/615131/01.webp",
+      "images": 1,
+      "_pcsPerCtn": 96.0,
+      "_cbm": 0.06
+    },
+    {
+      "sku": "615133",
+      "name": "Diwali Paper Cup",
+      "price": 0.210833333,
+      "subcategory": "Cup",
+      "description": "9oz\n8pcs",
+      "tags": [
+        "hot"
+      ],
+      "image": "",
+      "images": 0,
+      "_pcsPerCtn": 144,
+      "_cbm": 0.0722625
+    },
+    {
+      "sku": "615227",
+      "name": "Ramadan Gift Bag",
+      "price": 0.33,
+      "subcategory": "Cup",
+      "description": "8PK\n9oz",
+      "tags": [],
+      "image": "https://pub-1fd965ab66464286847edcb540254451.r2.dev/615227/01.webp",
+      "images": 1,
+      "_pcsPerCtn": 0,
+      "_cbm": 0
+    }
+  ],
+  "Paper Plate": [
+    {
+      "sku": "616207",
+      "name": "Eid Paper Plate Gold White 7inch 8ct",
+      "price": 0.37,
+      "subcategory": "Paper Plate",
+      "description": "Size:18cm\nPacking:8pcs",
+      "tags": [
+        "hot"
+      ],
+      "image": "https://pub-1fd965ab66464286847edcb540254451.r2.dev/616207/01.webp",
+      "images": 3,
+      "_pcsPerCtn": 168.0,
+      "_cbm": 0.05
+    },
+    {
+      "sku": "616208",
+      "name": "Eid Paper Plate Gold White 9inch 8ct",
+      "price": 0.52,
+      "subcategory": "Paper Plate",
+      "description": "Size:23cm\nPacking:8pcs",
+      "tags": [
+        "hot"
+      ],
+      "image": "https://pub-1fd965ab66464286847edcb540254451.r2.dev/616208/01.webp",
+      "images": 1,
+      "_pcsPerCtn": 96.0,
+      "_cbm": 0.05
+    },
+    {
+      "sku": "616222",
+      "name": "7 Eid Mubarak plates 7\" 8pcs",
+      "price": 0.42,
+      "subcategory": "Paper Plate",
+      "description": "Size:7inch\nPacking:8pcs",
+      "tags": [
+        "hot"
+      ],
+      "image": "https://pub-1fd965ab66464286847edcb540254451.r2.dev/616222/01.webp",
+      "images": 1,
+      "_pcsPerCtn": 96.0,
+      "_cbm": 0.03
+    },
+    {
+      "sku": "616223",
+      "name": "9 Eid Mubarak plates 9\" 8pcs",
+      "price": 0.63,
+      "subcategory": "Paper Plate",
+      "description": "Size:9inch\nPacking:8pcs",
+      "tags": [
+        "hot"
+      ],
+      "image": "https://pub-1fd965ab66464286847edcb540254451.r2.dev/616223/01.webp",
+      "images": 1,
+      "_pcsPerCtn": 96.0,
+      "_cbm": 0.05
+    },
+    {
+      "sku": "616277",
+      "name": "7 EID Mubarak Plates 12pcs",
+      "price": 0.71,
+      "subcategory": "Paper Plate",
+      "description": "8pcs\nSize:13.5*18cm",
+      "tags": [
+        "hot"
+      ],
+      "image": "https://pub-1fd965ab66464286847edcb540254451.r2.dev/616277/01.webp",
+      "images": 1,
+      "_pcsPerCtn": 168.0,
+      "_cbm": 0.04
+    },
+    {
+      "sku": "616278",
+      "name": "9 EID Mubarak Plates 12pcs",
+      "price": 0.75,
+      "subcategory": "Paper Plate",
+      "description": "8pcs\nSize:15*22.5cm",
+      "tags": [
+        "hot"
+      ],
+      "image": "https://pub-1fd965ab66464286847edcb540254451.r2.dev/616278/01.webp",
+      "images": 1,
+      "_pcsPerCtn": 144.0,
+      "_cbm": 0.05
+    },
+    {
+      "sku": "616279",
+      "name": "12 EID Mubarak Plates 12pcs",
+      "price": 0.93,
+      "subcategory": "Paper Plate",
+      "description": "8pcs\nSize:23*30cm",
+      "tags": [
+        "hot"
+      ],
+      "image": "https://pub-1fd965ab66464286847edcb540254451.r2.dev/616279/01.webp",
+      "images": 1,
+      "_pcsPerCtn": 72.0,
+      "_cbm": 0.04
+    },
+    {
+      "sku": "616281",
+      "name": "MOSQUE DESIGN PLATE 1pcs",
+      "price": 1.01,
+      "subcategory": "Paper Plate",
+      "description": "PET\n317g\n30*30*2cm",
+      "tags": [
+        "hot"
+      ],
+      "image": "https://pub-1fd965ab66464286847edcb540254451.r2.dev/616281/01.webp",
+      "images": 1,
+      "_pcsPerCtn": 12.0,
+      "_cbm": 0.02
+    }
+  ],
+  "Napkin": [
+    {
+      "sku": "617081",
+      "name": "Eid Party Napkin Gold White 33cm 20ct",
+      "price": 0.7,
+      "subcategory": "Napkin",
+      "description": "Size:33*33cm\nPacking:20pcs",
+      "tags": [
+        "hot"
+      ],
+      "image": "https://pub-1fd965ab66464286847edcb540254451.r2.dev/617081/01.webp",
+      "images": 4,
+      "_pcsPerCtn": 72.0,
+      "_cbm": 0.04
+    },
+    {
+      "sku": "617063",
+      "name": "Eid Party Napkin Gold White 33cm 20ct",
+      "price": 0.51,
+      "subcategory": "Napkin",
+      "description": "Size:33cm\nPacking:20pcs",
+      "tags": [
+        "hot"
+      ],
+      "image": "https://pub-1fd965ab66464286847edcb540254451.r2.dev/617063/01.webp",
+      "images": 1,
+      "_pcsPerCtn": 72.0,
+      "_cbm": 0.04
+    },
+    {
+      "sku": "617072",
+      "name": "Eid Mubarak napkins 16pcs",
+      "price": 0.55,
+      "subcategory": "Napkin",
+      "description": "Size:33cm\nPacking:20pcs",
+      "tags": [
+        "hot"
+      ],
+      "image": "https://pub-1fd965ab66464286847edcb540254451.r2.dev/617072/01.webp",
+      "images": 1,
+      "_pcsPerCtn": 96.0,
+      "_cbm": 0.04
+    },
+    {
+      "sku": "617193",
+      "name": "Ramadan Napkin Holder with Napkins incl. napkin",
+      "price": 0.67,
+      "subcategory": "Napkin",
+      "description": "Napkin, 1pcs",
+      "tags": [
+        "hot"
+      ],
+      "image": "https://pub-1fd965ab66464286847edcb540254451.r2.dev/617193/01.webp",
+      "images": 1,
+      "_pcsPerCtn": 120.0,
+      "_cbm": 0.09
+    },
+    {
+      "sku": "623201",
+      "name": "+Welcome Napkin +Napkin 12pcs",
+      "price": 0.16,
+      "subcategory": "Napkin",
+      "description": "6*6*11cm\ncase :1pc\nnapkin: 8pcs",
+      "tags": [
+        "hot"
+      ],
+      "image": "https://pub-1fd965ab66464286847edcb540254451.r2.dev/623201/01.webp",
+      "images": 1,
+      "_pcsPerCtn": 84.0,
+      "_cbm": 0.02
+    },
+    {
+      "sku": "631343",
+      "name": "Eid Napkin ring-black Napking 8pcs",
+      "price": 0.57,
+      "subcategory": "Napkin",
+      "description": "Napkin, Black, 8pcs",
+      "tags": [
+        "hot"
+      ],
+      "image": "https://pub-1fd965ab66464286847edcb540254451.r2.dev/631343/01.webp",
+      "images": 1,
+      "_pcsPerCtn": 504.0,
+      "_cbm": 0.03
+    },
+    {
+      "sku": "631345",
+      "name": "Eid Napkin ring-silver Napking 8pcs",
+      "price": 0.57,
+      "subcategory": "Napkin",
+      "description": "Napkin, Silver, 8pcs",
+      "tags": [
+        "hot"
+      ],
+      "image": "https://pub-1fd965ab66464286847edcb540254451.r2.dev/631345/01.webp",
+      "images": 1,
+      "_pcsPerCtn": 504.0,
+      "_cbm": 0.03
+    },
+    {
+      "sku": "631346",
+      "name": "Eid Napkin ring-gold Napking 8pcs",
+      "price": 0.57,
+      "subcategory": "Napkin",
+      "description": "Napkin, Gold, 8pcs",
+      "tags": [
+        "hot"
+      ],
+      "image": "https://pub-1fd965ab66464286847edcb540254451.r2.dev/631346/01.webp",
+      "images": 1,
+      "_pcsPerCtn": 504.0,
+      "_cbm": 0.03
+    }
+  ],
+  "Straw": [
+    {
+      "sku": "618186",
+      "name": "8pk Eid Mubarak Straws 8pcs",
+      "price": 0.23,
+      "subcategory": "Straw",
+      "description": "20cm\n8pcs",
+      "tags": [
+        "hot"
+      ],
+      "image": "https://pub-1fd965ab66464286847edcb540254451.r2.dev/618186/01.webp",
+      "images": 1,
+      "_pcsPerCtn": 180.0,
+      "_cbm": 0.06
+    }
+  ],
+  "Tablecloth": [
+    {
+      "sku": "621112",
+      "name": "PE Tablecloth 108*180cm",
+      "price": 0.32,
+      "subcategory": "Tablecloth",
+      "description": "EID TABLECLOTH 1pcs 108*180cm\n1pc/opp+header",
+      "tags": [
+        "hot"
+      ],
+      "image": "https://pub-1fd965ab66464286847edcb540254451.r2.dev/621112/01.webp",
+      "images": 5,
+      "_pcsPerCtn": 240.0,
+      "_cbm": 0.03
+    },
+    {
+      "sku": "621150",
+      "name": "Ramadan Tablecloth 1pcs",
+      "price": 2.79,
+      "subcategory": "Tablecloth",
+      "description": "Tablecloth, 1pcs",
+      "tags": [
+        "hot"
+      ],
+      "image": "https://pub-1fd965ab66464286847edcb540254451.r2.dev/621150/01.webp",
+      "images": 4,
+      "_pcsPerCtn": 48.0,
+      "_cbm": 0.05
+    },
+    {
+      "sku": "621151",
+      "name": "Ramadan Kareem Tablecloth 1pcs",
+      "price": 2.79,
+      "subcategory": "Tablecloth",
+      "description": "Tablecloth, 1pcs",
+      "tags": [
+        "hot"
+      ],
+      "image": "https://pub-1fd965ab66464286847edcb540254451.r2.dev/621151/01.webp",
+      "images": 5,
+      "_pcsPerCtn": 48.0,
+      "_cbm": 0.05
+    },
+    {
+      "sku": "621078",
+      "name": "Moon Wooden LED Light (40cm)",
+      "price": 1.34,
+      "subcategory": "Tablecloth",
+      "description": "Table Runner, 1pcs",
+      "tags": [
+        "hot"
+      ],
+      "image": "https://pub-1fd965ab66464286847edcb540254451.r2.dev/621078/01.webp",
+      "images": 4,
+      "_pcsPerCtn": 96.0,
+      "_cbm": 0
+    },
+    {
+      "sku": "621079",
+      "name": "Table runner 1pcs",
+      "price": 1.34,
+      "subcategory": "Tablecloth",
+      "description": "Table Runner, 1pcs",
+      "tags": [],
+      "image": "https://pub-1fd965ab66464286847edcb540254451.r2.dev/621079/01.webp",
+      "images": 4,
+      "_pcsPerCtn": 96.0,
+      "_cbm": 0
+    },
+    {
+      "sku": "621139",
+      "name": "RAMADAN Tablecloth",
+      "price": 0.64,
+      "subcategory": "Tablecloth",
+      "description": "28*275cm\n1pk",
+      "tags": [],
+      "image": "https://pub-1fd965ab66464286847edcb540254451.r2.dev/621139/01.webp",
+      "images": 1,
+      "_pcsPerCtn": 0,
+      "_cbm": 0
+    },
+    {
+      "sku": "621140",
+      "name": "RAMADAN TABLECLOTH",
+      "price": 0.77,
+      "subcategory": "Tablecloth",
+      "description": "120*180cm\n1pk1",
+      "tags": [],
+      "image": "https://pub-1fd965ab66464286847edcb540254451.r2.dev/621140/01.webp",
+      "images": 1,
+      "_pcsPerCtn": 0,
+      "_cbm": 0
+    }
+  ],
+  "Balloon Latex": [
+    {
+      "sku": "624166",
+      "name": "Eid Printed 12 inch Latex Balloon 8ct Black",
+      "price": 0.21,
+      "subcategory": "Balloon Latex",
+      "description": "12inch\n8pcs/opp+insert card",
+      "tags": [
+        "hot"
+      ],
+      "image": "https://pub-1fd965ab66464286847edcb540254451.r2.dev/624166/01.webp",
+      "images": 1,
+      "_pcsPerCtn": 576.0,
+      "_cbm": 0.09
+    },
+    {
+      "sku": "624057",
+      "name": "Eid Printed and Confetti Balloon 6ct",
+      "price": 0.44,
+      "subcategory": "Balloon Latex",
+      "description": "Size:12inch\nPacking:6pcs",
+      "tags": [],
+      "image": "https://pub-1fd965ab66464286847edcb540254451.r2.dev/624057/01.webp",
+      "images": 4,
+      "_pcsPerCtn": 336.0,
+      "_cbm": 0.06
+    },
+    {
+      "sku": "624134",
+      "name": "Eid Printed Black Balloon 6ct",
+      "price": 0.34,
+      "subcategory": "Balloon Latex",
+      "description": "Balloon, Black, 6pcs",
+      "tags": [],
+      "image": "https://pub-1fd965ab66464286847edcb540254451.r2.dev/624134/01.webp",
+      "images": 2,
+      "_pcsPerCtn": 240.0,
+      "_cbm": 0.03
+    },
+    {
+      "sku": "624167",
+      "name": "Ramadan Printed 12 inch Latex Balloon 8ct Gold",
+      "price": 0.21,
+      "subcategory": "Balloon Latex",
+      "description": "12inch\n8pcs/opp+insert card",
+      "tags": [],
+      "image": "https://pub-1fd965ab66464286847edcb540254451.r2.dev/624167/01.webp",
+      "images": 1,
+      "_pcsPerCtn": 576.0,
+      "_cbm": 0.09
+    },
+    {
+      "sku": "624169",
+      "name": "Diwali latex balloon 8pcs",
+      "price": 0.41975,
+      "subcategory": "Balloon Latex",
+      "description": "12inch latexb alloons *8pcs\ninserted card+OPP bag/set",
+      "tags": [],
+      "image": "",
+      "images": 0,
+      "_pcsPerCtn": 312,
+      "_cbm": 0.036288
+    }
+  ],
+  "Balloon Kit": [
+    {
+      "sku": "624148",
+      "name": "Eid Printed Chrome Balloon 12ct",
+      "price": 0.76,
+      "subcategory": "Balloon Kit",
+      "description": "Balloon, Chrome, 12pcs",
+      "tags": [
+        "hot"
+      ],
+      "image": "https://pub-1fd965ab66464286847edcb540254451.r2.dev/624148/01.webp",
+      "images": 4,
+      "_pcsPerCtn": 144.0,
+      "_cbm": 0.03
+    },
+    {
+      "sku": "624149",
+      "name": "Ramadan Printed Chrome Balloon 12ct",
+      "price": 0.76,
+      "subcategory": "Balloon Kit",
+      "description": "Balloon, Chrome, 12pcs",
+      "tags": [
+        "hot"
+      ],
+      "image": "https://pub-1fd965ab66464286847edcb540254451.r2.dev/624149/01.webp",
+      "images": 4,
+      "_pcsPerCtn": 144.0,
+      "_cbm": 0.03
+    },
+    {
+      "sku": "625556",
+      "name": "OMRA mubarak balloons",
+      "price": 0,
+      "subcategory": "Balloon Kit",
+      "description": "Balloon, 11pcs",
+      "tags": [
+        "hot"
+      ],
+      "image": "https://pub-1fd965ab66464286847edcb540254451.r2.dev/625556/01.webp",
+      "images": 1,
+      "_pcsPerCtn": 0,
+      "_cbm": 0
+    },
+    {
+      "sku": "624170",
+      "name": "EID MUBARAK LATEX BALLOONS 8pcs",
+      "price": 0,
+      "subcategory": "Balloon Kit",
+      "description": "Balloon, 8pcs",
+      "tags": [],
+      "image": "",
+      "images": 0,
+      "_pcsPerCtn": 0,
+      "_cbm": 0
+    },
+    {
+      "sku": "625517",
+      "name": "eid mubarak balloon set 120pcs",
+      "price": 0,
+      "subcategory": "Balloon Kit",
+      "description": "Balloon, 120pcs",
+      "tags": [],
+      "image": "",
+      "images": 0,
+      "_pcsPerCtn": 0,
+      "_cbm": 0
+    }
+  ],
+  "Balloon Foil": [
+    {
+      "sku": "625447",
+      "name": "Eid Mubarak Foil balloon balloons 1pcs",
+      "price": 0.25,
+      "subcategory": "Balloon Foil",
+      "description": "18inch\n1pc\nSize:45cm",
+      "tags": [
+        "hot"
+      ],
+      "image": "https://pub-1fd965ab66464286847edcb540254451.r2.dev/625447/01.webp",
+      "images": 2,
+      "_pcsPerCtn": 276.0,
+      "_cbm": 0.02
+    },
+    {
+      "sku": "625523",
+      "name": "Ramadan Lettering Foil Balloon Garland 16pcs",
+      "price": 1.09,
+      "subcategory": "Balloon Foil",
+      "description": "16\" letters and star, moon\n3m string",
+      "tags": [
+        "hot"
+      ],
+      "image": "https://pub-1fd965ab66464286847edcb540254451.r2.dev/625523/01.webp",
+      "images": 4,
+      "_pcsPerCtn": 108.0,
+      "_cbm": 0.04
+    },
+    {
+      "sku": "625536",
+      "name": "Ramadan 18inch Round Foil Balloon 1ct",
+      "price": 0.18,
+      "subcategory": "Balloon Foil",
+      "description": "RAMADAN KAREEM FOIL BALLOON 42cm 1pcs/opp+insert card",
+      "tags": [
+        "hot"
+      ],
+      "image": "https://pub-1fd965ab66464286847edcb540254451.r2.dev/625536/01.webp",
+      "images": 5,
+      "_pcsPerCtn": 324.0,
+      "_cbm": 0.02
+    },
+    {
+      "sku": "640401",
+      "name": "Eid Balloon Backdrop Decoration Kit",
+      "price": 3.45,
+      "subcategory": "Balloon Foil",
+      "description": "63pcs\n1*0.7m paper poster*1pc\n42pcs 12\" latex balloons\n24\" moon and star balloon *1pc\n10\" star foil balloon*1pc\ntassles bunting*1pc\nballoon connector and glue dosts",
+      "tags": [
+        "hot"
+      ],
+      "image": "https://pub-1fd965ab66464286847edcb540254451.r2.dev/640401/01.webp",
+      "images": 5,
+      "_pcsPerCtn": 36.0,
+      "_cbm": 0.09
+    },
+    {
+      "sku": "625425",
+      "name": "Eid Lettering Foil Balloon Garland Set 10pcs Silver",
+      "price": 0.79,
+      "subcategory": "Balloon Foil",
+      "description": "silver\nSize:18inch 10pcs\nPacking:1set",
+      "tags": [
+        "hot"
+      ],
+      "image": "https://pub-1fd965ab66464286847edcb540254451.r2.dev/625425/01.webp",
+      "images": 1,
+      "_pcsPerCtn": 96.0,
+      "_cbm": 0.03
+    },
+    {
+      "sku": "625426",
+      "name": "Eid Lettering Foil Balloon Garland Set 10pcs Rosegold",
+      "price": 0.79,
+      "subcategory": "Balloon Foil",
+      "description": "rose gold\nSize:18inch 10pcs\nPacking:1set",
+      "tags": [
+        "hot"
+      ],
+      "image": "https://pub-1fd965ab66464286847edcb540254451.r2.dev/625426/01.webp",
+      "images": 1,
+      "_pcsPerCtn": 96.0,
+      "_cbm": 0.03
+    },
+    {
+      "sku": "625495",
+      "name": "Hajj Round Foil Balloon 18inch",
+      "price": 0.21,
+      "subcategory": "Balloon Foil",
+      "description": "18inch\n1pc\nSize:45cm",
+      "tags": [
+        "hot"
+      ],
+      "image": "https://pub-1fd965ab66464286847edcb540254451.r2.dev/625495/01.webp",
+      "images": 1,
+      "_pcsPerCtn": 264.0,
+      "_cbm": 0.02
+    },
+    {
+      "sku": "625496",
+      "name": "Hajj Foil Balloon Set 13pcs",
+      "price": 1.0,
+      "subcategory": "Balloon Foil",
+      "description": "2x 18\" Hajj Foil\n11x 16\" letter foil\n13pcs",
+      "tags": [
+        "hot"
+      ],
+      "image": "https://pub-1fd965ab66464286847edcb540254451.r2.dev/625496/01.webp",
+      "images": 1,
+      "_pcsPerCtn": 120.0,
+      "_cbm": 0.06
+    }
+  ],
+  "Candle": [
+    {
+      "sku": "626072",
+      "name": "EID MUBARAK Candle 48pcs",
+      "price": 1.49,
+      "subcategory": "Candle",
+      "description": "Candle, 48pcs",
+      "tags": [
+        "hot"
+      ],
+      "image": "https://pub-1fd965ab66464286847edcb540254451.r2.dev/626072/01.webp",
+      "images": 4,
+      "_pcsPerCtn": 48.0,
+      "_cbm": 0.03
+    },
+    {
+      "sku": "641299",
+      "name": "Candle Holder-L 72pcs",
+      "price": 2.59,
+      "subcategory": "Candle",
+      "description": "10*21cm\ncandle plate\n1pc/box",
+      "tags": [
+        "hot"
+      ],
+      "image": "https://pub-1fd965ab66464286847edcb540254451.r2.dev/641299/01.webp",
+      "images": 1,
+      "_pcsPerCtn": 24.0,
+      "_cbm": 0.06
+    },
+    {
+      "sku": "641300",
+      "name": "Candle Holder-M 72pcs",
+      "price": 2.4,
+      "subcategory": "Candle",
+      "description": "10*18cm\ncandle plate\n1pc/box",
+      "tags": [
+        "hot"
+      ],
+      "image": "https://pub-1fd965ab66464286847edcb540254451.r2.dev/641300/01.webp",
+      "images": 1,
+      "_pcsPerCtn": 24.0,
+      "_cbm": 0.06
+    },
+    {
+      "sku": "641338",
+      "name": "EID CANDLE LAMP 1pcs",
+      "price": 1.15,
+      "subcategory": "Candle",
+      "description": "7*6.5*13cm\nmetal, glass\ncandle plate\n1pcs/box",
+      "tags": [
+        "hot"
+      ],
+      "image": "https://pub-1fd965ab66464286847edcb540254451.r2.dev/641338/01.webp",
+      "images": 1,
+      "_pcsPerCtn": 24.0,
+      "_cbm": 0.02
+    },
+    {
+      "sku": "642147",
+      "name": "Gold Candlestick Set of 3 single candlestick",
+      "price": 3.83,
+      "subcategory": "Candle",
+      "description": "Candle, Gold, 1pcs",
+      "tags": [
+        "hot"
+      ],
+      "image": "https://pub-1fd965ab66464286847edcb540254451.r2.dev/642147/01.webp",
+      "images": 1,
+      "_pcsPerCtn": 24.0,
+      "_cbm": 0.11
+    },
+    {
+      "sku": "642148",
+      "name": "Gold Single Candle Holder 1 1pcs",
+      "price": 2.02,
+      "subcategory": "Candle",
+      "description": "Candle, Gold, 1pcs",
+      "tags": [
+        "hot"
+      ],
+      "image": "https://pub-1fd965ab66464286847edcb540254451.r2.dev/642148/01.webp",
+      "images": 1,
+      "_pcsPerCtn": 48.0,
+      "_cbm": 0.13
+    },
+    {
+      "sku": "642149",
+      "name": "Gold Double Candle Holder 2 1pcs",
+      "price": 2.34,
+      "subcategory": "Candle",
+      "description": "Candle, Gold, 1pcs",
+      "tags": [
+        "hot"
+      ],
+      "image": "https://pub-1fd965ab66464286847edcb540254451.r2.dev/642149/01.webp",
+      "images": 1,
+      "_pcsPerCtn": 48.0,
+      "_cbm": 0.16
+    },
+    {
+      "sku": "642150",
+      "name": "Gold Triple Candle Holder 3 1pcs",
+      "price": 3.19,
+      "subcategory": "Candle",
+      "description": "Candle, Gold, 1pcs",
+      "tags": [
+        "hot"
+      ],
+      "image": "https://pub-1fd965ab66464286847edcb540254451.r2.dev/642150/01.webp",
+      "images": 1,
+      "_pcsPerCtn": 48.0,
+      "_cbm": 0.22
+    }
+  ],
+  "Pinata": [
+    {
+      "sku": "627275",
+      "name": "Silver Moon Pinata 8pcs",
+      "price": 3.28,
+      "subcategory": "Pinata",
+      "description": "pinata\nSize:45*45*10cm\n43cm",
+      "tags": [],
+      "image": "https://pub-1fd965ab66464286847edcb540254451.r2.dev/627275/01.webp",
+      "images": 5,
+      "_pcsPerCtn": 4.0,
+      "_cbm": 0.1
+    },
+    {
+      "sku": "627276",
+      "name": "silver moon pinata 1pcs",
+      "price": 3.28,
+      "subcategory": "Pinata",
+      "description": "pinata\nSize:46*17*9cm",
+      "tags": [],
+      "image": "https://pub-1fd965ab66464286847edcb540254451.r2.dev/627276/01.webp",
+      "images": 6,
+      "_pcsPerCtn": 4.0,
+      "_cbm": 0.1
+    },
+    {
+      "sku": "627084",
+      "name": "Star Shape Mini Pinata",
+      "price": 3.07,
+      "subcategory": "Pinata",
+      "description": "pinata\nSize: 30.5*30.5*7.5cm\nQty per CTN: 8PCS\nCTN Size:59*34*32cm",
+      "tags": [],
+      "image": "https://pub-1fd965ab66464286847edcb540254451.r2.dev/627084/01.webp",
+      "images": 1,
+      "_pcsPerCtn": 8.0,
+      "_cbm": 0.06
+    },
+    {
+      "sku": "627236",
+      "name": "Moon Shape Pinata",
+      "price": 3.28,
+      "subcategory": "Pinata",
+      "description": "pinata\nSize: 45*45*10cm\nQty per CTN: 4PCS\nCTN Size: 48*47*42cm",
+      "tags": [],
+      "image": "https://pub-1fd965ab66464286847edcb540254451.r2.dev/627236/01.webp",
+      "images": 1,
+      "_pcsPerCtn": 4.0,
+      "_cbm": 0.1
+    }
+  ],
+  "Picks": [
+    {
+      "sku": "902354",
+      "name": "Eid Mubarak Cake Pick Black colour 1pcs",
+      "price": 0.21,
+      "subcategory": "Picks",
+      "description": "Eid Mubarak Cake Pick\nBlack colour 14*11cm 1pcs/opp+insert card",
+      "tags": [
+        "hot"
+      ],
+      "image": "https://pub-1fd965ab66464286847edcb540254451.r2.dev/902354/01.webp",
+      "images": 5,
+      "_pcsPerCtn": 600.0,
+      "_cbm": 0.03
+    },
+    {
+      "sku": "902357",
+      "name": "Eid Acrylic Cake Topper",
+      "price": 0.65,
+      "subcategory": "Picks",
+      "description": "Ramadan Cake Picks Opp+white card 16.5cm 2pcs pack:29*21.5cm",
+      "tags": [
+        "hot"
+      ],
+      "image": "https://pub-1fd965ab66464286847edcb540254451.r2.dev/902357/01.webp",
+      "images": 5,
+      "_pcsPerCtn": 300.0,
+      "_cbm": 0.04
+    },
+    {
+      "sku": "902358",
+      "name": "Eid Acrylic Cake Topper",
+      "price": 0.65,
+      "subcategory": "Picks",
+      "description": "Ramadan Cake Picks 16.5cm 2pcs",
+      "tags": [
+        "hot"
+      ],
+      "image": "https://pub-1fd965ab66464286847edcb540254451.r2.dev/902358/01.webp",
+      "images": 5,
+      "_pcsPerCtn": 300.0,
+      "_cbm": 0.04
+    },
+    {
+      "sku": "902359",
+      "name": "Eid Acrylic Cake Topper",
+      "price": 0.65,
+      "subcategory": "Picks",
+      "description": "Ramadan Cake Picks 16.5cm 2pcs",
+      "tags": [
+        "hot"
+      ],
+      "image": "https://pub-1fd965ab66464286847edcb540254451.r2.dev/902359/01.webp",
+      "images": 5,
+      "_pcsPerCtn": 300.0,
+      "_cbm": 0.04
+    },
+    {
+      "sku": "902360",
+      "name": "Eid Acrylic Cake Topper",
+      "price": 0.65,
+      "subcategory": "Picks",
+      "description": "Ramadan Cake Picks 16.5cm 2pcs",
+      "tags": [
+        "hot"
+      ],
+      "image": "https://pub-1fd965ab66464286847edcb540254451.r2.dev/902360/01.webp",
+      "images": 5,
+      "_pcsPerCtn": 300.0,
+      "_cbm": 0.04
+    },
+    {
+      "sku": "640015",
+      "name": "Eid Cup Cake  Wrap and Topper Silver",
+      "price": 2.41,
+      "subcategory": "Picks",
+      "description": "8pcs topper\n8pcs cake wrap",
+      "tags": [
+        "hot"
+      ],
+      "image": "https://pub-1fd965ab66464286847edcb540254451.r2.dev/640015/01.webp",
+      "images": 1,
+      "_pcsPerCtn": 252.0,
+      "_cbm": 0.05
+    },
+    {
+      "sku": "902258",
+      "name": "Firework Foil Cake Topper  6ct",
+      "price": 0.15,
+      "subcategory": "Picks",
+      "description": "Size:15cm\nPacking:6pcs",
+      "tags": [
+        "hot"
+      ],
+      "image": "https://pub-1fd965ab66464286847edcb540254451.r2.dev/902258/01.webp",
+      "images": 1,
+      "_pcsPerCtn": 1008.0,
+      "_cbm": 0.06
+    },
+    {
+      "sku": "902277",
+      "name": "Eid Paper Pick",
+      "price": 0.29,
+      "subcategory": "Picks",
+      "description": "12cm\n8pcs",
+      "tags": [
+        "hot"
+      ],
+      "image": "https://pub-1fd965ab66464286847edcb540254451.r2.dev/902277/01.webp",
+      "images": 1,
+      "_pcsPerCtn": 600.0,
+      "_cbm": 0.06
+    }
+  ],
+  "Party Set": [
+    {
+      "sku": "640410",
+      "name": "Ramadan Mubarak set",
+      "price": 2.2,
+      "subcategory": "Party Set",
+      "description": "",
+      "tags": [
+        "new"
+      ],
+      "image": "https://pub-1fd965ab66464286847edcb540254451.r2.dev/640410/01.webp",
+      "images": 2,
+      "_pcsPerCtn": 0,
+      "_cbm": 0
+    },
+    {
+      "sku": "640408",
+      "name": "EID Mubarak set 1pcs",
+      "price": 1.86,
+      "subcategory": "Party Set",
+      "description": "Sticker, 1pcs",
+      "tags": [
+        "new"
+      ],
+      "image": "https://pub-1fd965ab66464286847edcb540254451.r2.dev/640408/01.webp",
+      "images": 1,
+      "_pcsPerCtn": 0,
+      "_cbm": 0
+    },
+    {
+      "sku": "640409",
+      "name": "Ramadan Mubarak set 1pcs",
+      "price": 2.2,
+      "subcategory": "Party Set",
+      "description": "Sticker, 1pcs",
+      "tags": [
+        "new"
+      ],
+      "image": "https://pub-1fd965ab66464286847edcb540254451.r2.dev/640409/01.webp",
+      "images": 1,
+      "_pcsPerCtn": 0,
+      "_cbm": 0
+    },
+    {
+      "sku": "640411",
+      "name": "Umrah Mubarak set 1pcs",
+      "price": 2.1,
+      "subcategory": "Party Set",
+      "description": "Sticker, 1pcs",
+      "tags": [
+        "new"
+      ],
+      "image": "https://pub-1fd965ab66464286847edcb540254451.r2.dev/640411/01.webp",
+      "images": 1,
+      "_pcsPerCtn": 0,
+      "_cbm": 0
+    },
+    {
+      "sku": "TEMP-021",
+      "name": "Gold Tray",
+      "price": 1.34,
+      "subcategory": "Party Set",
+      "description": "linen\n33x159cm\n18inch\n1pcs\n45*45*10cm\n1pcs",
+      "tags": [],
+      "image": "",
+      "images": 0,
+      "_pcsPerCtn": 96.0,
+      "_cbm": 0.05
+    }
+  ],
+  "Other": [
+    {
+      "sku": "623261",
+      "name": "Happy Diwali Paper Bags 1pcs",
+      "price": 0.15525,
+      "subcategory": "Other",
+      "description": "21*15*8cm\n1pc sticker",
+      "tags": [
+        "hot"
+      ],
+      "image": "",
+      "images": 0,
+      "_pcsPerCtn": 1200,
+      "_cbm": 0.087318
+    },
+    {
+      "sku": "640414",
+      "name": "Ramadan Decoration Set",
+      "price": 4.56,
+      "subcategory": "Other",
+      "description": "5x paper fan garland\n1x lettering garland\n2x 18\"star foil balloon\n12x 12\" latex balloon",
+      "tags": [],
+      "image": "https://pub-1fd965ab66464286847edcb540254451.r2.dev/640414/01.webp",
+      "images": 4,
+      "_pcsPerCtn": 0,
+      "_cbm": 0
+    },
+    {
+      "sku": "640415",
+      "name": "Ramadan Decoration Set",
+      "price": 3.94,
+      "subcategory": "Other",
+      "description": "1x 28\"foil moon balloon\n3x 10\" foil star balloon\n24x 12\"latex balloon\n1x lettering garland\n1x35cm fan\n4x30cm fan\n2x25cm fan",
+      "tags": [],
+      "image": "https://pub-1fd965ab66464286847edcb540254451.r2.dev/640415/01.webp",
+      "images": 5,
+      "_pcsPerCtn": 0,
+      "_cbm": 0
+    },
+    {
+      "sku": "640416",
+      "name": "Ramadan Decoration Set",
+      "price": 1.01,
+      "subcategory": "Other",
+      "description": "1x lettering bunting\n6x swirl\n6x hanging cards",
+      "tags": [],
+      "image": "https://pub-1fd965ab66464286847edcb540254451.r2.dev/640416/01.webp",
+      "images": 7,
+      "_pcsPerCtn": 0,
+      "_cbm": 0
+    },
+    {
+      "sku": "640417",
+      "name": "Ramadan Decoration Set",
+      "price": 1.89,
+      "subcategory": "Other",
+      "description": "1x 28\"foil moon balloon\n8x 12\"latex balloon\n1x lettering garland\n1x35cm fan\n4x30cm fan\n2x25cm fan",
+      "tags": [],
+      "image": "https://pub-1fd965ab66464286847edcb540254451.r2.dev/640417/01.webp",
+      "images": 2,
+      "_pcsPerCtn": 0,
+      "_cbm": 0
+    },
+    {
+      "sku": "608410",
+      "name": "Ramadan Decoration Set",
+      "price": 1.32,
+      "subcategory": "Other",
+      "description": "1x banner\n3x garlands",
+      "tags": [],
+      "image": "https://pub-1fd965ab66464286847edcb540254451.r2.dev/608410/01.webp",
+      "images": 13,
+      "_pcsPerCtn": 0,
+      "_cbm": 0
+    },
+    {
+      "sku": "613126",
+      "name": "Ramadan Calendar",
+      "price": 2.0,
+      "subcategory": "Other",
+      "description": "40*60cm\n1pc",
+      "tags": [],
+      "image": "https://pub-1fd965ab66464286847edcb540254451.r2.dev/613126/01.webp",
+      "images": 12,
+      "_pcsPerCtn": 0,
+      "_cbm": 0
+    },
+    {
+      "sku": "642281",
+      "name": "Ramadan Calendar",
+      "price": 0.45,
+      "subcategory": "Other",
+      "description": "1xcalendar 22*28cm \n1x sticker sheet",
+      "tags": [],
+      "image": "https://pub-1fd965ab66464286847edcb540254451.r2.dev/642281/01.webp",
+      "images": 2,
+      "_pcsPerCtn": 0,
+      "_cbm": 0
+    }
+  ],
+  "Balloon Acce": [
+    {
+      "sku": "653157",
+      "name": "Balloon Box With \"EID\" Decor 1 set 3pcs",
+      "price": 2.01,
+      "subcategory": "Balloon Acce",
+      "description": "30*30*30cm\n3pcs/set",
+      "tags": [
+        "hot"
+      ],
+      "image": "https://pub-1fd965ab66464286847edcb540254451.r2.dev/653157/01.webp",
+      "images": 5,
+      "_pcsPerCtn": 30.0,
+      "_cbm": 0.05
+    }
+  ],
+  "Cupcake": [
+    {
+      "sku": "653263",
+      "name": "Ramadan 16 Grids Candy Box 2pcs",
+      "price": 1.18,
+      "subcategory": "Cupcake",
+      "description": "15*15*3.5cm\n2pcs",
+      "tags": [
+        "hot"
+      ],
+      "image": "https://pub-1fd965ab66464286847edcb540254451.r2.dev/653263/01.webp",
+      "images": 4,
+      "_pcsPerCtn": 120.0,
+      "_cbm": 0.04
+    },
+    {
+      "sku": "653271",
+      "name": "Ramadan 16 Grids Candy Box 2pcs",
+      "price": 0.76,
+      "subcategory": "Cupcake",
+      "description": "15*15*3.5cm\n2pcs",
+      "tags": [
+        "hot"
+      ],
+      "image": "https://pub-1fd965ab66464286847edcb540254451.r2.dev/653271/01.webp",
+      "images": 4,
+      "_pcsPerCtn": 120.0,
+      "_cbm": 0.04
+    },
+    {
+      "sku": "653264",
+      "name": "Eid 16 Grids Candy Box 2pcs",
+      "price": 0.5,
+      "subcategory": "Cupcake",
+      "description": "15*15*3.5cm\n2pcs",
+      "tags": [
+        "hot"
+      ],
+      "image": "https://pub-1fd965ab66464286847edcb540254451.r2.dev/653264/01.webp",
+      "images": 1,
+      "_pcsPerCtn": 120.0,
+      "_cbm": 0.04
+    },
+    {
+      "sku": "653265",
+      "name": "Eid 16 Grids Candy Box 2pcs",
+      "price": 0.75,
+      "subcategory": "Cupcake",
+      "description": "15*15*3.5cm\n2pcs",
+      "tags": [
+        "hot"
+      ],
+      "image": "https://pub-1fd965ab66464286847edcb540254451.r2.dev/653265/01.webp",
+      "images": 1,
+      "_pcsPerCtn": 120.0,
+      "_cbm": 0.04
+    },
+    {
+      "sku": "653266",
+      "name": "Ramadan 16 Grids Candy Box 2pcs",
+      "price": 0.78,
+      "subcategory": "Cupcake",
+      "description": "15*15*3.5cm\n2pcs",
+      "tags": [
+        "hot"
+      ],
+      "image": "https://pub-1fd965ab66464286847edcb540254451.r2.dev/653266/01.webp",
+      "images": 1,
+      "_pcsPerCtn": 120.0,
+      "_cbm": 0.04
+    },
+    {
+      "sku": "653267",
+      "name": "Eid 16 Grids Candy Box 2pcs",
+      "price": 0.78,
+      "subcategory": "Cupcake",
+      "description": "15*15*3.5cm\n2pcs",
+      "tags": [
+        "hot"
+      ],
+      "image": "https://pub-1fd965ab66464286847edcb540254451.r2.dev/653267/01.webp",
+      "images": 1,
+      "_pcsPerCtn": 120.0,
+      "_cbm": 0.04
+    },
+    {
+      "sku": "653268",
+      "name": "Ramadan 16 Grids Candy Box 2pcs",
+      "price": 0.78,
+      "subcategory": "Cupcake",
+      "description": "15*15*3.5cm\n2pcs",
+      "tags": [
+        "hot"
+      ],
+      "image": "https://pub-1fd965ab66464286847edcb540254451.r2.dev/653268/01.webp",
+      "images": 1,
+      "_pcsPerCtn": 120.0,
+      "_cbm": 0.04
+    },
+    {
+      "sku": "653269",
+      "name": "Eid 16 Grids Candy Box 2pcs",
+      "price": 0.78,
+      "subcategory": "Cupcake",
+      "description": "15*15*3.5cm\n2pcs",
+      "tags": [
+        "hot"
+      ],
+      "image": "https://pub-1fd965ab66464286847edcb540254451.r2.dev/653269/01.webp",
+      "images": 1,
+      "_pcsPerCtn": 120.0,
+      "_cbm": 0.04
+    }
+  ],
+  "Props": [
+    {
+      "sku": "642215",
+      "name": "Wooden Quran Stand 1pcs",
+      "price": 23.23,
+      "subcategory": "Props",
+      "description": "Stand, 1pcs",
+      "tags": [
+        "new",
+        "hot"
+      ],
+      "image": "https://pub-1fd965ab66464286847edcb540254451.r2.dev/642215/01.webp",
+      "images": 5,
+      "_pcsPerCtn": 2.0,
+      "_cbm": 0.06
+    }
+  ]
+}
