@@ -19,19 +19,27 @@
 - Chrome works, some Edge instances fail — likely proxy/VPN/DNS routing issue
 - R2 public access domain may be intermittently blocked in China
 
-## Blog Coverage Progress (as of 2026-06-24)
-- 15 total blog posts generated
+## Blog Coverage Progress (as of 2026-07-08)
+- 17 total blog posts generated
 - ✅ Bunting (17p) | ✅ Lantern (64p) | ✅ LED Light (184p) | ✅ Deco-Table (73p)
 - ✅ Deco-Wood (111p) | ✅ Deco-Hanging (81p) | ✅ Deco (92p)
-- ✅ Food Storage (64p) | ✅ Bag (45p, 6/24)
-- ⬜ Wrapping (26p) | ⬜ Box (24p) | ⬜ Backdrop (17p)
-- ⬜ Balloon Foil (19p) | ⬜ Napkin (18p) | ⬜ Picks (15p) | ⬜ Candle (14p)
+- ✅ Food Storage (64p) | ✅ Bag (45p, 6/24) | ✅ Wrapping (26p, 6/30)
+- ✅ Box (24p, 7/8) | ⬜ Balloon Foil (19p) — next candidate
+- ⬜ Napkin (18p) | ⬜ Backdrop (17p) | ⬜ Picks (15p) | ⬜ Candle (14p)
 - ⬜ Cupcake (13p) | ⬜ Paper Plate (12p) | ⬜ Garland (8p) + 14 more small subcategories
 
 ## Build System Notes
 - `build_pages.py` generates: product pages, category pages, sitemap.xml, robots.txt, products-public.json
 - `fp-render` inline script in index.html has JS syntax bug (missing `+` operator between string concatenations) — fixed 2026-06-05
 - Sitemap lastmod is hardcoded to build date, should be updated on each deploy
+
+## VPS Sitemap Cron (as of 2026-07-13)
+- Weekly sitemap refresh runs on VPS 49.234.48.68
+- Script: `/root/scripts/sitemap_refresh.sh` (git pull → build_pages.py → ping → git push)
+- Cron: `0 8 * * 1` (every Monday 8:00 AM Beijing)
+- Log: `/root/sitemap_refresh.log`
+- Repo: `/root/party-maker-website/` (shallow clone, git@github-pm-site remote)
+- Local WorkBuddy automation `automation-1781581832976` PAUSED
 
 ## Git Rules (DO NOT BREAK)
 - **NEVER `git add -A`** — node_modules 有 11000+ 文件，会卡死 push
