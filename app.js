@@ -482,7 +482,7 @@ function buildProductCardHTML(p, idx) {
     return `
     <div class="product-card ${inCart ? 'in-cart' : ''}" data-id="${p.id}">
         <div class="product-image" ${clickHandler ? `onclick="${clickHandler}"` : 'style="cursor:default"'}">
-            ${cardImgUrl ? `<img src="${cardImgUrl}" alt="${p.name}" ${imgAttrs} onerror="this.onerror=null;this.parentElement.classList.add('img-failed');this.outerHTML='<div class=\\'img-placeholder\\'><svg width=\\'40\\' height=\\'40\\' style=\\'color:var(--text-light)\\'><use href=\\'#icon-package\\'/></svg></div>'">` : `<div class="img-placeholder"><svg width="40" height="40" style="color:var(--text-light)"><use href="#icon-package"/></svg></div>`}
+            ${cardImgUrl ? `<img src="${cardImgUrl}" alt="${p.name}" ${imgAttrs} data-full="${imgUrl}" onerror="if(this.src.includes('/thumb/')){this.src=this.getAttribute('data-full')||this.src.replace('/thumb/','/');}else{this.onerror=null;this.parentElement.classList.add('img-failed');this.outerHTML='<div class=\\'img-placeholder\\'><svg width=\\'40\\' height=\\'40\\' style=\\'color:var(--text-light)\\'><use href=\\'#icon-package\\'/></svg></div>';}">` : `<div class="img-placeholder"><svg width="40" height="40" style="color:var(--text-light)"><use href="#icon-package"/></svg></div>`}
             ${badge}
             ${imgDots}
             ${tagBadges ? `<div class="tag-badges">${tagBadges}</div>` : ''}
