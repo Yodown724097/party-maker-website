@@ -4,6 +4,7 @@ Non-interactive, fully automated.
 """
 import json, os, sys, subprocess, time, io
 from pathlib import Path
+from gen_missing_thumbs import _get_client, generate_thumbs
 
 # ===================== CONFIG =====================
 WEBSITE_DIR = Path(__file__).parent
@@ -185,6 +186,12 @@ def append_and_build(products):
                        capture_output=True, text=True, cwd=str(WEBSITE_DIR), timeout=600)
     if r.stdout: print(r.stdout[-2000:])
     if r.stderr: print("STDERR:", r.stderr[:300])
+
+    # Auto-generate thumbnails for new products
+    print(f"\n  Generating thumbnails...")
+    r2_client = _get_client()
+    generate_thumbs(r2_client, products, verbose=True)
+
     return new
 
 # ===================== MAIN =====================
