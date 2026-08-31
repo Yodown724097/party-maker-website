@@ -698,6 +698,29 @@ def json_str(text):
     return json.dumps(str(text), ensure_ascii=False)
 
 
+def inject_gtag(html):
+    """在 <head> 后注入 Google Analytics (G-HYERFKYG25) gtag 代码。
+    幂等：已含则跳过。所有页面 build 时统一调用，避免 rebuild 覆盖手动注入。"""
+    GTAG_ID = "G-HYERFKYG25"
+    if GTAG_ID in html and "googletagmanager.com/gtag/js" in html:
+        return html  # 已注入，跳过
+    GTAG_HTML = (
+        '\n    <!-- Google tag (gtag.js) -->\n'
+        '    <script async src="https://www.googletagmanager.com/gtag/js?id=G-HYERFKYG25"></script>\n'
+        '    <script>\n'
+        '      window.dataLayer = window.dataLayer || [];\n'
+        '      function gtag(){dataLayer.push(arguments);}\n'
+        "      gtag('js', new Date());\n"
+        "      gtag('config', 'G-HYERFKYG25');\n"
+        '    </script>\n'
+    )
+    m = re.search(r'<head[^>]*>', html, re.IGNORECASE)
+    if not m:
+        return html
+    pos = m.end()
+    return html[:pos] + GTAG_HTML + html[pos:]
+
+
 def clean_public_product(p):
     """Return a lightweight product dict for the public frontend JSON.
     Only includes fields needed by product card rendering + lightbox."""
@@ -1740,7 +1763,7 @@ def generate_blog_posts(blog_json_path, output_dir, css_path="/style.css"):
 
         post_dir = output_dir / slug
         post_dir.mkdir(parents=True, exist_ok=True)
-        (post_dir / "index.html").write_text(html, encoding='utf-8')
+        (post_dir / "index.html").write_text(inject_gtag(html), encoding='utf-8')
         blog_urls.append((canonical, "0.7", "monthly"))
         post_count += 1
 
@@ -1772,7 +1795,7 @@ def generate_blog_posts(blog_json_path, output_dir, css_path="/style.css"):
         posts_html='\n'.join(posts_html_parts),
     )
 
-    (output_dir / "index.html").write_text(index_html, encoding='utf-8')
+    (output_dir / "index.html").write_text(inject_gtag(index_html), encoding='utf-8')
     blog_urls.append((f"{SITE_URL}/blog/", "0.8", "weekly"))
 
     print(f"[Blog] {post_count} posts + index generated")
@@ -1913,7 +1936,7 @@ def main():
     # Cache buster replacement — ensure absolute paths (/style.css, /app.js) so fallback works
     index_html = re.sub(r'(?:/)?app\.js\?v=[^\"\s]+', f'/app.js?v={cache_ver}', index_html)
     index_html = re.sub(r'(?:/)?style\.css\?v=[^\"\s]+', f'/style.css?v={cache_ver}', index_html)
-    index_file.write_text(index_html, encoding='utf-8')
+    index_file.write_text(inject_gtag(index_html), encoding='utf-8')
     print(f"[1c] index.html: embedded data injected, cache buster v={cache_ver}")
 
     # === 2. Build category index ===
@@ -1946,7 +1969,7 @@ def main():
         out_dir = product_dir / sku
         out_dir.mkdir(parents=True, exist_ok=True)
         page_html = generate_product_page(p, products)
-        (out_dir / "index.html").write_text(page_html, encoding='utf-8')
+        (out_dir / "index.html").write_text(inject_gtag(page_html), encoding='utf-8')
         count += 1
 
     # Save new cache for next build
@@ -1973,7 +1996,7 @@ def main():
         theme_dir = WEBSITE_DIR / theme_slug
         theme_dir.mkdir(parents=True, exist_ok=True)
         theme_html = generate_category_page(theme, None, theme_products, products)
-        (theme_dir / "index.html").write_text(theme_html, encoding='utf-8')
+        (theme_dir / "index.html").write_text(inject_gtag(theme_html), encoding='utf-8')
         sitemap_urls.append((f"{SITE_URL}/{theme_slug}/", "0.8", "weekly"))
         cat_count += 1
 
@@ -1983,7 +2006,7 @@ def main():
             subcat_dir = WEBSITE_DIR / theme_slug / subcat_slug
             subcat_dir.mkdir(parents=True, exist_ok=True)
             subcat_html = generate_category_page(theme, subcat, sub_products, products)
-            (subcat_dir / "index.html").write_text(subcat_html, encoding='utf-8')
+            (subcat_dir / "index.html").write_text(inject_gtag(subcat_html), encoding='utf-8')
             sitemap_urls.append((f"{SITE_URL}/{theme_slug}/{subcat_slug}/", "0.7", "weekly"))
             cat_count += 1
 
