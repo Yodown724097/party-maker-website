@@ -25,6 +25,54 @@ ROBOTS_FILE = WEBSITE_DIR / "robots.txt"
 IMG_PROXY = "https://www.partymaker.cn/img"
 R2_PUBLIC_RAW = "https://pub-1fd965ab66464286847edcb540254451.r2.dev"
 
+# ========== SEO: PROTECTED PRODUCTS ==========
+# 已收录且有排名的产品 SKU 白名单 —— 这些页面的 title 绝不改动，避免影响已有谷歌排名。
+# 名单来源: Search Console Performance 报表中有曝光的产品页(2026-08-31)。
+INDEXED_PRODUCTS_FILE = WEBSITE_DIR / "indexed_product_skus.json"
+try:
+    _load = __import__("json").loads(INDEXED_PRODUCTS_FILE.read_text(encoding="utf-8"))
+    INDEXED_PRODUCT_SKUS = set(_load) if isinstance(_load, list) else set()
+except Exception:
+    INDEXED_PRODUCT_SKUS = set()
+
+# 子分类 → B2B 买家长尾词 (仅用于"未收录"产品页的 title 增强)
+TITLE_BUYER_KEYWORDS = {
+    "Bag": "Ramadan Gift Bags Wholesale",
+    "Cup": "Eid Cups Wholesale",
+    "Paper Plate": "Eid Plates Wholesale",
+    "Box": "Ramadan Gift Boxes Wholesale",
+    "Wrapping": "Gift Wrapping Wholesale",
+    "Lantern": "Ramadan Lanterns Wholesale",
+    "Candle": "Ramadan Candles Wholesale",
+    "Bunting": "Ramadan Bunting Wholesale",
+    "Backdrop": "Ramadan Backdrops Wholesale",
+    "Napkin": "Eid Napkins Wholesale",
+    "Deco": "Eid Decorations Wholesale",
+    "Deco-Table": "Eid Table Decorations Wholesale",
+    "Deco-Hanging": "Hanging Eid Decorations Wholesale",
+    "Deco-Wood": "Wooden Eid Decorations Wholesale",
+    "LED Light": "Ramadan LED Lights Wholesale",
+    "Food Storage": "Ramadan Food Storage Wholesale",
+    "Balloon Foil": "Eid Foil Balloons Wholesale",
+    "Balloon-Latex": "Eid Latex Balloons Wholesale",
+    "Cake Stand": "Eid Cake Stands Wholesale",
+    "Cupcake": "Eid Cupcake Toppers Wholesale",
+    "Picks": "Eid Food Picks Wholesale",
+    "Curtain": "Ramadan Curtains Wholesale",
+    "Cutlery": "Eid Cutlery Wholesale",
+    "Confetti": "Eid Confetti Wholesale",
+    "Straw": "Eid Straws Wholesale",
+    "General": "Party Supplies Wholesale",
+}
+DEFAULT_BUYER_KEYWORD = "Party Supplies Wholesale"
+
+
+def buyer_keyword_for(subcategory):
+    """根据子分类返回 B2B 买家长尾词, 未收录产品页 title 用它增强."""
+    sub = (subcategory or "").strip()
+    return TITLE_BUYER_KEYWORDS.get(sub, DEFAULT_BUYER_KEYWORD)
+
+
 def to_proxy(url):
     """Convert R2 raw URL to proxy URL under partymaker.cn."""
     if not url:
@@ -773,7 +821,13 @@ def generate_product_page(product, all_products, css_path="/style.css"):
     first_image = images[0] if images else ''
 
     # Title - include theme & subcategory for keyword coverage
-    title = f"{name} - {theme} {subcategory} | {SITE_NAME}"
+    # 已收录且有排名的产品: title 保持原样(不动, 保护排名)
+    # 未收录产品: title 尾部加 B2B 买家长尾词(如 Wholesale), 提升被搜索到的机会
+    if sku in INDEXED_PRODUCT_SKUS:
+        title = f"{name} - {theme} {subcategory} | {SITE_NAME}"
+    else:
+        buyer_kw = buyer_keyword_for(subcategory)
+        title = f"{name} - {buyer_kw} | {SITE_NAME}"
 
     # Meta description - use seo_desc (fallback to description)
     desc_for_meta = seo_desc if seo_desc else description
