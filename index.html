@@ -247,18 +247,7 @@
     <aside class="sidebar">
         <div class="sidebar-title">Browse by Theme</div>
         <div id="categoryList"></div>
-    </aside>
-    <main class="products-section">
-        <div class="products-header">
-            <div>
-                <div class="breadcrumb">
-                    <span onclick="setCategory('all','all')">All Products</span>
-                </div>
-                <h1 class="section-title" id="sectionTitle">Ramadan &amp; Eid Party Supplies — Wholesale from Yiwu</h1>
-            </div>
-            <span class="products-count" id="productsCount">0 products</span>
-        </div>
-        <!-- Static category nav (SEO: real links for crawlers) -->
+        <!-- Static category nav (SEO: real crawlable links, hidden on mobile) -->
         <nav class="static-cat-nav" aria-label="Product categories">
             <a href="/ramadan/" class="static-cat-link cat-main">Ramadan &amp; Eid</a>
             <a href="/ramadan/lantern/" class="static-cat-link">Lanterns</a>
@@ -283,6 +272,17 @@
             <a href="/diwali/" class="static-cat-link cat-main">Diwali</a>
             <a href="/blog/" class="static-cat-link cat-main">Blog &amp; Guides</a>
         </nav>
+    </aside>
+    <main class="products-section">
+        <div class="products-header">
+            <div>
+                <div class="breadcrumb">
+                    <span onclick="setCategory('all','all')">All Products</span>
+                </div>
+                <h1 class="section-title" id="sectionTitle">Ramadan &amp; Eid Party Supplies — Wholesale from Yiwu</h1>
+            </div>
+            <span class="products-count" id="productsCount">0 products</span>
+        </div>
         <!-- Theme quick pills -->
         <div id="themePills" class="theme-pills"></div>
         <div class="products-grid" id="productsGrid"><div class="skeleton-card"><div class="skel-img"></div><div class="skel-text"><div class="skel-line"></div><div class="skel-line"></div></div></div><div class="skeleton-card"><div class="skel-img"></div><div class="skel-text"><div class="skel-line"></div><div class="skel-line"></div></div></div><div class="skeleton-card"><div class="skel-img"></div><div class="skel-text"><div class="skel-line"></div><div class="skel-line"></div></div></div><div class="skeleton-card"><div class="skel-img"></div><div class="skel-text"><div class="skel-line"></div><div class="skel-line"></div></div></div><div class="skeleton-card"><div class="skel-img"></div><div class="skel-text"><div class="skel-line"></div><div class="skel-line"></div></div></div><div class="skeleton-card"><div class="skel-img"></div><div class="skel-text"><div class="skel-line"></div><div class="skel-line"></div></div></div></div>
@@ -323,9 +323,9 @@
 <!-- ========== MODALS ========== -->
 
 <!-- About Modal -->
-<div class="modal-overlay" id="aboutModal">
+<div class="modal-overlay" id="aboutModal" onclick="if(event.target===this)closeModal('aboutModal')">
     <div class="modal">
-        <div class="about-hero">
+        <div class="about-hero"><button class="modal-close about-modal-close" onclick="closeModal('aboutModal')" aria-label="Close">&times;</button>
             <div class="about-hero-logo">🎉</div>
             <h2>Party Maker</h2>
             <p>Wholesale celebration products from Yiwu, China.<br>Ramadan · Eid · Diwali · Easter · New Year</p>
@@ -420,7 +420,7 @@
 </div>
 
 <!-- Contact Modal -->
-<div class="modal-overlay" id="contactModal">
+<div class="modal-overlay" id="contactModal" onclick="if(event.target===this)closeModal('contactModal')">
     <div class="modal">
         <div class="modal-header">
             <h2>Contact Us</h2>
