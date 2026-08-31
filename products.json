@@ -11429,7 +11429,9 @@
       "theme": "Ramadan",
       "subcategory": "Lantern",
       "description": "",
-      "images": [],
+      "images": [
+        "https://pub-1fd965ab66464286847edcb540254451.r2.dev/641391-取消/01.webp"
+      ],
       "tags": [],
       "_costPrice": 110.2,
       "_unitSize": "",
@@ -21831,7 +21833,9 @@
       "theme": "Ramadan",
       "subcategory": "Curtain",
       "description": "1.0*1.6m",
-      "images": [],
+      "images": [
+        "https://pub-1fd965ab66464286847edcb540254451.r2.dev/ZY-02/01.webp"
+      ],
       "tags": [],
       "_costPrice": 8.44,
       "_unitSize": "",
@@ -21852,7 +21856,16 @@
       "theme": "Ramadan",
       "subcategory": "Curtain",
       "description": "1.0*1.6m",
-      "images": [],
+      "images": [
+        "https://pub-1fd965ab66464286847edcb540254451.r2.dev/ZY-03/01.webp",
+        "https://pub-1fd965ab66464286847edcb540254451.r2.dev/ZY-03/02.webp",
+        "https://pub-1fd965ab66464286847edcb540254451.r2.dev/ZY-03/03.webp",
+        "https://pub-1fd965ab66464286847edcb540254451.r2.dev/ZY-03/04.webp",
+        "https://pub-1fd965ab66464286847edcb540254451.r2.dev/ZY-03/05.webp",
+        "https://pub-1fd965ab66464286847edcb540254451.r2.dev/ZY-03/06.webp",
+        "https://pub-1fd965ab66464286847edcb540254451.r2.dev/ZY-03/07.webp",
+        "https://pub-1fd965ab66464286847edcb540254451.r2.dev/ZY-03/08.webp"
+      ],
       "tags": [],
       "_costPrice": 8.44,
       "_unitSize": "",
@@ -21873,7 +21886,15 @@
       "theme": "Ramadan",
       "subcategory": "Balloon Foil",
       "description": "5 * 12-inch transparent balloons with gold foil lining\n25 * 10-inch gold balloons\n35 * 10-inch white balloons\n1 * 18-inch star foil balloon\n1 * 18-inch moon foil balloon\n1 roll of dot adhesive tape\n1 arch decoration piece\n1 * 120x120 cm background cloth",
-      "images": [],
+      "images": [
+        "https://pub-1fd965ab66464286847edcb540254451.r2.dev/ZY-05/01.webp",
+        "https://pub-1fd965ab66464286847edcb540254451.r2.dev/ZY-05/02.webp",
+        "https://pub-1fd965ab66464286847edcb540254451.r2.dev/ZY-05/03.webp",
+        "https://pub-1fd965ab66464286847edcb540254451.r2.dev/ZY-05/04.webp",
+        "https://pub-1fd965ab66464286847edcb540254451.r2.dev/ZY-05/05.webp",
+        "https://pub-1fd965ab66464286847edcb540254451.r2.dev/ZY-05/06.webp",
+        "https://pub-1fd965ab66464286847edcb540254451.r2.dev/ZY-05/07.webp"
+      ],
       "tags": [],
       "_costPrice": 9.27,
       "_unitSize": "",
@@ -21894,7 +21915,12 @@
       "theme": "Ramadan",
       "subcategory": "Other",
       "description": "1.blackblue1bag, 29*27*12cm\n2.1bag, 23*22*11cm\n3.bag\n4.sticker\n5",
-      "images": [],
+      "images": [
+        "https://pub-1fd965ab66464286847edcb540254451.r2.dev/ZY-06/01.webp",
+        "https://pub-1fd965ab66464286847edcb540254451.r2.dev/ZY-06/02.webp",
+        "https://pub-1fd965ab66464286847edcb540254451.r2.dev/ZY-06/03.webp",
+        "https://pub-1fd965ab66464286847edcb540254451.r2.dev/ZY-06/04.webp"
+      ],
       "tags": [],
       "_costPrice": 3.9,
       "_unitSize": "",
@@ -21915,7 +21941,9 @@
       "theme": "Ramadan",
       "subcategory": "Other",
       "description": "1.5005, 1pcs\n2.5012, 1pcs\n3.opp bag\n4.sticker\n5",
-      "images": [],
+      "images": [
+        "https://pub-1fd965ab66464286847edcb540254451.r2.dev/ZY-07/01.webp"
+      ],
       "tags": [],
       "_costPrice": 7.094,
       "_unitSize": "",
@@ -21936,7 +21964,16 @@
       "theme": "Ramadan",
       "subcategory": "Bag",
       "description": "1.5024, 2pcs\n29*27*12cm",
-      "images": [],
+      "images": [
+        "https://pub-1fd965ab66464286847edcb540254451.r2.dev/ZY-08/01.webp",
+        "https://pub-1fd965ab66464286847edcb540254451.r2.dev/ZY-08/02.webp",
+        "https://pub-1fd965ab66464286847edcb540254451.r2.dev/ZY-08/03.webp",
+        "https://pub-1fd965ab66464286847edcb540254451.r2.dev/ZY-08/04.webp",
+        "https://pub-1fd965ab66464286847edcb540254451.r2.dev/ZY-08/05.webp",
+        "https://pub-1fd965ab66464286847edcb540254451.r2.dev/ZY-08/06.webp",
+        "https://pub-1fd965ab66464286847edcb540254451.r2.dev/ZY-08/07.webp",
+        "https://pub-1fd965ab66464286847edcb540254451.r2.dev/ZY-08/08.webp"
+      ],
       "tags": [],
       "_costPrice": 10.57,
       "_unitSize": "",
@@ -21957,7 +21994,16 @@
       "theme": "Ramadan",
       "subcategory": "Food Storage",
       "description": "1pcs star plate 15cm\n1pcs moon plate 28cm\nboth 5cm in height\nmade of iron\nall in a paper box",
-      "images": [],
+      "images": [
+        "https://pub-1fd965ab66464286847edcb540254451.r2.dev/ZY-1/01.webp",
+        "https://pub-1fd965ab66464286847edcb540254451.r2.dev/ZY-1/02.webp",
+        "https://pub-1fd965ab66464286847edcb540254451.r2.dev/ZY-1/03.webp",
+        "https://pub-1fd965ab66464286847edcb540254451.r2.dev/ZY-1/04.webp",
+        "https://pub-1fd965ab66464286847edcb540254451.r2.dev/ZY-1/05.webp",
+        "https://pub-1fd965ab66464286847edcb540254451.r2.dev/ZY-1/06.webp",
+        "https://pub-1fd965ab66464286847edcb540254451.r2.dev/ZY-1/07.webp",
+        "https://pub-1fd965ab66464286847edcb540254451.r2.dev/ZY-1/08.webp"
+      ],
       "tags": [],
       "_costPrice": 26.0,
       "_unitSize": "",
@@ -22671,7 +22717,9 @@
       "theme": "Ramadan",
       "subcategory": "Balloon Kit",
       "description": "Balloon, 120pcs",
-      "images": [],
+      "images": [
+        "https://pub-1fd965ab66464286847edcb540254451.r2.dev/625517/01.webp"
+      ],
       "tags": [],
       "_costPrice": 0.0,
       "_unitSize": "",
@@ -23262,7 +23310,9 @@
       "theme": "Ramadan",
       "subcategory": "Deco-Hanging",
       "description": "1pcs",
-      "images": [],
+      "images": [
+        "https://pub-1fd965ab66464286847edcb540254451.r2.dev/613291/01.webp"
+      ],
       "tags": [],
       "_costPrice": 5.0,
       "_unitSize": "",
@@ -23283,7 +23333,10 @@
       "theme": "Ramadan",
       "subcategory": "Picks",
       "description": "18pcs",
-      "images": [],
+      "images": [
+        "https://pub-1fd965ab66464286847edcb540254451.r2.dev/902148/01.webp",
+        "https://pub-1fd965ab66464286847edcb540254451.r2.dev/902148/02.webp"
+      ],
       "tags": [
         "hot"
       ],
@@ -24368,7 +24421,9 @@
       "seo_desc": "Diwali Banner is a Diwali Bunting product, factory-direct wholesale from Yiwu, China. Specs: 16* 240cm\n128g coated paper\n1pc. Wholesale $0.31625/unit; suggested retail $0.89–$1.11, ~72% margin. Ships 72 pcs/carton (value $23). ~3809 units per CBM. Hot seller based on 2026 buyer activity. No MOQ for spot goods. Custom 600+ pcs with private labeling. Global shipping. Contact info@partymaker.cn.",
       "theme": "Diwali",
       "subcategory": "Bunting",
-      "images": [],
+      "images": [
+        "https://pub-1fd965ab66464286847edcb540254451.r2.dev/608301/01.webp"
+      ],
       "tags": [
         "hot"
       ],
@@ -24394,7 +24449,9 @@
       "seo_desc": "Diwali Garland is a Diwali Bunting product, factory-direct wholesale from Yiwu, China. Specs: 250g art card\n300cm, 1pc. Wholesale $0.594166667/unit; suggested retail $1.66–$2.08, ~71% margin. Ships 192 pcs/carton (value $114). ~2744 units per CBM. Hot seller based on 2026 buyer activity. No MOQ for spot goods. Custom 600+ pcs with private labeling. Global shipping. Contact info@partymaker.cn.",
       "theme": "Diwali",
       "subcategory": "Bunting",
-      "images": [],
+      "images": [
+        "https://pub-1fd965ab66464286847edcb540254451.r2.dev/608302/01.webp"
+      ],
       "tags": [
         "hot"
       ],
@@ -24420,7 +24477,9 @@
       "seo_desc": "Diwali Swirl is a Diwali Deco-Hanging product, factory-direct wholesale from Yiwu, China. Specs: Elephant 26*33cm\ncandle:12*13cm\nswarl: 70cm\n6pcs. Wholesale $0.536666667/unit; suggested retail $1.5–$1.88, ~71% margin. Ships 192 pcs/carton (value $103). ~3694 units per CBM. Hot seller based on 2026 buyer activity. No MOQ for spot goods. Custom 600+ pcs with private labeling. Global shipping. Contact info@partymaker.cn.",
       "theme": "Diwali",
       "subcategory": "Deco-Hanging",
-      "images": [],
+      "images": [
+        "https://pub-1fd965ab66464286847edcb540254451.r2.dev/614034/01.webp"
+      ],
       "tags": [
         "hot"
       ],
@@ -24446,7 +24505,13 @@
       "seo_desc": "Diwali Door Hanging Decoration 1pair is a Diwali Other product, factory-direct wholesale from Yiwu, China. Specs: 30*30cm*10pcspcs\nribbon\nglue dot. Wholesale $2.549166667/unit; suggested retail $7.14–$8.92, ~71% margin. Ships 216 pcs/carton (value $551). ~5952 units per CBM. No MOQ for spot goods. Custom 600+ pcs with private labeling. Global shipping. Contact info@partymaker.cn.",
       "theme": "Diwali",
       "subcategory": "Other",
-      "images": [],
+      "images": [
+        "https://pub-1fd965ab66464286847edcb540254451.r2.dev/614105/01.webp",
+        "https://pub-1fd965ab66464286847edcb540254451.r2.dev/614105/02.webp",
+        "https://pub-1fd965ab66464286847edcb540254451.r2.dev/614105/03.webp",
+        "https://pub-1fd965ab66464286847edcb540254451.r2.dev/614105/04.webp",
+        "https://pub-1fd965ab66464286847edcb540254451.r2.dev/614105/05.webp"
+      ],
       "tags": [],
       "_costPrice": 13.3,
       "_costNote": "产品：13.2/个\n贴纸：0.09/张",
@@ -24470,7 +24535,13 @@
       "seo_desc": "HAPPY DIWALI Couplets 1pcs is a Diwali Backdrop product, factory-direct wholesale from Yiwu, China. Specs: 180*30cm*2pcs\nheader card. Wholesale $2.491666667/unit; suggested retail $6.98–$8.72, ~71% margin. Ships 96 pcs/carton (value $239). ~2645 units per CBM. No MOQ for spot goods. Custom 600+ pcs with private labeling. Global shipping. Contact info@partymaker.cn.",
       "theme": "Diwali",
       "subcategory": "Backdrop",
-      "images": [],
+      "images": [
+        "https://pub-1fd965ab66464286847edcb540254451.r2.dev/614106/01.webp",
+        "https://pub-1fd965ab66464286847edcb540254451.r2.dev/614106/02.webp",
+        "https://pub-1fd965ab66464286847edcb540254451.r2.dev/614106/03.webp",
+        "https://pub-1fd965ab66464286847edcb540254451.r2.dev/614106/04.webp",
+        "https://pub-1fd965ab66464286847edcb540254451.r2.dev/614106/05.webp"
+      ],
       "tags": [],
       "_costPrice": 13.0,
       "_costNote": "产品：12.65/个\n卡头：0.21/张\n包装：0.14",
@@ -24494,7 +24565,13 @@
       "seo_desc": "HAPPY DIWALI Couplets 1pcs is a Diwali Backdrop product, factory-direct wholesale from Yiwu, China. Specs: 180*30cm*2pcs\nheader card. Wholesale $2.491666667/unit; suggested retail $6.98–$8.72, ~71% margin. Ships 120 pcs/carton (value $299). ~2163 units per CBM. No MOQ for spot goods. Custom 600+ pcs with private labeling. Global shipping. Contact info@partymaker.cn.",
       "theme": "Diwali",
       "subcategory": "Backdrop",
-      "images": [],
+      "images": [
+        "https://pub-1fd965ab66464286847edcb540254451.r2.dev/614107/01.webp",
+        "https://pub-1fd965ab66464286847edcb540254451.r2.dev/614107/02.webp",
+        "https://pub-1fd965ab66464286847edcb540254451.r2.dev/614107/03.webp",
+        "https://pub-1fd965ab66464286847edcb540254451.r2.dev/614107/04.webp",
+        "https://pub-1fd965ab66464286847edcb540254451.r2.dev/614107/05.webp"
+      ],
       "tags": [],
       "_costPrice": 13.0,
       "_costNote": "产品：12.65/个\n卡头：0.21/张\n包装：0.14",
@@ -24518,7 +24595,9 @@
       "seo_desc": "Diwali Paper Cup is a Diwali Cup product, factory-direct wholesale from Yiwu, China. Specs: 9oz\n8pcs. Wholesale $0.210833333/unit; suggested retail $0.59–$0.74, ~72% margin. Ships 144 pcs/carton (value $30). ~1992 units per CBM. Hot seller based on 2026 buyer activity. No MOQ for spot goods. Custom 600+ pcs with private labeling. Global shipping. Contact info@partymaker.cn.",
       "theme": "Diwali",
       "subcategory": "Cup",
-      "images": [],
+      "images": [
+        "https://pub-1fd965ab66464286847edcb540254451.r2.dev/615133/01.webp"
+      ],
       "tags": [
         "hot"
       ],
@@ -24544,7 +24623,9 @@
       "seo_desc": "Diwali 7\" Paper Plate is a Diwali Paper Plate product, factory-direct wholesale from Yiwu, China. Specs: 7inch\n8pcs. Wholesale $0.274083333/unit; suggested retail $0.77–$0.96, ~71% margin. Ships 96 pcs/carton (value $26). ~3484 units per CBM. Hot seller based on 2026 buyer activity. No MOQ for spot goods. Custom 600+ pcs with private labeling. Global shipping. Contact info@partymaker.cn.",
       "theme": "Diwali",
       "subcategory": "Paper Plate",
-      "images": [],
+      "images": [
+        "https://pub-1fd965ab66464286847edcb540254451.r2.dev/616226/01.webp"
+      ],
       "tags": [
         "hot"
       ],
@@ -24570,7 +24651,9 @@
       "seo_desc": "Diwali 9\" Paper Plate is a Diwali Paper Plate product, factory-direct wholesale from Yiwu, China. Specs: 9inch\n8pcs. Wholesale $0.394833333/unit; suggested retail $1.11–$1.38, ~71% margin. Ships 120 pcs/carton (value $47). ~2373 units per CBM. Hot seller based on 2026 buyer activity. No MOQ for spot goods. Custom 600+ pcs with private labeling. Global shipping. Contact info@partymaker.cn.",
       "theme": "Diwali",
       "subcategory": "Paper Plate",
-      "images": [],
+      "images": [
+        "https://pub-1fd965ab66464286847edcb540254451.r2.dev/616227/01.webp"
+      ],
       "tags": [
         "hot"
       ],
@@ -24596,7 +24679,11 @@
       "seo_desc": "Diwali  Napkin is a Diwali Napkin product, factory-direct wholesale from Yiwu, China. Specs: 33*33cm\n3plys\n16pcs. Wholesale $0.366083333/unit; suggested retail $1.03–$1.28, ~71% margin. Ships 96 pcs/carton (value $35). ~2314 units per CBM. Hot seller based on 2026 buyer activity. No MOQ for spot goods. Custom 600+ pcs with private labeling. Global shipping. Contact info@partymaker.cn.",
       "theme": "Diwali",
       "subcategory": "Napkin",
-      "images": [],
+      "images": [
+        "https://pub-1fd965ab66464286847edcb540254451.r2.dev/617074/01.webp",
+        "https://pub-1fd965ab66464286847edcb540254451.r2.dev/617074/02.webp",
+        "https://pub-1fd965ab66464286847edcb540254451.r2.dev/617074/03.webp"
+      ],
       "tags": [
         "hot"
       ],
@@ -24622,7 +24709,12 @@
       "seo_desc": "Happy Diwali Paper Bags 1pcs is a Diwali Other product, factory-direct wholesale from Yiwu, China. Specs: 21*15*8cm\n1pc sticker. Wholesale $0.15525/unit; suggested retail $0.43–$0.54, ~71% margin. Ships 1200 pcs/carton (value $186). ~13742 units per CBM. Hot seller based on 2026 buyer activity. No MOQ for spot goods. Custom 600+ pcs with private labeling. Global shipping. Contact info@partymaker.cn.",
       "theme": "Diwali",
       "subcategory": "Other",
-      "images": [],
+      "images": [
+        "https://pub-1fd965ab66464286847edcb540254451.r2.dev/623261/01.webp",
+        "https://pub-1fd965ab66464286847edcb540254451.r2.dev/623261/02.webp",
+        "https://pub-1fd965ab66464286847edcb540254451.r2.dev/623261/03.webp",
+        "https://pub-1fd965ab66464286847edcb540254451.r2.dev/623261/04.webp"
+      ],
       "tags": [
         "hot"
       ],
@@ -24648,7 +24740,13 @@
       "seo_desc": "Happy Diwali Treat Box 4pcs is a Diwali Box product, factory-direct wholesale from Yiwu, China. Specs: 16*9*9cm 4pcs/header card. Wholesale $0.559666667/unit; suggested retail $1.57–$1.96, ~71% margin. Ships 96 pcs/carton (value $54). ~2645 units per CBM. Hot seller based on 2026 buyer activity. No MOQ for spot goods. Custom 600+ pcs with private labeling. Global shipping. Contact info@partymaker.cn.",
       "theme": "Diwali",
       "subcategory": "Box",
-      "images": [],
+      "images": [
+        "https://pub-1fd965ab66464286847edcb540254451.r2.dev/623262/01.webp",
+        "https://pub-1fd965ab66464286847edcb540254451.r2.dev/623262/02.webp",
+        "https://pub-1fd965ab66464286847edcb540254451.r2.dev/623262/03.webp",
+        "https://pub-1fd965ab66464286847edcb540254451.r2.dev/623262/04.webp",
+        "https://pub-1fd965ab66464286847edcb540254451.r2.dev/623262/05.webp"
+      ],
       "tags": [
         "hot"
       ],
@@ -24674,7 +24772,14 @@
       "seo_desc": "Happy Diwali Gift Bag 1pcs is a Diwali Wrapping product, factory-direct wholesale from Yiwu, China. Specs: 23*22*11cm 1pcs hang tag. Wholesale $0.21275/unit; suggested retail $0.6–$0.74, ~71% margin. Ships 300 pcs/carton (value $64). ~5932 units per CBM. Hot seller based on 2026 buyer activity. No MOQ for spot goods. Custom 600+ pcs with private labeling. Global shipping. Contact info@partymaker.cn.",
       "theme": "Diwali",
       "subcategory": "Wrapping",
-      "images": [],
+      "images": [
+        "https://pub-1fd965ab66464286847edcb540254451.r2.dev/623263/01.webp",
+        "https://pub-1fd965ab66464286847edcb540254451.r2.dev/623263/02.webp",
+        "https://pub-1fd965ab66464286847edcb540254451.r2.dev/623263/03.webp",
+        "https://pub-1fd965ab66464286847edcb540254451.r2.dev/623263/04.webp",
+        "https://pub-1fd965ab66464286847edcb540254451.r2.dev/623263/05.webp",
+        "https://pub-1fd965ab66464286847edcb540254451.r2.dev/623263/06.webp"
+      ],
       "tags": [
         "hot"
       ],
@@ -24700,7 +24805,9 @@
       "seo_desc": "Diwali latex balloon 8pcs is a Diwali Balloon Latex product, factory-direct wholesale from Yiwu, China. Specs: 12inch latexb alloons *8pcs\ninserted card+OPP bag/set. Wholesale $0.41975/unit; suggested retail $1.18–$1.47, ~71% margin. Ships 312 pcs/carton (value $131). ~8597 units per CBM. No MOQ for spot goods. Custom 600+ pcs with private labeling. Global shipping. Contact info@partymaker.cn.",
       "theme": "Diwali",
       "subcategory": "Balloon Latex",
-      "images": [],
+      "images": [
+        "https://pub-1fd965ab66464286847edcb540254451.r2.dev/624169/01.webp"
+      ],
       "tags": [],
       "_costPrice": 2.19,
       "_costNote": "产品：0.22/个\n背卡：0.28/张\n包装: 0.15",
@@ -24724,7 +24831,9 @@
       "seo_desc": "Diwali DIWALI foil balloon set 7pcs is a Diwali Balloon Foil product, factory-direct wholesale from Yiwu, China. Specs: 18 inch foill balloons\nround *3pcs\nstar* 4pcs. Wholesale $0.728333333/unit; suggested retail $2.04–$2.55, ~71% margin. Ships 180 pcs/carton (value $131). ~4096 units per CBM. Hot seller based on 2026 buyer activity. No MOQ for spot goods. Custom 600+ pcs with private labeling. Global shipping. Contact info@partymaker.cn.",
       "theme": "Diwali",
       "subcategory": "Balloon Foil",
-      "images": [],
+      "images": [
+        "https://pub-1fd965ab66464286847edcb540254451.r2.dev/625504/01.webp"
+      ],
       "tags": [
         "hot"
       ],
@@ -24750,7 +24859,9 @@
       "seo_desc": "Diwali DIWALI foil balloon set GOLD 11pcs is a Diwali Balloon Foil product, factory-direct wholesale from Yiwu, China. Specs: 16inch  Gold\n 11pcs. Wholesale $0.699583333/unit; suggested retail $1.96–$2.45, ~71% margin. Ships 96 pcs/carton (value $67). ~2645 units per CBM. Hot seller based on 2026 buyer activity. No MOQ for spot goods. Custom 600+ pcs with private labeling. Global shipping. Contact info@partymaker.cn.",
       "theme": "Diwali",
       "subcategory": "Balloon Foil",
-      "images": [],
+      "images": [
+        "https://pub-1fd965ab66464286847edcb540254451.r2.dev/625505/01.webp"
+      ],
       "tags": [
         "hot"
       ],
@@ -24802,7 +24913,13 @@
       "seo_desc": "Diwali LED light string 1pc is a Diwali LED Light product, factory-direct wholesale from Yiwu, China. Specs: 10lights, 1.65m\nSticker, 1pcs. Wholesale $1.412583333/unit; suggested retail $3.96–$4.94, ~71% margin. Ships 84 pcs/carton (value $119). ~1383 units per CBM. No MOQ for spot goods. Custom 600+ pcs with private labeling. Global shipping. Contact info@partymaker.cn.",
       "theme": "Diwali",
       "subcategory": "LED Light",
-      "images": [],
+      "images": [
+        "https://pub-1fd965ab66464286847edcb540254451.r2.dev/641289/01.webp",
+        "https://pub-1fd965ab66464286847edcb540254451.r2.dev/641289/02.webp",
+        "https://pub-1fd965ab66464286847edcb540254451.r2.dev/641289/03.webp",
+        "https://pub-1fd965ab66464286847edcb540254451.r2.dev/641289/04.webp",
+        "https://pub-1fd965ab66464286847edcb540254451.r2.dev/641289/05.webp"
+      ],
       "tags": [],
       "_costPrice": 7.37,
       "_costNote": "7.07\n背卡+OPP袋=0.3",
@@ -24826,7 +24943,14 @@
       "seo_desc": "Diwali LED light string 1pc is a Diwali LED Light product, factory-direct wholesale from Yiwu, China. Specs: 10lights, 1.65m\nSticker, 1pcs. Wholesale $1.495/unit; suggested retail $4.19–$5.23, ~71% margin. Ships 108 pcs/carton (value $161). ~1779 units per CBM. No MOQ for spot goods. Custom 600+ pcs with private labeling. Global shipping. Contact info@partymaker.cn.",
       "theme": "Diwali",
       "subcategory": "LED Light",
-      "images": [],
+      "images": [
+        "https://pub-1fd965ab66464286847edcb540254451.r2.dev/641290/01.webp",
+        "https://pub-1fd965ab66464286847edcb540254451.r2.dev/641290/02.webp",
+        "https://pub-1fd965ab66464286847edcb540254451.r2.dev/641290/03.webp",
+        "https://pub-1fd965ab66464286847edcb540254451.r2.dev/641290/04.webp",
+        "https://pub-1fd965ab66464286847edcb540254451.r2.dev/641290/05.webp",
+        "https://pub-1fd965ab66464286847edcb540254451.r2.dev/641290/06.webp"
+      ],
       "tags": [],
       "_costPrice": 7.8,
       "_costNote": "7.5\n背卡+OPP袋=0.3",
@@ -24850,7 +24974,13 @@
       "seo_desc": "Diwali LED light string 1pc is a Diwali LED Light product, factory-direct wholesale from Yiwu, China. Specs: 10lights, 1.65m\nSticker, 1pcs. Wholesale $1.686666667/unit; suggested retail $4.72–$5.9, ~71% margin. Ships 108 pcs/carton (value $182). ~1779 units per CBM. No MOQ for spot goods. Custom 600+ pcs with private labeling. Global shipping. Contact info@partymaker.cn.",
       "theme": "Diwali",
       "subcategory": "LED Light",
-      "images": [],
+      "images": [
+        "https://pub-1fd965ab66464286847edcb540254451.r2.dev/641291/01.webp",
+        "https://pub-1fd965ab66464286847edcb540254451.r2.dev/641291/02.webp",
+        "https://pub-1fd965ab66464286847edcb540254451.r2.dev/641291/03.webp",
+        "https://pub-1fd965ab66464286847edcb540254451.r2.dev/641291/04.webp",
+        "https://pub-1fd965ab66464286847edcb540254451.r2.dev/641291/05.webp"
+      ],
       "tags": [],
       "_costPrice": 8.8,
       "_costNote": "8.5\n背卡+OPP袋=0.3",
@@ -24874,7 +25004,11 @@
       "seo_desc": "HAPPY DIWALI backdrop 1pc is a Diwali Other product, factory-direct wholesale from Yiwu, China. Specs: 400*180cm\n1pcs+sticker. Wholesale $8.2685/unit; suggested retail $23.15–$28.94, ~71% margin. Ships 11 pcs/carton (value $91). ~399 units per CBM. No MOQ for spot goods. Custom 600+ pcs with private labeling. Global shipping. Contact info@partymaker.cn.",
       "theme": "Diwali",
       "subcategory": "Other",
-      "images": [],
+      "images": [
+        "https://pub-1fd965ab66464286847edcb540254451.r2.dev/642078/01.webp",
+        "https://pub-1fd965ab66464286847edcb540254451.r2.dev/642078/02.webp",
+        "https://pub-1fd965ab66464286847edcb540254451.r2.dev/642078/03.webp"
+      ],
       "tags": [],
       "_costPrice": 43.14,
       "_costNote": "产品：42.9/个\n贴纸：0.09/张\n包装: 0.15",
@@ -24898,7 +25032,13 @@
       "seo_desc": "HAPPY DIWALI backdrop 1pc is a Diwali Curtain product, factory-direct wholesale from Yiwu, China. Specs: 250*50cm 1pcs+header card. Wholesale $1.797833333/unit; suggested retail $5.03–$6.29, ~71% margin. Ships 120 pcs/carton (value $216). ~2764 units per CBM. No MOQ for spot goods. Custom 600+ pcs with private labeling. Global shipping. Contact info@partymaker.cn.",
       "theme": "Diwali",
       "subcategory": "Curtain",
-      "images": [],
+      "images": [
+        "https://pub-1fd965ab66464286847edcb540254451.r2.dev/642079/01.webp",
+        "https://pub-1fd965ab66464286847edcb540254451.r2.dev/642079/02.webp",
+        "https://pub-1fd965ab66464286847edcb540254451.r2.dev/642079/03.webp",
+        "https://pub-1fd965ab66464286847edcb540254451.r2.dev/642079/04.webp",
+        "https://pub-1fd965ab66464286847edcb540254451.r2.dev/642079/05.webp"
+      ],
       "tags": [],
       "_costPrice": 9.38,
       "_costNote": "产品：9.02/个\n卡头：0.21/张\n包装: 0.15",
@@ -24922,7 +25062,11 @@
       "seo_desc": "HAPPY DIWALI TABLE MAT PLACEMAT 1pc is a Diwali Deco product, factory-direct wholesale from Yiwu, China. Specs: 45*30cm\n1pcs\nheader card. Wholesale $0.427416667/unit; suggested retail $1.2–$1.5, ~72% margin. Ships 240 pcs/carton (value $103). ~8710 units per CBM. No MOQ for spot goods. Custom 600+ pcs with private labeling. Global shipping. Contact info@partymaker.cn.",
       "theme": "Diwali",
       "subcategory": "Deco",
-      "images": [],
+      "images": [
+        "https://pub-1fd965ab66464286847edcb540254451.r2.dev/651073/01.webp",
+        "https://pub-1fd965ab66464286847edcb540254451.r2.dev/651073/02.webp",
+        "https://pub-1fd965ab66464286847edcb540254451.r2.dev/651073/03.webp"
+      ],
       "tags": [],
       "_costPrice": 2.23,
       "_costNote": "产品：1.87/个\n卡头：0.21/张\n包装: 0.15",
@@ -24946,7 +25090,11 @@
       "seo_desc": "HAPPY DIWALI TABLE RUNNER 1pc is a Diwali Deco product, factory-direct wholesale from Yiwu, China. Specs: 180*30cm\nTable Runner, 1pc. Wholesale $1.165333333/unit; suggested retail $3.26–$4.08, ~71% margin. Ships 240 pcs/carton (value $280). ~5529 units per CBM. No MOQ for spot goods. Custom 600+ pcs with private labeling. Global shipping. Contact info@partymaker.cn.",
       "theme": "Diwali",
       "subcategory": "Deco",
-      "images": [],
+      "images": [
+        "https://pub-1fd965ab66464286847edcb540254451.r2.dev/651074/01.webp",
+        "https://pub-1fd965ab66464286847edcb540254451.r2.dev/651074/02.webp",
+        "https://pub-1fd965ab66464286847edcb540254451.r2.dev/651074/03.webp"
+      ],
       "tags": [],
       "_costPrice": 6.08,
       "_costNote": "产品：5.72/个\n卡头：0.21/张\n包装: 0.15",
@@ -25074,7 +25222,11 @@
       "seo_desc": "HAPPY DIWALI Bag 1pc is a Diwali Bag product, factory-direct wholesale from Yiwu, China. Specs: 34*27cm\n1pcs. Wholesale $0.38525/unit; suggested retail $1.08–$1.35, ~71% margin. Ships 240 pcs/carton (value $92). ~5529 units per CBM. No MOQ for spot goods. Custom 600+ pcs with private labeling. Global shipping. Contact info@partymaker.cn.",
       "theme": "Diwali",
       "subcategory": "Bag",
-      "images": [],
+      "images": [
+        "https://pub-1fd965ab66464286847edcb540254451.r2.dev/631736/01.webp",
+        "https://pub-1fd965ab66464286847edcb540254451.r2.dev/631736/02.webp",
+        "https://pub-1fd965ab66464286847edcb540254451.r2.dev/631736/03.webp"
+      ],
       "tags": [],
       "_costPrice": 2.01,
       "_costNote": "产品：1.65/个\n卡头：0.21/张\n包装: 0.15",
@@ -25098,7 +25250,11 @@
       "seo_desc": "HAPPY DIWALI Bag 1pc is a Diwali Bag product, factory-direct wholesale from Yiwu, China. Specs: 34*27cm\n1pcs. Wholesale $0.38525/unit; suggested retail $1.08–$1.35, ~71% margin. Ships 240 pcs/carton (value $92). ~5529 units per CBM. No MOQ for spot goods. Custom 600+ pcs with private labeling. Global shipping. Contact info@partymaker.cn.",
       "theme": "Diwali",
       "subcategory": "Bag",
-      "images": [],
+      "images": [
+        "https://pub-1fd965ab66464286847edcb540254451.r2.dev/631737/01.webp",
+        "https://pub-1fd965ab66464286847edcb540254451.r2.dev/631737/02.webp",
+        "https://pub-1fd965ab66464286847edcb540254451.r2.dev/631737/03.webp"
+      ],
       "tags": [],
       "_costPrice": 2.01,
       "_costNote": "产品：1.65/个\n卡头：0.21/张\n包装: 0.15",
