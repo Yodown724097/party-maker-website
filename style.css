@@ -371,6 +371,39 @@ header {
 .breadcrumb span:hover { color: var(--primary); }
 .breadcrumb .sep { font-size: 0.7rem; }
 
+/* Static category nav (SEO: real crawlable links) */
+.static-cat-nav {
+    display: flex;
+    gap: 0.45rem;
+    flex-wrap: wrap;
+    margin-bottom: 1.25rem;
+    padding: 0.6rem 0.75rem;
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    background: var(--bg-card);
+}
+.static-cat-link {
+    padding: 0.35rem 0.8rem;
+    border-radius: 18px;
+    font-size: 0.78rem;
+    font-weight: 500;
+    text-decoration: none;
+    border: 1.5px solid var(--border);
+    background: var(--bg-card);
+    color: var(--text-mid);
+    transition: all 0.2s;
+    white-space: nowrap;
+}
+.static-cat-link:hover {
+    border-color: var(--accent);
+    color: var(--accent);
+}
+.static-cat-link.cat-main {
+    border-color: var(--accent);
+    color: var(--accent-dark);
+    font-weight: 700;
+}
+
 /* Theme quick pills */
 .theme-pills {
     display: flex;
