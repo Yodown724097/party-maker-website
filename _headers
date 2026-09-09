@@ -35,3 +35,8 @@
   X-Content-Type-Options: nosniff
   X-Frame-Options: SAMEORIGIN
   Referrer-Policy: strict-origin-when-cross-origin
+
+# VPN subscription file — serve as yaml, short edge cache so backend pushes propagate fast
+/mihomo.yaml
+  Content-Type: text/yaml; charset=utf-8
+  Cache-Control: public, max-age=60
