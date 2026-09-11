@@ -15,6 +15,16 @@
 - **Sitemap**: 1000 URLs submitted, lastmod 2026-04-30 (stale)
 - **robots.txt**: Clean, allows all
 
+## Performance 快照 (2026-09-11, Search Console 近3月 6/9-9/8)
+- 总展现 2392 / 总点击 21 / CTR 0.88% / 加权排名 21.96
+- 月度展现 430(6)→711(7)→849(8)→402(9前8天) 趋势向上
+- 品牌词占点击 67%/展现 37%（其余为 B2B 买家词获客潜力）
+- 设备: Mobile 排名9.61/CTR2.52% 远优于 Desktop 排名25.16/CTR0.47%
+- 首页占全站展现 83%(1981); 博客内容页排名(8-10)明显优于产品页
+- 英语大市场(美1250/英203/澳71展现)几乎0点击→snippet吸引力短板
+- 与方案呼应: P0首页静态化已见效(展现涨); P2 Wholesale词有展现未转化; P1内容补强是下一步重点
+- 详见 .workbuddy/memory/2026-09-11.md
+
 ## R2 Image Issues
 - Some networks (specific Edge/browser configs) cannot access `pub-1fd965ab66464286847edcb540254451.r2.dev` → `ERR_CONNECTION_REFUSED`
 - Chrome works, some Edge instances fail — likely proxy/VPN/DNS routing issue
