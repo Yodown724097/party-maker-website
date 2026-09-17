@@ -29,6 +29,9 @@
 
 // ── 精确路径（根级内部文件）────────────────────────────────────
 // 全部小写；匹配前路径会被转小写
+// ⚠️ 已于 2026-09-17 从 git 移除的 4 个 products 备份不再列在此处
+//    （products.json.backup / .backup.20260425 / .bak / products-public.json.backup）
+//    —— 它们已不在仓库里，Pages 不再发布，无需拦截。
 const BLOCK_EXACT = new Set([
   '/.build_cache.json',
   '/.env.example',
@@ -39,10 +42,6 @@ const BLOCK_EXACT = new Set([
   '/package-lock.json',
   '/package.json',
   '/products.json',
-  '/products.json.backup',
-  '/products.json.backup.20260425',
-  '/products.json.bak',
-  '/products-public.json.backup',
 ]);
 
 // ── 目录前缀（含子目录，一律拦）────────────────────────────────

@@ -17,3 +17,4 @@ __pycache__/
 # 数据/状态备份
 *.backup
 *.bak
+*.backup.*
