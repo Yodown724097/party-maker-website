@@ -3,3 +3,17 @@ __pycache__/
 *.pyc
 .diwali_imgs/
 .diwali_raw.json
+
+# ── 机密与内部文件：绝不进 git ────────────────────────────────
+# 本仓库是 public，且 Cloudflare Pages 会把「除 functions/ 外的整仓」当静态文件发布
+# → 任何进了 git 的文件都等于挂到公网。2026-09-17 就是因为这条踩过一次。
+.env
+.env.*
+!.env.example
+
+# 内部工作区（记忆日志 / SEO 队列 / 草稿脚本）——同样会被公网下载
+.workbuddy/
+
+# 数据/状态备份
+*.backup
+*.bak

@@ -5,6 +5,7 @@ Non-interactive, fully automated.
 import json, os, sys, subprocess, time, io
 from pathlib import Path
 from gen_missing_thumbs import _get_client, generate_thumbs
+from r2_credentials import client as r2_client
 
 # ===================== CONFIG =====================
 WEBSITE_DIR = Path(__file__).parent
@@ -138,10 +139,7 @@ def download_images(products):
 
 def upload_r2(products):
     import boto3; from botocore.config import Config; from PIL import Image
-    r2 = boto3.client('s3', endpoint_url="https://cdd100719805df54e62bee48d165b2dd.r2.cloudflarestorage.com",
-                      aws_access_key_id="6ba9614989d68d1b8f7f7d6b53f50e54",
-                      aws_secret_access_key="10d4b41750b6965866db2bac4f33c8d6be56679219efe4cab6ae0211eacd6d80",
-                      region_name='auto', config=Config(signature_version='s3v4'))
+    r2 = r2_client()
     total = sum(len(p.get('_local_imgs',[])) for p in products)
     up = 0
     for p in products:

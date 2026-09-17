@@ -9,19 +9,18 @@ import boto3
 from botocore.config import Config
 from PIL import Image
 
-R2_ENDPOINT = "https://cdd100719805df54e62bee48d165b2dd.r2.cloudflarestorage.com"
-R2_ACCESS_KEY = "6ba9614989d68d1b8f7f7d6b53f50e54"
-R2_SECRET_KEY = "10d4b41750b6965866db2bac4f33c8d6be56679219efe4cab6ae0211eacd6d80"
-BUCKET_NAME = "party-maker"
+# R2 凭据一律从 .env 读取（见 r2_credentials.py）——
+# ⚠️ 本仓库是 public，任何写死在这里的密钥都等于挂到公网。2026-09-17 踩过。
+from r2_credentials import (ENDPOINT as R2_ENDPOINT,
+                            BUCKET as BUCKET_NAME,
+                            client as r2_client)
 R2_PUBLIC = "https://pub-1fd965ab66464286847edcb540254451.r2.dev"
 THUMB_MAX_SIZE = 300
 THUMB_QUALITY = 75
 
 
 def _get_client():
-    return boto3.client('s3', endpoint_url=R2_ENDPOINT,
-        aws_access_key_id=R2_ACCESS_KEY, aws_secret_access_key=R2_SECRET_KEY,
-        region_name='auto', config=Config(signature_version='s3v4', max_pool_connections=25))
+    return r2_client(config=Config(signature_version='s3v4', max_pool_connections=25))
 
 
 def generate_thumbs(client, products, verbose=True):

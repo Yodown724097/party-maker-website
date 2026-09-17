@@ -81,10 +81,8 @@ print(f"Downloaded {dl_count}/{total} images")
 # Upload to R2
 print("Uploading to R2...")
 import boto3; from botocore.config import Config; from PIL import Image
-r2 = boto3.client('s3', endpoint_url="https://cdd100719805df54e62bee48d165b2dd.r2.cloudflarestorage.com",
-                  aws_access_key_id="6ba9614989d68d1b8f7f7d6b53f50e54",
-                  aws_secret_access_key="10d4b41750b6965866db2bac4f33c8d6be56679219efe4cab6ae0211eacd6d80",
-                  region_name='auto', config=Config(signature_version='s3v4'))
+from r2_credentials import client as r2_client
+r2 = r2_client()
 
 up = 0
 r2_urls = {}  # sku -> [r2 urls]

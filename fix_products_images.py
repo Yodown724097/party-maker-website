@@ -88,10 +88,8 @@ from PIL import Image
 import boto3
 from botocore.config import Config
 
-r2 = boto3.client('s3', endpoint_url="https://cdd100719805df54e62bee48d165b2dd.r2.cloudflarestorage.com",
-                  aws_access_key_id="6ba9614989d68d1b8f7f7d6b53f50e54",
-                  aws_secret_access_key="10d4b41750b6965866db2bac4f33c8d6be56679219efe4cab6ae0211eacd6d80",
-                  region_name='auto', config=Config(signature_version='s3v4'))
+from r2_credentials import client as r2_client
+r2 = r2_client()
 
 sku_uploaded = {}  # sku -> [r2 urls]
 up = 0
