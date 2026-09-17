@@ -3,27 +3,7 @@
   "include": [
     "/api/*",
     "/img/*",
-    "/*.py",
-    "/*.pyc",
-    "/*.md",
-    "/*.docx",
-    "/*.log",
-    "/.workbuddy/*",
-    "/.workbuddy/memory/*",
-    "/.workbuddy/automations/*",
-    "/.build_cache.json",
-    "/.env.example",
-    "/.gitignore",
-    "/indexed_product_skus.json",
-    "/make_ppt.js",
-    "/missing_images_88.txt",
-    "/package-lock.json",
-    "/package.json",
-    "/products.json",
-    "/products.json.backup",
-    "/products.json.backup.20260425",
-    "/products.json.bak",
-    "/products-public.json.backup"
+    "/products.json"
   ],
   "exclude": []
 }
