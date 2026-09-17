@@ -31,7 +31,8 @@ MIDDLEWARE_JS = REPO / "functions" / "_middleware.js"
 
 MAX_RULES = 100
 
-# ── 公开名单：这些必须能被公网访问，绝不能进拦截 ──────────────────
+# ── 不该被拦的路径 ──────────────────────────────────────────────
+# 两类：① 必须能被公网访问的对外资源；② 由 Pages 自己消费、本就不对外的特殊文件
 PUBLIC_EXACT = {
     "/index.html",
     "/app.js",
@@ -42,8 +43,9 @@ PUBLIC_EXACT = {
     "/sitemap.xml",
     "/robots.txt",
     "/mihomo.yaml",          # 老板有意发布的 VPN 订阅地址
-    "/_headers",             # Pages 自己消费，本就不对外提供
-    "/_redirects",
+    "/_headers",             # ② Pages 自己消费，实测取不到
+    "/_redirects",           # ② 同上
+    "/_routes.json",         # ② 同上（Functions 调用路由表）
 }
 
 # 这些目录下的内容是对外页面，整目录公开
@@ -86,6 +88,20 @@ def main() -> int:
 
     if total > MAX_RULES:
         problems.append(f"_routes.json 规则数 {total} 超过 Cloudflare 上限 {MAX_RULES}")
+
+    # ⛔ 2026-09-17 实测踩坑：中间带通配符的规则（如 "/*.py"、"/*.md"）会让
+    #    Cloudflare Pages 构建直接失败 —— 且失败时**保留旧版本**，线上毫无征兆，
+    #    只有部署列表里能看到。通配符只能出现在规则末尾（/* 或 /xxx/*）。
+    for rule in include + exclude:
+        if "*" in rule and not rule.endswith("*"):
+            problems.append(
+                f"_routes.json 规则 {rule!r} 的 * 不在末尾 —— "
+                f"Cloudflare 会拒绝并导致构建失败（实测），请改为显式列举"
+            )
+    for rule in include + exclude:
+        if len(rule) > 100:
+            problems.append(f"_routes.json 规则 {rule!r} 超过 100 字符上限")
+
     for required in ("/api/*", "/img/*"):
         if required not in include:
             problems.append(
