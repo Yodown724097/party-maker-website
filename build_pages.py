@@ -1981,9 +1981,22 @@ def cart_js_version():
 
 
 def compute_product_hash(p):
-    """Compute a deterministic hash of fields that affect product page HTML."""
+    """产品页 HTML 的内容哈希（含模板/共享脚本版本）——决定这一页要不要重建。"""
+    return _product_digest(p, [TEMPLATE_VERSION, cart_js_version()])
+
+
+def compute_data_hash(p):
+    """只按产品数据本身算哈希，**不含**模板/脚本版本 —— 专供 sitemap lastmod 判定。
+
+    模板改了不该让 996 条 URL 的 lastmod 一起跳成今天：那等于向搜索引擎发"全站大改"
+    信号，白白消耗抓取预算（本站还有大量页面在排队等收录）。
+    页面重建（compute_product_hash）与"内容对搜索引擎算不算新"（本函数）是两件事。"""
+    return _product_digest(p, [])
+
+
+def _product_digest(p, extra):
     import hashlib
-    raw = [TEMPLATE_VERSION, cart_js_version()]  # 模板/共享脚本改了 → 所有页面哈希都变 → 强制全量重建
+    raw = list(extra)
     for key in sorted(HASH_FIELDS):
         val = p.get(key)
         if isinstance(val, (list, dict)):
@@ -2012,14 +2025,21 @@ def main():
 
     # Compute hashes for all products NOW (needed by multiple sections below)
     new_cache = {}
-    changed_skus = set()
+    changed_skus = set()          # 需要重建 HTML 的页面
+    data_changed_skus = set()     # 产品数据真的变了 → 才动 sitemap 的 lastmod
     if not demo_mode:
         for p in products:
             h = compute_product_hash(p)
             new_cache[p['sku']] = h
             if prev_cache.get(p['sku']) != h:
                 changed_skus.add(p['sku'])
-        print(f"  Changed products detected: {len(changed_skus)}")
+            dkey = p['sku'] + '__data'
+            dh = compute_data_hash(p)
+            new_cache[dkey] = dh
+            # 没有基线时不算变更（保守）：避免首次引入本字段时把 996 条 lastmod 全推成今天
+            if dkey in prev_cache and prev_cache[dkey] != dh:
+                data_changed_skus.add(p['sku'])
+        print(f"  Changed products detected: {len(changed_skus)} (数据真变: {len(data_changed_skus)})")
     else:
         changed_skus = {p['sku'] for p in products[:3]}
 
@@ -2213,7 +2233,7 @@ def main():
     print(f"[4] Sitemap URLs: {len(sitemap_urls)} total ({sitemap_products} products, {skipped_products} skipped — need name+image+price)")
 
     # === 6. Generate sitemap.xml ===
-    generate_sitemap(sitemap_urls, SITEMAP_FILE, changed_skus=(changed_skus if not demo_mode else None))
+    generate_sitemap(sitemap_urls, SITEMAP_FILE, changed_skus=(data_changed_skus if not demo_mode else None))
     print(f"[5] sitemap.xml: updated ({len(sitemap_urls)} URLs)")
 
     # === 7. Generate robots.txt (only if changed) ===
