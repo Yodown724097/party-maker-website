@@ -20,8 +20,15 @@ const cartStore = window.PMCart || {
     read: function () { return []; },
     write: function () {},
     clear: function () {},
-    renderBadges: function () {}
+    renderBadges: function () {},
+    encodeList: function () { return ''; },
+    decodeList: function () { return []; },
+    shareUrl: function () { return ''; },
+    mergeList: function () { return { added: 0, updated: 0 }; }
 };
+
+// Share/restore a picked list across devices via URL: /?load=605040.24,642071.12
+const SHARE_PARAM = cartStore.SHARE_PARAM || 'load';
 // Image proxy — avoids R2 domain unreachable on MaxHub, certain browsers, and China networks
 const IMG_PROXY = 'https://www.partymaker.cn/img';
 const R2_PUBLIC_RAW = 'https://pub-1fd965ab66464286847edcb540254451.r2.dev';
@@ -782,6 +789,112 @@ function openInquiryModal() {
 }
 function closeInquiryModal() { document.getElementById('inquiryModal').classList.remove('active'); }
 
+// ============ SAVE / SHARE LIST ============
+// The customer's worry: "I picked 20 products on my laptop, now I'm on another
+// computer and my cart is gone." localStorage is per-browser, so the list is
+// encoded INTO THE LINK itself (/?load=605040.24,642071.12) instead of being
+// stored on a server. No account, no password, nothing to lose or leak.
+// The link carries only SKU + quantity — prices are re-read from the live catalog.
+
+let shareListUrl = '';
+
+function openSaveList() {
+    if (cart.length === 0) return;
+
+    shareListUrl = cartStore.shareUrl(cart);
+    document.getElementById('saveListUrl').value = shareListUrl;
+
+    const pieces = cart.reduce((sum, it) => sum + (parseInt(it.qty, 10) || 0), 0);
+    document.getElementById('saveListMeta').textContent =
+        `${cart.length} product${cart.length > 1 ? 's' : ''} · ${pieces} pieces`;
+
+    // 链接过长时（几百个货号）邮件比复制可靠，提前提醒
+    const longHint = document.getElementById('saveListLongHint');
+    if (longHint) longHint.style.display = shareListUrl.length > 1800 ? 'block' : 'none';
+
+    // 顺手预填客户刚在询盘表单里填过的邮箱，省一次输入（不额外存任何东西）
+    const emailEl = document.getElementById('saveListEmail');
+    const typed = (document.getElementById('buyerEmail') || {}).value || '';
+    if (!emailEl.value && typed) emailEl.value = typed;
+
+    setSaveListMsg('');
+    setSaveListSending(false);
+    openModal('saveListModal');
+}
+
+function closeSaveListModal() { closeModal('saveListModal'); }
+
+/** 复制链接：优先用 Clipboard API，旧浏览器退回 execCommand */
+async function copySaveListLink() {
+    const el = document.getElementById('saveListUrl');
+    const link = shareListUrl || el.value;
+    let ok = false;
+    try {
+        await navigator.clipboard.writeText(link);
+        ok = true;
+    } catch (e) {
+        try {
+            el.removeAttribute('readonly');
+            el.select();
+            el.setSelectionRange(0, link.length);
+            ok = document.execCommand('copy');
+            el.setAttribute('readonly', 'readonly');
+            window.getSelection().removeAllRanges();
+        } catch (e2) { ok = false; }
+    }
+    if (ok) {
+        setSaveListMsg('Link copied — paste it anywhere.', 'ok');
+        showToast('Link copied', 'success');
+    } else {
+        setSaveListMsg('Could not copy automatically — please select the link and copy it.', 'err');
+    }
+}
+
+/** 把链接寄到客户自己填的邮箱（只能寄给他自己，不会抄送任何人） */
+async function emailSaveList() {
+    const email = document.getElementById('saveListEmail').value.trim();
+    if (!email || !/^[^\s@,;]+@[^\s@,;]+\.[^\s@,;]{2,}$/.test(email)) {
+        setSaveListMsg('Please enter a valid email address.', 'err');
+        return;
+    }
+    setSaveListSending(true);
+    setSaveListMsg('Sending…');
+    try {
+        const resp = await fetch('/api/save-list', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                email,
+                cart: cart.map(it => ({ sku: it.sku || it.id, qty: it.qty }))
+            })
+        });
+        const data = await resp.json().catch(() => ({}));
+        if (resp.ok && data.success) {
+            setSaveListMsg(`Sent to ${email} — open it on any device to get your list back.`, 'ok');
+            showToast('List emailed', 'success');
+        } else {
+            setSaveListMsg(data.error || 'Could not send the email. Please try "Copy link" instead.', 'err');
+        }
+    } catch (e) {
+        setSaveListMsg('Network error — please try "Copy link" instead.', 'err');
+    }
+    setSaveListSending(false);
+}
+
+function setSaveListMsg(text, kind) {
+    const el = document.getElementById('saveListMsg');
+    if (!el) return;
+    el.textContent = text || '';
+    el.className = 'save-list-msg' + (kind ? ' ' + kind : '');
+}
+
+function setSaveListSending(on) {
+    const btn = document.getElementById('saveListSendBtn');
+    if (!btn) return;
+    btn.disabled = !!on;
+    btn.textContent = on ? 'Sending…' : 'Email me this link';
+}
+
 function renderInquirySummary() {
     const el = document.getElementById('inquirySummary');
     el.innerHTML = `<h4>Selected Products (${cart.length})</h4>` +
@@ -946,6 +1059,39 @@ function applyRoute() {
             const sidebar = document.getElementById('cartSidebar');
             if (sidebar && !sidebar.classList.contains('open')) toggleCart();
         }, 250);
+        return;
+    }
+
+    // Saved list link (from "Save my list" / the email we send): /?load=605040.24,642071.12
+    // Brings a picked selection back on any device. No account, no password.
+    const loadParam = urlParams.get(SHARE_PARAM);
+    if (loadParam) {
+        history.replaceState(null, '', '/');   // 先清参数，刷新不会重复触发
+        const incoming = cartStore.decodeList(loadParam).map(inc => {
+            const p = allProducts.find(pr => pr.id === inc.id || pr.sku === inc.id);
+            if (!p) return inc;   // 已下架：保留客户的选择，名称留空
+            return {
+                id: inc.id,
+                qty: inc.qty,
+                name: p.name || '',
+                sku: p.sku || inc.sku,
+                price: p.price || 0,
+                description: p.description || '',
+                images: p.images || []
+            };
+        });
+        if (incoming.length) {
+            cartStore.mergeList(incoming);   // 同货号以这份清单为准，没提到的保留
+            cart = loadCart();               // 同步内存态（mergeList 只写存储）
+            syncCartWithProducts();          // 价格/名称对齐最新目录
+            updateCartUI();
+            renderProducts();
+            setTimeout(() => {
+                const sidebar = document.getElementById('cartSidebar');
+                if (sidebar && !sidebar.classList.contains('open')) toggleCart();
+                showToast(`Restored ${incoming.length} product${incoming.length > 1 ? 's' : ''} to your cart`, 'success');
+            }, 300);
+        }
         return;
     }
 

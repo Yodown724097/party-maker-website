@@ -139,6 +139,73 @@
         write(items);
     }
 
+    /* ------------------------------------------------- share / restore list */
+
+    var SHARE_PARAM = 'load';       // 分享链接参数：?load=605040.24,642071.12
+    var SHARE_MAX_ITEMS = 200;      // 防御：拒绝异常长的清单
+
+    /**
+     * 把购物车编码成可放进 URL 的短串。
+     * 只含「货号 + 数量」——不含价格、邮箱、任何内部字段，所以链接被转发也无隐私风险。
+     * 恢复时价格会从最新产品目录重新取，不会用陈旧价格。
+     */
+    function encodeList(items) {
+        return (items || [])
+            .filter(function (it) { return it && (it.sku || it.id); })
+            .slice(0, SHARE_MAX_ITEMS)
+            .map(function (it) { return (it.sku || it.id) + '.' + normalizeQty(it.qty); })
+            .join(',');
+    }
+
+    /**
+     * 解析分享串 → [{ id, sku, qty }]。
+     * 容错：空段、缺数量、坏数量、超长全部跳过；货号已下架也照样返回（由上层决定保留）。
+     */
+    function decodeList(str) {
+        if (!str) return [];
+        return String(str)
+            .split(',')
+            .slice(0, SHARE_MAX_ITEMS)
+            .map(function (part) {
+                var i = part.lastIndexOf('.');   // 货号本身不含点，用最后一个点分隔数量
+                if (i <= 0) return null;
+                var sku = part.slice(0, i).trim();
+                var qty = parseInt(part.slice(i + 1), 10);
+                if (!sku) return null;
+                return { id: sku, sku: sku, qty: normalizeQty(qty) };
+            })
+            .filter(Boolean);
+    }
+
+    /** 生成完整的分享链接 */
+    function shareUrl(items) {
+        var origin = window.location.origin || 'https://www.partymaker.cn';
+        return origin + '/?' + SHARE_PARAM + '=' + encodeURIComponent(encodeList(items));
+    }
+
+    /**
+     * 把一份外部清单并进当前购物车（用于打开分享链接时）。
+     * 规则：**同货号以这份清单的数量为准**（客户是来"恢复成我保存的那份"）；
+     *       清单里没有的条目保留不动（不删掉客户在这台机器上新加的东西）。
+     * @returns {{added:number, updated:number}}
+     */
+    function mergeList(incoming) {
+        var items = read();
+        var added = 0, updated = 0;
+        (incoming || []).forEach(function (inc) {
+            var hit = null;
+            items.forEach(function (it) { if (it.id === inc.id) hit = it; });
+            if (hit) {
+                if (hit.qty !== inc.qty) { hit.qty = inc.qty; updated++; }
+            } else {
+                items.push({ id: inc.id, sku: inc.sku, qty: inc.qty, name: '', price: 0, images: [] });
+                added++;
+            }
+        });
+        if (added || updated) write(items);
+        return { added: added, updated: updated };
+    }
+
     /* ------------------------------------------------------------------ badges */
 
     /** 刷新页面上所有购物车徽标（首页 #cartBadge，详情页 [data-cart-badge]） */
@@ -174,6 +241,7 @@
     window.PMCart = {
         KEY: KEY,
         STEP: STEP,
+        SHARE_PARAM: SHARE_PARAM,
         normalizeQty: normalizeQty,
         read: read,
         write: write,
@@ -184,6 +252,10 @@
         add: add,
         remove: remove,
         setQty: setQty,
+        encodeList: encodeList,
+        decodeList: decodeList,
+        shareUrl: shareUrl,
+        mergeList: mergeList,
         renderBadges: renderBadges,
         onChange: onChange
     };
