@@ -3,6 +3,8 @@ const R2_PRODUCTS_URL = '/products.json';
 // Direct to Cloudflare Pages Function (no CORS issues, no VPS needed)
 const WORKER_URL = '/api/generate';
 const QTY_STEP = 12;
+// Inquiry cart persistence — selections survive reload/tab close until the customer clears them
+const CART_STORAGE_KEY = 'pm_cart_v1';
 // Image proxy — avoids R2 domain unreachable on MaxHub, certain browsers, and China networks
 const IMG_PROXY = 'https://www.partymaker.cn/img';
 const R2_PUBLIC_RAW = 'https://pub-1fd965ab66464286847edcb540254451.r2.dev';
@@ -56,8 +58,15 @@ const preloadedUrls = new Set(); // Track preloaded image URLs
 
 // ============ INIT ============
 async function init() {
+    // Restore persisted cart FIRST so the badge is correct even before products finish loading
+    cart = loadCart();
+    updateCartUI();
     setupSearch();
     await loadProducts();
+    // Products are in — re-align stored prices/names with the latest catalog
+    syncCartWithProducts();
+    updateCartUI();
+    renderProducts();
     // Apply route from URL path (not hash)
     applyRoute();
 }
@@ -550,9 +559,7 @@ function handleCartClick(id) {
     const qtyInput = document.getElementById('qty-' + id);
     const rawVal = qtyInput ? qtyInput.value : '';
     // Round up to nearest step
-    let qty = parseInt(rawVal) || QTY_STEP;
-    if (qty < QTY_STEP) qty = QTY_STEP;
-    qty = Math.ceil(qty / QTY_STEP) * QTY_STEP;
+    const qty = normalizeQty(rawVal);
 
     const product = allProducts.find(p => p.id === id);
     if (!product) return;
@@ -585,6 +592,7 @@ function handleCartClick(id) {
         });
         showToast(`Added: ${product.name} × ${qty}`, 'success');
     }
+    saveCart();
     updateCartUI();
     renderProducts();
 }
@@ -649,21 +657,21 @@ function changeQty(id, delta) {
     const item = cart.find(c => c.id === id);
     if (!item) return;
     item.qty = Math.max(QTY_STEP, item.qty + delta * QTY_STEP);
+    saveCart();
     updateCartUI();
 }
 
 function updateQty(id, val) {
     const item = cart.find(c => c.id === id);
     if (!item) return;
-    let qty = parseInt(val) || QTY_STEP;
-    if (qty < QTY_STEP) qty = QTY_STEP;
-    qty = Math.ceil(qty / QTY_STEP) * QTY_STEP;
-    item.qty = qty;
+    item.qty = normalizeQty(val);
+    saveCart();
     updateCartUI();
 }
 
 function removeFromCart(id) {
     cart = cart.filter(c => c.id !== id);
+    saveCart();
     updateCartUI();
     renderProducts();
     showToast('Removed from cart', 'default');
@@ -673,6 +681,95 @@ function toggleCart() {
     document.getElementById('cartOverlay').classList.toggle('active');
     document.getElementById('cartSidebar').classList.toggle('open');
 }
+
+/** Empty the cart — only called on explicit customer action */
+function clearCart() {
+    if (cart.length === 0) return;
+    if (!confirm('Remove all products from your inquiry cart?')) return;
+    cart = [];
+    clearCartStorage();
+    updateCartUI();
+    renderProducts();
+    showToast('Cart cleared', 'default');
+}
+
+// ============ CART PERSISTENCE ============
+// The cart lives in localStorage so it survives reloads, tab closes and navigating to
+// product detail pages. It is only emptied when the customer clears it (or submits an inquiry).
+// Every storage call is wrapped: private mode / full quota / corrupt JSON degrade to memory-only.
+
+/** Round a user-entered quantity up to the nearest valid step */
+function normalizeQty(val) {
+    let qty = parseInt(val);
+    if (!qty || qty < QTY_STEP) qty = QTY_STEP;
+    return Math.ceil(qty / QTY_STEP) * QTY_STEP;
+}
+
+function saveCart() {
+    try {
+        localStorage.setItem(CART_STORAGE_KEY, JSON.stringify({ v: 1, savedAt: Date.now(), items: cart }));
+    } catch (e) {
+        // Storage unavailable (private mode / quota) — cart still works for this session
+        console.warn('Cart not persisted:', e);
+    }
+}
+
+function loadCart() {
+    try {
+        const raw = localStorage.getItem(CART_STORAGE_KEY);
+        if (!raw) return [];
+        const data = JSON.parse(raw);
+        const items = Array.isArray(data) ? data : (data && Array.isArray(data.items) ? data.items : []);
+        return items
+            .filter(it => it && it.id)
+            .map(it => Object.assign({}, it, { qty: normalizeQty(it.qty) }));
+    } catch (e) {
+        // Corrupt payload — drop it rather than breaking the page
+        console.warn('Cart storage unreadable, reset:', e);
+        clearCartStorage();
+        return [];
+    }
+}
+
+function clearCartStorage() {
+    try {
+        localStorage.removeItem(CART_STORAGE_KEY);
+    } catch (e) {
+        // ignore
+    }
+}
+
+/** Re-align stored items with the latest catalog. Delisted products are kept, not dropped. */
+function syncCartWithProducts() {
+    if (cart.length === 0 || allProducts.length === 0) return;
+    let changed = false;
+    cart.forEach(item => {
+        const p = allProducts.find(pr => pr.id === item.id);
+        if (!p) return; // product no longer listed — keep what the customer chose
+        const freshPrice = (p.price !== undefined && p.price !== null) ? p.price : item.price;
+        const freshImages = (p.images && p.images.length) ? p.images : (item.images || []);
+        if (p.name !== item.name ||
+            p.sku !== item.sku ||
+            parseFloat(freshPrice) !== parseFloat(item.price) ||
+            freshImages[0] !== (item.images || [])[0]) {
+            item.name = p.name || item.name;
+            item.sku = p.sku || item.sku;
+            item.price = freshPrice || 0;
+            item.images = freshImages;
+            changed = true;
+        }
+    });
+    if (changed) saveCart();
+}
+
+// Two tabs open on the same browser: keep them consistent so one tab cannot
+// silently overwrite items the customer just added in the other.
+window.addEventListener('storage', e => {
+    if (e.key !== CART_STORAGE_KEY) return;
+    cart = loadCart();
+    updateCartUI();
+    renderProducts();
+});
 
 // ============ MODALS ============
 function openModal(id) { document.getElementById(id).classList.add('active'); }
@@ -751,8 +848,11 @@ async function submitInquiry(e) {
         }
         document.getElementById('inquiryFormContent').style.display = 'none';
         document.getElementById('inquirySuccessContent').style.display = 'block';
+        // Inquiry accepted — empty both the cart and its persisted copy
         cart = [];
+        clearCartStorage();
         updateCartUI();
+        renderProducts();
     } catch (err) {
         showToast('Failed: ' + err.message, 'error');
         btn.disabled = false;

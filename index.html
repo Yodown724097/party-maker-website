@@ -308,7 +308,10 @@
         </div>
     </div>
     <div class="cart-footer" id="cartFooter" style="display:none;">
-        <div class="cart-item-count" id="cartItemCount"></div>
+        <div class="cart-footer-top">
+            <div class="cart-item-count" id="cartItemCount"></div>
+            <button class="cart-clear" onclick="clearCart()" aria-label="Clear all items">Clear all</button>
+        </div>
         <div class="cart-total">
             <span>Est. Total:</span>
             <strong id="cartTotal">$0.00</strong>

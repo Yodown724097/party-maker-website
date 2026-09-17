@@ -871,6 +871,25 @@ header {
     color: var(--text-light);
     margin-bottom: 0.5rem;
 }
+.cart-footer-top {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 0.5rem;
+}
+.cart-footer-top .cart-item-count { margin-bottom: 0; }
+.cart-clear {
+    background: none;
+    border: none;
+    color: var(--text-light);
+    font-size: 0.78rem;
+    cursor: pointer;
+    padding: 0.2rem 0;
+    text-decoration: underline;
+    opacity: 0.75;
+    transition: opacity 0.15s, color 0.15s;
+}
+.cart-clear:hover { opacity: 1; color: var(--danger); }
 .submit-inquiry {
     width: 100%;
     background: var(--accent);
