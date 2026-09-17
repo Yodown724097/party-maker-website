@@ -13,8 +13,18 @@
      —— 否则请求根本不会进中间件，Pages 会直接吐静态文件（静默泄露）
   4. 公开名单里的文件，不能被中间件规则误伤
 
-用法：  python check_publish_surface.py
+用法：
+  python check_publish_surface.py             # 静态检查（默认）
+  python check_publish_surface.py --online    # 静态检查 + 线上实测
+  python check_publish_surface.py --online --wait
+                                              # 线上实测，先轮询等新构建生效
+
 退出码：0 = 全部通过；1 = 存在漏网/不一致
+
+⛔ 为什么需要 --online：
+  维护的是线上不可下载，而"改了没生效"这件事是**静默的** ——
+  Cloudflare 构建失败时会保留旧版本继续服务，静态检查全绿也可能线上照旧泄露。
+  只有真去访问一遍才知道。
 """
 
 from __future__ import annotations
@@ -23,6 +33,9 @@ import json
 import re
 import subprocess
 import sys
+import time
+import urllib.error
+import urllib.request
 from pathlib import Path
 
 REPO = Path(__file__).resolve().parent
@@ -204,5 +217,107 @@ def main() -> int:
     return 0
 
 
+# ── 线上实测 ──────────────────────────────────────────────────────
+SITE = "https://www.partymaker.cn"
+UA = {
+    "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 "
+                  "(KHTML, like Gecko) Chrome/120 Safari/537.36"
+}
+HOME_LEN = 45729   # 首页长度：Pages 对不存在的路径回落首页，用它识别「假 200」
+
+# 线上必须存活的对外资源（少一个都不行）
+PUBLIC_PROBE = [
+    ("/", "首页"), ("/index.html", ""),
+    ("/product/605040/", "产品页"), ("/ramadan/", "品类页"),
+    ("/diwali/", "品类页"), ("/blog/", "博客"),
+    ("/products-public.json", "站点数据源"), ("/blog.json", ""),
+    ("/app.js", ""), ("/cart.js", ""), ("/style.css", ""),
+    ("/sitemap.xml", "SEO"), ("/robots.txt", "SEO"),
+]
+# Function 路由：包在产品图代理里，漏了它全站图全挂
+FUNCTION_PROBE = ["/img/605040/01.webp", "/api/save-list", "/api/generate"]
+
+
+def _fetch(path: str, method: str = "GET"):
+    req = urllib.request.Request(SITE + path, headers=UA, method=method)
+    try:
+        with urllib.request.urlopen(req, timeout=25) as resp:
+            return resp.status, resp.read(), resp.headers.get("Content-Type", "") or ""
+    except urllib.error.HTTPError as e:
+        try:
+            body = e.read()
+        except Exception:
+            body = b""
+        ct = (e.headers.get("Content-Type", "") if e.headers else "") or ""
+        return e.code, body, ct
+    except Exception as e:
+        return -1, str(e).encode(), ""
+
+
+def online_check(blocked_paths: list[str], wait: bool = False) -> int:
+    problems: list[str] = []
+
+    def note(ok: bool, text: str) -> None:
+        print(f"  {'ok  ' if ok else 'FAIL'} {text}")
+        if not ok:
+            problems.append(text)
+
+    if wait:
+        print("等待新构建生效（轮询 /check_publish_surface.py 变为 404）...")
+        deadline = time.time() + 420
+        while time.time() < deadline:
+            code, body, _ = _fetch("/check_publish_surface.py")
+            if code == 404:
+                print("  已生效\n")
+                break
+            time.sleep(10)
+        else:
+            print("  ⏰ 超时 —— 构建可能失败（失败会保留旧版本继续服务）\n")
+
+    print("=== 线上：内部文件必须 404 ===")
+    for p in blocked_paths:
+        code, body, _ = _fetch(p)
+        leak = code == 200 and len(body) != HOME_LEN
+        note(code == 404, f"{code} {len(body):>7}B  {p}" + ("   🔴 仍在泄露!" if leak else ""))
+
+    print("\n=== 线上：对外资源必须真内容 ===")
+    for p, label in PUBLIC_PROBE:
+        code, body, _ = _fetch(p)
+        is_home = len(body) == HOME_LEN
+        ok = code == 200 and (is_home if p in ("/", "/index.html") else not is_home)
+        note(ok, f"{code} {len(body):>7}B  {p:<38} {label}")
+
+    print("\n=== 线上：mihomo.yaml 不拦（老板明确要求）===")
+    code, body, _ = _fetch("/mihomo.yaml")
+    note(code == 200 and b"proxies:" in body, f"{code} {len(body):>7}B  /mihomo.yaml")
+
+    print("\n=== 线上：Function 路由必须存活 ===")
+    for p in FUNCTION_PROBE:
+        code, _, ct = _fetch(p)
+        note(code in (200, 400, 404, 405) and "text/html" not in ct, f"{code} {ct:<26} {p}")
+
+    print()
+    if problems:
+        print(f"FAIL  线上实测 {len(problems)} 项不符")
+        return 1
+    print("PASS  线上实测全部通过")
+    return 0
+
+
 if __name__ == "__main__":
-    sys.exit(main())
+    args = set(sys.argv[1:])
+    rc = main()
+    if "--online" in args:
+        # 只抽测根级显式规则 + 少量 .workbuddy 样本（数量可控，够发现问题）
+        routes = json.loads(ROUTES_JSON.read_text(encoding="utf-8"))["include"]
+        roots = [r for r in routes if r not in ("/api/*", "/img/*") and not r.startswith("/.workbuddy/")]
+        samples = [
+            "/.workbuddy/memory/MEMORY.md",
+            "/.workbuddy/memory/2026-09-11.md",
+            "/.workbuddy/seo_queue.json",
+            "/.workbuddy/vps_blog_daily.py",
+            "/.workbuddy/automations/automation-1780929777036/memory.md",
+        ]
+        print()
+        rc = max(rc, online_check(roots + samples, wait="--wait" in args))
+    sys.exit(rc)
