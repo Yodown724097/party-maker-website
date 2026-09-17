@@ -122,9 +122,10 @@
             </a>
         </div>
         <div class="header-actions">
-            <a href="/" class="cart-btn">
+            <a href="/?cart=1" class="cart-btn" title="View your inquiry cart">
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="8" cy="21" r="1"/><circle cx="19" cy="21" r="1"/><path d="M2.05 2.05h2l2.66 12.42a2 2 0 0 0 2 1.58h9.78a2 2 0 0 0 1.95-1.57l1.65-7.43H5.12"/></svg>
-                <span class="cart-btn-text">Browse All</span>
+                <span class="cart-btn-text">Inquiry Cart</span>
+                <span class="cart-badge empty" data-cart-badge>0</span>
             </a>
         </div>
     </div>
@@ -161,7 +162,12 @@
 
             <h2 class="section-title">&#9670; Product Specifications</h2><table class="specs-table"><tr><td class="spec-label">Pcs/Carton</td><td class="spec-value">144</td></tr><tr><td class="spec-label">Carton Size</td><td class="spec-value">41 x 21 x 32 cm</td></tr><tr><td class="spec-label">CBM</td><td class="spec-value">0.030</td></tr><tr><td class="spec-label">N.W.</td><td class="spec-value">6.9 kg</td></tr><tr><td class="spec-label">G.W.</td><td class="spec-value">7.4 kg</td></tr></table>
             <div class="detail-actions">
-                <button class="btn-inquiry" onclick="openPdpInquiry()">&#128722; Inquire This Product</button>
+                <div class="atc-row">
+                    <input type="number" id="pdpAddQty" value="12" min="12" step="12" inputmode="numeric" aria-label="Quantity to add">
+                    <button class="btn-add-cart" id="pdpAddCartBtn" onclick="addToCartFromPdp()">&#128722; Add to Cart</button>
+                </div>
+                <div class="atc-hint">Sold in multiples of 12 pcs &middot; adjust the cart before sending your inquiry</div>
+                <button class="btn-inquiry" onclick="openPdpInquiry()">Inquire About This Product</button>
             </div>
         </div>
     </div>
@@ -216,7 +222,7 @@
     </a>
     <a href="/product/625517/" class="product-card">
         <div class="product-image">
-            <img src="" alt="eid mubarak balloon set 120pcs" width="400" height="400" loading="lazy" decoding="async">
+            <img src="https://www.partymaker.cn/img/625517/01.webp" alt="eid mubarak balloon set 120pcs" width="400" height="400" loading="lazy" decoding="async">
             
         </div>
         <div class="product-info">
@@ -289,10 +295,27 @@
 </div>
 </div>
 </div>
+<script src="/cart.js?v=b65ddd496669"></script>
 <script>
 var PDP_SKU='624148';
 var PDP_NAME='Eid Printed Chrome Balloon 12ct';
 var PDP_IMG='https://www.partymaker.cn/img/624148/01.webp';
+// 本页内嵌的购物车数据：只含公开展示字段。
+// 内部成本口径由后端自己持有，前端不参与、也不传输。
+var PDP_CART_ITEM={"id":"624148","sku":"624148","name":"Eid Printed Chrome Balloon 12ct","price":0.76,"description":"Balloon, Chrome, 12pcs","images":["https://www.partymaker.cn/img/624148/01.webp","https://www.partymaker.cn/img/624148/02.webp","https://www.partymaker.cn/img/624148/03.webp"]};
+function addToCartFromPdp(){
+if(!window.PMCart){showPdpToast('Cart unavailable, please refresh');return;}
+var qEl=document.getElementById('pdpAddQty');
+PMCart.add(PDP_CART_ITEM,qEl?qEl.value:'');
+var b=document.getElementById('pdpAddCartBtn');
+if(b){
+if(!b.dataset.label)b.dataset.label=b.innerHTML;
+b.classList.add('added');
+b.innerHTML='&#10003; Added to Cart';
+clearTimeout(window._atcTimer);
+window._atcTimer=setTimeout(function(){b.classList.remove('added');b.innerHTML=b.dataset.label;},2200);
+}
+}
 function openPdpInquiry(){
 document.getElementById('pdpInquiryOverlay').style.display='flex';
 document.getElementById('pdpInquiryFormWrap').style.display='block';
@@ -335,12 +358,7 @@ country:document.getElementById('pdpCountry').value.trim(),
 phone:document.getElementById('pdpPhone').value.trim(),
 message:(msgExtra+document.getElementById('pdpNotes').value.trim())
 },
-cart:[{
-id:PDP_SKU,sku:PDP_SKU,name:PDP_NAME,description:'',quantity:qty?parseInt(qty):120,
-price:0,images:[PDP_IMG],
-_costPrice:0,_costNote:'',_orderNo:PDP_SKU,_stockQty:'-',
-_unitSize:'',_ctnL:'-',_ctnW:'-',_ctnH:'-',_pcsPerCtn:'-',_cbm:'-',_nw:'-',_gw:'-'
-}],
+cart:[Object.assign({},PDP_CART_ITEM,{quantity:qty?parseInt(qty):120})],
 send_email:true,
 timestamp:new Date().toISOString()
 };
@@ -505,11 +523,58 @@ btn.disabled=false;btn.textContent='Send Inquiry ↳';btn.style.opacity='1';
 
 .detail-actions {
     display: flex;
-    gap: 0.75rem;
+    flex-direction: column;
+    align-items: stretch;
+    gap: 0.6rem;
     margin-bottom: 1.5rem;
+}
+/* Add-to-cart row: quantity + button. Quantity mirrors the homepage step (12 pcs). */
+.atc-row {
+    display: flex;
+    gap: 0.6rem;
+    align-items: stretch;
     flex-wrap: wrap;
 }
+.atc-row input[type="number"] {
+    width: 104px;
+    flex: 0 0 auto;
+    padding: 0.65rem 0.5rem;
+    border: 1.5px solid #d8d8d2;
+    border-radius: 8px;
+    font-size: 0.95rem;
+    font-weight: 600;
+    font-family: inherit;
+    text-align: center;
+    color: #333;
+    background: #fff;
+}
+.atc-row input[type="number"]:focus { outline: none; border-color: #9CAF88; }
+.btn-add-cart {
+    flex: 1 1 180px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.4rem;
+    padding: 0.7rem 1.4rem;
+    background: #D4AF37;
+    color: white;
+    border: none;
+    border-radius: 8px;
+    font-size: 0.95rem;
+    font-weight: 700;
+    font-family: inherit;
+    cursor: pointer;
+    transition: background 0.2s, transform 0.15s;
+}
+.btn-add-cart:hover { background: #B8960F; transform: translateY(-1px); }
+.btn-add-cart.added { background: #4E8A4E; }
+.atc-hint {
+    font-size: 0.78rem;
+    color: #8a8a8a;
+    line-height: 1.4;
+}
 .btn-inquiry {
+    align-self: flex-start;
     display: inline-flex;
     align-items: center;
     gap: 0.4rem;
@@ -906,6 +971,21 @@ header {
     white-space: nowrap;
 }
 .cart-btn:hover { background: #B8960F; transform: translateY(-1px); }
+.cart-badge {
+    background: white;
+    color: #B8960F;
+    border-radius: 50%;
+    width: 20px;
+    height: 20px;
+    min-width: 20px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.7rem;
+    font-weight: 700;
+    line-height: 1;
+}
+.cart-badge.empty { display: none; }
 
 /* Responsive */
 @media (max-width: 768px) {

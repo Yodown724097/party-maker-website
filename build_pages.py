@@ -99,6 +99,13 @@ HASH_FIELDS = (
 # Only _costPrice is truly internal; packaging specs are useful for buyers
 INTERNAL_FIELDS = ("_costPrice",)
 
+# ── 模板版本号 ──────────────────────────────────────────────────────────────
+# 改 PRODUCT_TEMPLATE / CATEGORY_TEMPLATE / DETAIL_CSS / 页面内联脚本后，**必须**改这里。
+# 原因：产品页是增量生成的（见 main() —— 只重建 compute_product_hash 变了的 SKU）。
+# 模板版本参与哈希，才能让"只改模板、产品数据没变"也触发全量重建；
+# 否则 996 个页面会被全部跳过，改动永远上不了线。
+TEMPLATE_VERSION = "2026-09-17-pdp-cart-v1"
+
 # Fields needed by the frontend product list (lightweight JSON)
 PUBLIC_LIST_FIELDS = (
     "id", "sku", "name", "price", "price_range", "description", "seo_desc",
@@ -197,9 +204,10 @@ PRODUCT_TEMPLATE = """\
             </a>
         </div>
         <div class="header-actions">
-            <a href="/" class="cart-btn">
+            <a href="/?cart=1" class="cart-btn" title="View your inquiry cart">
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="8" cy="21" r="1"/><circle cx="19" cy="21" r="1"/><path d="M2.05 2.05h2l2.66 12.42a2 2 0 0 0 2 1.58h9.78a2 2 0 0 0 1.95-1.57l1.65-7.43H5.12"/></svg>
-                <span class="cart-btn-text">Browse All</span>
+                <span class="cart-btn-text">Inquiry Cart</span>
+                <span class="cart-badge empty" data-cart-badge>0</span>
             </a>
         </div>
     </div>
@@ -236,7 +244,12 @@ PRODUCT_TEMPLATE = """\
 
             {specs_html}
             <div class="detail-actions">
-                <button class="btn-inquiry" onclick="openPdpInquiry()">&#128722; Inquire This Product</button>
+                <div class="atc-row">
+                    <input type="number" id="pdpAddQty" value="12" min="12" step="12" inputmode="numeric" aria-label="Quantity to add">
+                    <button class="btn-add-cart" id="pdpAddCartBtn" onclick="addToCartFromPdp()">&#128722; Add to Cart</button>
+                </div>
+                <div class="atc-hint">Sold in multiples of 12 pcs &middot; adjust the cart before sending your inquiry</div>
+                <button class="btn-inquiry" onclick="openPdpInquiry()">Inquire About This Product</button>
             </div>
         </div>
     </div>
@@ -321,10 +334,27 @@ PRODUCT_TEMPLATE = """\
 </div>
 </div>
 </div>
+<script src="/cart.js?v={cart_js_ver}"></script>
 <script>
 var PDP_SKU='{sku}';
 var PDP_NAME='{name_escaped_js}';
 var PDP_IMG='{first_image}';
+// 本页内嵌的购物车数据：只含公开展示字段。
+// 内部成本口径由后端自己持有，前端不参与、也不传输。
+var PDP_CART_ITEM={cart_item_json};
+function addToCartFromPdp(){{
+if(!window.PMCart){{showPdpToast('Cart unavailable, please refresh');return;}}
+var qEl=document.getElementById('pdpAddQty');
+PMCart.add(PDP_CART_ITEM,qEl?qEl.value:'');
+var b=document.getElementById('pdpAddCartBtn');
+if(b){{
+if(!b.dataset.label)b.dataset.label=b.innerHTML;
+b.classList.add('added');
+b.innerHTML='&#10003; Added to Cart';
+clearTimeout(window._atcTimer);
+window._atcTimer=setTimeout(function(){{b.classList.remove('added');b.innerHTML=b.dataset.label;}},2200);
+}}
+}}
 function openPdpInquiry(){{
 document.getElementById('pdpInquiryOverlay').style.display='flex';
 document.getElementById('pdpInquiryFormWrap').style.display='block';
@@ -367,12 +397,7 @@ country:document.getElementById('pdpCountry').value.trim(),
 phone:document.getElementById('pdpPhone').value.trim(),
 message:(msgExtra+document.getElementById('pdpNotes').value.trim())
 }},
-cart:[{{
-id:PDP_SKU,sku:PDP_SKU,name:PDP_NAME,description:'',quantity:qty?parseInt(qty):120,
-price:0,images:[PDP_IMG],
-_costPrice:0,_costNote:'',_orderNo:PDP_SKU,_stockQty:'-',
-_unitSize:'',_ctnL:'-',_ctnW:'-',_ctnH:'-',_pcsPerCtn:'-',_cbm:'-',_nw:'-',_gw:'-'
-}}],
+cart:[Object.assign({{}},PDP_CART_ITEM,{{quantity:qty?parseInt(qty):120}})],
 send_email:true,
 timestamp:new Date().toISOString()
 }};
@@ -501,9 +526,10 @@ CATEGORY_TEMPLATE = """\
             </a>
         </div>
         <div class="header-actions">
-            <a href="/" class="cart-btn">
+            <a href="/?cart=1" class="cart-btn" title="View your inquiry cart">
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="8" cy="21" r="1"/><circle cx="19" cy="21" r="1"/><path d="M2.05 2.05h2l2.66 12.42a2 2 0 0 0 2 1.58h9.78a2 2 0 0 0 1.95-1.57l1.65-7.43H5.12"/></svg>
-                <span class="cart-btn-text">Browse All</span>
+                <span class="cart-btn-text">Inquiry Cart</span>
+                <span class="cart-badge empty" data-cart-badge>0</span>
             </a>
         </div>
     </div>
@@ -541,6 +567,7 @@ CATEGORY_TEMPLATE = """\
 <style>
 {detail_css}
 </style>
+<script src="/cart.js?v={cart_js_ver}"></script>
 <!-- 小满 Okki CRM 访客追踪 & 询盘表单 -->
 <script>
   window.okkiConfigs = window.okkiConfigs || [];
@@ -803,7 +830,7 @@ def build_product_card(p, css_path="/style.css"):
     </a>"""
 
 
-def generate_product_page(product, all_products, css_path="/style.css"):
+def generate_product_page(product, all_products, css_path="/style.css", asset_ver=""):
     """Generate a full product detail HTML page."""
     sku = product['sku']
     name = product.get('name', '')
@@ -954,6 +981,18 @@ def generate_product_page(product, all_products, css_path="/style.css"):
     desc_json = json_str(desc_text)
     images_json = json.dumps(images[:5], ensure_ascii=False)
     sku_json = json_str(sku)
+
+    # 「Add to Cart」按钮的数据负载 —— 只用公开字段，**绝不**放内部成本字段(_costPrice)。
+    # 内部 PI 的成本价由后端 PRODUCT_INTERNAL 自己出，不依赖前端。
+    # 结尾把 </ 转义掉，避免产品名里出现 </script> 时提前闭合脚本标签。
+    cart_item_json = json.dumps({
+        "id": sku,
+        "sku": sku,
+        "name": name,
+        "price": product.get("price", 0) or 0,
+        "description": description[:300],
+        "images": images[:3],
+    }, ensure_ascii=False, separators=(",", ":")).replace("</", "<\\/")
     canonical_json = json_str(canonical)
     category_json = json_str(f"{theme} > {subcategory}")
     theme_json = json_str(theme)
@@ -1009,11 +1048,13 @@ def generate_product_page(product, all_products, css_path="/style.css"):
         theme_json=theme_json,
         subcat_json=subcat_json,
         breadcrumb_ld_json=breadcrumb_ld_json,
+        cart_item_json=cart_item_json,
+        cart_js_ver=asset_ver,
     )
     return page_html
 
 
-def generate_category_page(theme, subcategory, products, all_products, css_path="/style.css"):
+def generate_category_page(theme, subcategory, products, all_products, css_path="/style.css", asset_ver=""):
     """Generate a category listing HTML page."""
     is_ramadan = (theme == "Ramadan")
 
@@ -1114,6 +1155,7 @@ def generate_category_page(theme, subcategory, products, all_products, css_path=
         canonical_json=json_str(canonical),
         item_list_json=item_list_json,
         breadcrumb_ld_json=breadcrumb_ld_json,
+        cart_js_ver=asset_ver,
     )
     return page_html
 
@@ -1318,11 +1360,58 @@ DETAIL_CSS = """
 
 .detail-actions {
     display: flex;
-    gap: 0.75rem;
+    flex-direction: column;
+    align-items: stretch;
+    gap: 0.6rem;
     margin-bottom: 1.5rem;
+}
+/* Add-to-cart row: quantity + button. Quantity mirrors the homepage step (12 pcs). */
+.atc-row {
+    display: flex;
+    gap: 0.6rem;
+    align-items: stretch;
     flex-wrap: wrap;
 }
+.atc-row input[type="number"] {
+    width: 104px;
+    flex: 0 0 auto;
+    padding: 0.65rem 0.5rem;
+    border: 1.5px solid #d8d8d2;
+    border-radius: 8px;
+    font-size: 0.95rem;
+    font-weight: 600;
+    font-family: inherit;
+    text-align: center;
+    color: #333;
+    background: #fff;
+}
+.atc-row input[type="number"]:focus { outline: none; border-color: #9CAF88; }
+.btn-add-cart {
+    flex: 1 1 180px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.4rem;
+    padding: 0.7rem 1.4rem;
+    background: #D4AF37;
+    color: white;
+    border: none;
+    border-radius: 8px;
+    font-size: 0.95rem;
+    font-weight: 700;
+    font-family: inherit;
+    cursor: pointer;
+    transition: background 0.2s, transform 0.15s;
+}
+.btn-add-cart:hover { background: #B8960F; transform: translateY(-1px); }
+.btn-add-cart.added { background: #4E8A4E; }
+.atc-hint {
+    font-size: 0.78rem;
+    color: #8a8a8a;
+    line-height: 1.4;
+}
 .btn-inquiry {
+    align-self: flex-start;
     display: inline-flex;
     align-items: center;
     gap: 0.4rem;
@@ -1719,6 +1808,21 @@ header {
     white-space: nowrap;
 }
 .cart-btn:hover { background: #B8960F; transform: translateY(-1px); }
+.cart-badge {
+    background: white;
+    color: #B8960F;
+    border-radius: 50%;
+    width: 20px;
+    height: 20px;
+    min-width: 20px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.7rem;
+    font-weight: 700;
+    line-height: 1;
+}
+.cart-badge.empty { display: none; }
 
 /* Responsive */
 @media (max-width: 768px) {
@@ -1857,10 +1961,29 @@ def generate_blog_posts(blog_json_path, output_dir, css_path="/style.css"):
     return blog_urls
 
 
+_CART_JS_VER = None
+
+
+def cart_js_version():
+    """cart.js 内容哈希（12 位），用作 <script src="/cart.js?v=..."> 的版本号。
+
+    _headers 里 /*.js 是 `immutable, max-age=1y`，不带版本号 = 改了也送不到老访客。
+    这个哈希也参与 compute_product_hash，保证 cart.js 一变，996 个产品页会跟着重建，
+    不会留下一批指向旧版本 cart.js 的页面。"""
+    global _CART_JS_VER
+    if _CART_JS_VER is None:
+        import hashlib
+        try:
+            _CART_JS_VER = hashlib.md5((WEBSITE_DIR / "cart.js").read_bytes()).hexdigest()[:12]
+        except Exception:
+            _CART_JS_VER = "0"
+    return _CART_JS_VER
+
+
 def compute_product_hash(p):
     """Compute a deterministic hash of fields that affect product page HTML."""
     import hashlib
-    raw = []
+    raw = [TEMPLATE_VERSION, cart_js_version()]  # 模板/共享脚本改了 → 所有页面哈希都变 → 强制全量重建
     for key in sorted(HASH_FIELDS):
         val = p.get(key)
         if isinstance(val, (list, dict)):
@@ -1973,13 +2096,15 @@ def main():
         '<script src="/app.js',
         embed_tag + '\n' + bootstrap_js + '\n<script src="/app.js'
     )
-    # Cache buster: only bump when app.js or style.css content actually changed
+    # Cache buster: only bump when app.js / style.css / cart.js content actually changed
+    # (.js and .css are served `immutable, max-age=1y` per _headers — 不带版本号就永远更新不到)
     cache_ver = prev_cache.get('__asset_hash__', str(len(products)) + str(int(datetime.now().timestamp())))
     app_js = WEBSITE_DIR / "app.js"
     style_css = WEBSITE_DIR / "style.css"
+    cart_js = WEBSITE_DIR / "cart.js"
     try:
         new_asset_hash = hashlib.md5(
-            (app_js.read_bytes() + style_css.read_bytes())
+            (app_js.read_bytes() + style_css.read_bytes() + cart_js.read_bytes())
         ).hexdigest()[:12]
         if new_asset_hash != prev_cache.get('__asset_hash_raw__', ''):
             cache_ver = str(len(products)) + new_asset_hash
@@ -1990,6 +2115,7 @@ def main():
     # Cache buster replacement — ensure absolute paths (/style.css, /app.js) so fallback works
     index_html = re.sub(r'(?:/)?app\.js\?v=[^\"\s]+', f'/app.js?v={cache_ver}', index_html)
     index_html = re.sub(r'(?:/)?style\.css\?v=[^\"\s]+', f'/style.css?v={cache_ver}', index_html)
+    index_html = re.sub(r'(?:/)?cart\.js\?v=[^\"\s]+', f'/cart.js?v={cache_ver}', index_html)
     index_file.write_text(inject_gtag(index_html), encoding='utf-8')
     print(f"[1c] index.html: embedded data injected, cache buster v={cache_ver}")
 
@@ -2022,7 +2148,7 @@ def main():
             continue
         out_dir = product_dir / sku
         out_dir.mkdir(parents=True, exist_ok=True)
-        page_html = generate_product_page(p, products)
+        page_html = generate_product_page(p, products, asset_ver=cart_js_version())
         (out_dir / "index.html").write_text(inject_gtag(page_html), encoding='utf-8')
         count += 1
 
@@ -2049,7 +2175,7 @@ def main():
             theme_products.extend(sub_products)
         theme_dir = WEBSITE_DIR / theme_slug
         theme_dir.mkdir(parents=True, exist_ok=True)
-        theme_html = generate_category_page(theme, None, theme_products, products)
+        theme_html = generate_category_page(theme, None, theme_products, products, asset_ver=cart_js_version())
         (theme_dir / "index.html").write_text(inject_gtag(theme_html), encoding='utf-8')
         sitemap_urls.append((f"{SITE_URL}/{theme_slug}/", "0.8", "weekly"))
         cat_count += 1
@@ -2059,7 +2185,7 @@ def main():
             subcat_slug = slugify(subcat)
             subcat_dir = WEBSITE_DIR / theme_slug / subcat_slug
             subcat_dir.mkdir(parents=True, exist_ok=True)
-            subcat_html = generate_category_page(theme, subcat, sub_products, products)
+            subcat_html = generate_category_page(theme, subcat, sub_products, products, asset_ver=cart_js_version())
             (subcat_dir / "index.html").write_text(inject_gtag(subcat_html), encoding='utf-8')
             sitemap_urls.append((f"{SITE_URL}/{theme_slug}/{subcat_slug}/", "0.7", "weekly"))
             cat_count += 1

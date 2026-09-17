@@ -6,9 +6,13 @@
  *   1. 接收前端 POST 请求（contact + cart）
  *   2. 生成 PI 号
  *   3. 用 Resend 发客户通知邮件（HTML，无附件，无成本价）
- *   4. 用 Resend 发内部邮件给 info@（HTML + Excel 附件，含成本价）
+ *   4. 用 Resend 发内部邮件给 info@ / service@（HTML + Excel 附件，含成本价）
  */
 import { PRODUCT_INTERNAL } from '../_shared/product-data.js';
+
+// 内部询盘通知收件人 —— 客户提交询盘后老板侧收到的那封（含成本价 + Excel 附件）。
+// 加/减收件人只改这里一处，别散落在各分支里。
+const OWNER_RECIPIENTS = ['info@partymaker.cn', 'service@partymaker.cn'];
 
 export async function onRequest({ request, env }) {
   const corsHeaders = {
@@ -83,7 +87,7 @@ export async function onRequest({ request, env }) {
           headers: { 'Authorization': `Bearer ${apiKey}`, 'Content-Type': 'application/json' },
           body: JSON.stringify({
             from: 'Party Maker <info@partymaker.cn>',
-            to: ['info@partymaker.cn'],
+            to: OWNER_RECIPIENTS,
             subject: `[New Inquiry] ${piNo} - ${contact.name} (${contact.email})`,
             html: ownerHtml,
             attachments: [{

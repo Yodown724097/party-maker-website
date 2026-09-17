@@ -100,9 +100,10 @@
             </a>
         </div>
         <div class="header-actions">
-            <a href="/" class="cart-btn">
+            <a href="/?cart=1" class="cart-btn" title="View your inquiry cart">
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="8" cy="21" r="1"/><circle cx="19" cy="21" r="1"/><path d="M2.05 2.05h2l2.66 12.42a2 2 0 0 0 2 1.58h9.78a2 2 0 0 0 1.95-1.57l1.65-7.43H5.12"/></svg>
-                <span class="cart-btn-text">Browse All</span>
+                <span class="cart-btn-text">Inquiry Cart</span>
+                <span class="cart-badge empty" data-cart-badge>0</span>
             </a>
         </div>
     </div>
@@ -2299,11 +2300,58 @@ with light</div>
 
 .detail-actions {
     display: flex;
-    gap: 0.75rem;
+    flex-direction: column;
+    align-items: stretch;
+    gap: 0.6rem;
     margin-bottom: 1.5rem;
+}
+/* Add-to-cart row: quantity + button. Quantity mirrors the homepage step (12 pcs). */
+.atc-row {
+    display: flex;
+    gap: 0.6rem;
+    align-items: stretch;
     flex-wrap: wrap;
 }
+.atc-row input[type="number"] {
+    width: 104px;
+    flex: 0 0 auto;
+    padding: 0.65rem 0.5rem;
+    border: 1.5px solid #d8d8d2;
+    border-radius: 8px;
+    font-size: 0.95rem;
+    font-weight: 600;
+    font-family: inherit;
+    text-align: center;
+    color: #333;
+    background: #fff;
+}
+.atc-row input[type="number"]:focus { outline: none; border-color: #9CAF88; }
+.btn-add-cart {
+    flex: 1 1 180px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.4rem;
+    padding: 0.7rem 1.4rem;
+    background: #D4AF37;
+    color: white;
+    border: none;
+    border-radius: 8px;
+    font-size: 0.95rem;
+    font-weight: 700;
+    font-family: inherit;
+    cursor: pointer;
+    transition: background 0.2s, transform 0.15s;
+}
+.btn-add-cart:hover { background: #B8960F; transform: translateY(-1px); }
+.btn-add-cart.added { background: #4E8A4E; }
+.atc-hint {
+    font-size: 0.78rem;
+    color: #8a8a8a;
+    line-height: 1.4;
+}
 .btn-inquiry {
+    align-self: flex-start;
     display: inline-flex;
     align-items: center;
     gap: 0.4rem;
@@ -2700,6 +2748,21 @@ header {
     white-space: nowrap;
 }
 .cart-btn:hover { background: #B8960F; transform: translateY(-1px); }
+.cart-badge {
+    background: white;
+    color: #B8960F;
+    border-radius: 50%;
+    width: 20px;
+    height: 20px;
+    min-width: 20px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.7rem;
+    font-weight: 700;
+    line-height: 1;
+}
+.cart-badge.empty { display: none; }
 
 /* Responsive */
 @media (max-width: 768px) {
@@ -2713,6 +2776,7 @@ header {
 }
 
 </style>
+<script src="/cart.js?v=b65ddd496669"></script>
 <!-- 小满 Okki CRM 访客追踪 & 询盘表单 -->
 <script>
   window.okkiConfigs = window.okkiConfigs || [];

@@ -5,6 +5,23 @@ const WORKER_URL = '/api/generate';
 const QTY_STEP = 12;
 // Inquiry cart persistence — selections survive reload/tab close until the customer clears them
 const CART_STORAGE_KEY = 'pm_cart_v1';
+
+// cart.js loads before this file and owns all cart storage — the homepage and the
+// 996 pre-rendered /product/<SKU>/ pages share one cart through it.
+// If cart.js ever fails to load, degrade to a memory-only stub so the homepage still works
+// instead of dying on "PMCart is not defined".
+const cartStore = window.PMCart || {
+    KEY: CART_STORAGE_KEY,
+    normalizeQty: function (val) {
+        let qty = parseInt(val, 10);
+        if (!qty || qty < QTY_STEP) qty = QTY_STEP;
+        return Math.ceil(qty / QTY_STEP) * QTY_STEP;
+    },
+    read: function () { return []; },
+    write: function () {},
+    clear: function () {},
+    renderBadges: function () {}
+};
 // Image proxy — avoids R2 domain unreachable on MaxHub, certain browsers, and China networks
 const IMG_PROXY = 'https://www.partymaker.cn/img';
 const R2_PUBLIC_RAW = 'https://pub-1fd965ab66464286847edcb540254451.r2.dev';
@@ -694,49 +711,26 @@ function clearCart() {
 }
 
 // ============ CART PERSISTENCE ============
-// The cart lives in localStorage so it survives reloads, tab closes and navigating to
-// product detail pages. It is only emptied when the customer clears it (or submits an inquiry).
-// Every storage call is wrapped: private mode / full quota / corrupt JSON degrade to memory-only.
+// Storage lives in the shared cart.js module (window.PMCart) so that the homepage and
+// the 996 pre-rendered /product/<SKU>/ pages read and write ONE cart, not two.
+// Everything below is a thin delegate: the real logic (and all the try/catch degradation)
+// is in cart.js.
 
 /** Round a user-entered quantity up to the nearest valid step */
 function normalizeQty(val) {
-    let qty = parseInt(val);
-    if (!qty || qty < QTY_STEP) qty = QTY_STEP;
-    return Math.ceil(qty / QTY_STEP) * QTY_STEP;
+    return cartStore.normalizeQty(val);
 }
 
 function saveCart() {
-    try {
-        localStorage.setItem(CART_STORAGE_KEY, JSON.stringify({ v: 1, savedAt: Date.now(), items: cart }));
-    } catch (e) {
-        // Storage unavailable (private mode / quota) — cart still works for this session
-        console.warn('Cart not persisted:', e);
-    }
+    cartStore.write(cart);
 }
 
 function loadCart() {
-    try {
-        const raw = localStorage.getItem(CART_STORAGE_KEY);
-        if (!raw) return [];
-        const data = JSON.parse(raw);
-        const items = Array.isArray(data) ? data : (data && Array.isArray(data.items) ? data.items : []);
-        return items
-            .filter(it => it && it.id)
-            .map(it => Object.assign({}, it, { qty: normalizeQty(it.qty) }));
-    } catch (e) {
-        // Corrupt payload — drop it rather than breaking the page
-        console.warn('Cart storage unreadable, reset:', e);
-        clearCartStorage();
-        return [];
-    }
+    return cartStore.read();
 }
 
 function clearCartStorage() {
-    try {
-        localStorage.removeItem(CART_STORAGE_KEY);
-    } catch (e) {
-        // ignore
-    }
+    cartStore.clear();
 }
 
 /** Re-align stored items with the latest catalog. Delisted products are kept, not dropped. */
@@ -764,6 +758,7 @@ function syncCartWithProducts() {
 
 // Two tabs open on the same browser: keep them consistent so one tab cannot
 // silently overwrite items the customer just added in the other.
+// (cart.js already refreshes the badge; this re-renders the product grid.)
 window.addEventListener('storage', e => {
     if (e.key !== CART_STORAGE_KEY) return;
     cart = loadCart();
@@ -943,6 +938,17 @@ function _lbInitTouch() {
 function applyRoute() {
     // Check for ?p=SKU query param (from pre-rendered product pages "Inquire" button)
     const urlParams = new URLSearchParams(window.location.search);
+
+    // Product pages link back with /?cart=1 — open the cart so the customer sees what they picked
+    if (urlParams.get('cart') === '1') {
+        history.replaceState(null, '', '/');
+        setTimeout(() => {
+            const sidebar = document.getElementById('cartSidebar');
+            if (sidebar && !sidebar.classList.contains('open')) toggleCart();
+        }, 250);
+        return;
+    }
+
     const pParam = urlParams.get('p');
     if (pParam) {
         const product = allProducts.find(pr => pr.sku === pParam || pr.id === pParam);
