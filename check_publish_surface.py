@@ -1,0 +1,192 @@
+#!/usr/bin/env python3
+"""
+公开面守门脚本 —— 防止「仓库里新增的文件悄悄变成公网可下载」。
+
+背景：Cloudflare Pages 的发布目录就是仓库根，凡是 git 跟踪的文件（functions/ 除外）
+都会被公网直接下载。functions/_middleware.js + _routes.json 负责把不该公开的文件返回 404。
+但两者都是手写清单，容易随新增文件失效 —— 本脚本就是那个「发现失效」的闸门。
+
+检查四件事：
+  1. _routes.json 合法、规则数 ≤100、必须含 /api/* 与 /img/*、不含任何公开路径
+  2. 每个 git 跟踪的文件都能被明确分类（公开 或 拦截），没有「漏网」
+  3. 判定为「该拦」的文件，必须同时被 _routes.json 覆盖
+     —— 否则请求根本不会进中间件，Pages 会直接吐静态文件（静默泄露）
+  4. 公开名单里的文件，不能被中间件规则误伤
+
+用法：  python check_publish_surface.py
+退出码：0 = 全部通过；1 = 存在漏网/不一致
+"""
+
+from __future__ import annotations
+
+import json
+import re
+import subprocess
+import sys
+from pathlib import Path
+
+REPO = Path(__file__).resolve().parent
+ROUTES_JSON = REPO / "_routes.json"
+MIDDLEWARE_JS = REPO / "functions" / "_middleware.js"
+
+MAX_RULES = 100
+
+# ── 公开名单：这些必须能被公网访问，绝不能进拦截 ──────────────────
+PUBLIC_EXACT = {
+    "/index.html",
+    "/app.js",
+    "/cart.js",
+    "/style.css",
+    "/products-public.json",
+    "/blog.json",
+    "/sitemap.xml",
+    "/robots.txt",
+    "/mihomo.yaml",          # 老板有意发布的 VPN 订阅地址
+    "/_headers",             # Pages 自己消费，本就不对外提供
+    "/_redirects",
+}
+
+# 这些目录下的内容是对外页面，整目录公开
+PUBLIC_DIRS = ("product/", "ramadan/", "diwali/", "blog/")
+
+# 这些目录不是静态资源（functions/ 由 Pages 执行，不对外提供；__pycache__ 从不入库）
+IGNORED_DIRS = ("functions/", "__pycache__/")
+
+
+# ── 从中间件源码里抽出三张清单（唯一事实基，避免两处手抄不一致）────
+def parse_middleware() -> tuple[set[str], list[str], set[str]]:
+    src = MIDDLEWARE_JS.read_text(encoding="utf-8")
+
+    def grab_array(name: str) -> list[str]:
+        # 兼容 `= [...]` 和 `= new Set([...])` 两种写法
+        m = re.search(rf"{name}\s*=\s*(?:new\s+Set\()?\[(.*?)\]", src, re.S)
+        if not m:
+            raise SystemExit(f"❌ 无法从 _middleware.js 解析出 {name}")
+        return re.findall(r"'([^']+)'", m.group(1))
+
+    def grab_set(name: str) -> set[str]:
+        return set(grab_array(name))
+
+    return grab_set("BLOCK_EXACT"), grab_array("BLOCK_PREFIX"), grab_set("BLOCK_EXT")
+
+
+def glob_to_regex(pattern: str) -> re.Pattern[str]:
+    """把 _routes.json 里的 * 通配转成正则：* 匹配任意字符（含 /，Cloudflare 语义）"""
+    return re.compile("^" + re.escape(pattern).replace(r"\*", ".*") + "$")
+
+
+def main() -> int:
+    problems: list[str] = []
+
+    # ── 1. _routes.json 基础校验 ────────────────────────────────
+    routes = json.loads(ROUTES_JSON.read_text(encoding="utf-8"))
+    include = routes.get("include", [])
+    exclude = routes.get("exclude", [])
+    total = len(include) + len(exclude)
+
+    if total > MAX_RULES:
+        problems.append(f"_routes.json 规则数 {total} 超过 Cloudflare 上限 {MAX_RULES}")
+    for required in ("/api/*", "/img/*"):
+        if required not in include:
+            problems.append(
+                f"_routes.json include 缺少 {required} —— "
+                f"{'生产接口' if required == '/api/*' else '产品图代理'}会失效"
+            )
+    for path in PUBLIC_EXACT:
+        if path in include and path not in exclude:
+            problems.append(f"_routes.json 把公开路径 {path} 写进了 include，会被误拦")
+
+    # ── 2. 中间件清单 ───────────────────────────────────────────
+    block_exact, block_prefix, block_ext = parse_middleware()
+
+    def is_blocked(path: str) -> bool:
+        p = "/" + path.lstrip("/").rstrip("/").lower()
+        if any(p.startswith(pre) for pre in block_prefix):
+            return True
+        if p in block_exact:
+            return True
+        dot = p.rfind(".")
+        return dot > 0 and p[dot:] in block_ext
+
+    include_res = [glob_to_regex(pat) for pat in include]
+
+    def is_routed(pub_path: str) -> bool:
+        return any(r.match(pub_path) for r in include_res)
+
+    # ── 3. 遍历所有 git 跟踪文件 ────────────────────────────────
+    out = subprocess.run(
+        ["git", "-c", "core.quotepath=false", "ls-files", "-z"],
+        cwd=REPO, capture_output=True, text=True,
+        encoding="utf-8", errors="replace",
+    )
+    if out.returncode != 0:
+        raise SystemExit("❌ git ls-files 执行失败")
+    # -z：NUL 分隔，非 ASCII 路径不会被 git 加引号转义
+    tracked = [f for f in out.stdout.split("\0") if f.strip()]
+
+    misclassified: list[str] = []   # 归类不明：既不公开也不拦
+    not_routed: list[str] = []      # 该拦但 _routes.json 没覆盖 → 静默泄露
+
+    for f in tracked:
+        pub = "/" + f
+        if f.endswith("/"):
+            continue
+        if f.startswith(IGNORED_DIRS):
+            continue
+
+        should_public = pub in PUBLIC_EXACT or f.startswith(PUBLIC_DIRS)
+        blocked = is_blocked(f)
+
+        if should_public:
+            if blocked:
+                problems.append(f"公开文件被中间件误拦：{f}")
+        else:
+            if not blocked:
+                misclassified.append(f)
+            elif not is_routed(pub):
+                not_routed.append(f)
+
+    if misclassified:
+        problems.append(
+            f"{len(misclassified)} 个文件既不在公开名单、也没被拦截 —— 当前正被公网下载：\n    "
+            + "\n    ".join(sorted(misclassified)[:15])
+        )
+    if not_routed:
+        problems.append(
+            f"{len(not_routed)} 个文件该拦但 _routes.json 没覆盖（请求进不了中间件，会静默泄露）：\n    "
+            + "\n    ".join(sorted(not_routed)[:15])
+        )
+
+    # ── 4. 输出 ─────────────────────────────────────────────────
+    public_count = sum(
+        1 for f in tracked
+        if not f.startswith(IGNORED_DIRS)
+        and (("/" + f) in PUBLIC_EXACT or f.startswith(PUBLIC_DIRS))
+    )
+    blocked_count = sum(
+        1 for f in tracked
+        if not f.startswith(IGNORED_DIRS)
+        and not (("/" + f) in PUBLIC_EXACT or f.startswith(PUBLIC_DIRS))
+    )
+
+    print("公开面守门检查")
+    print(f"  git 跟踪文件      : {len(tracked)}")
+    print(f"  判定为公开        : {public_count}")
+    print(f"  判定为拦截        : {blocked_count}")
+    print(f"  _routes.json 规则 : {total} / {MAX_RULES}")
+    print(f"  中间件拦截清单    : exact {len(block_exact)} 条 / prefix {len(block_prefix)} 条 / ext {len(block_ext)} 类")
+    print()
+
+    if problems:
+        for p in problems:
+            print(f"❌ {p}")
+        print()
+        print(f"FAIL  共 {len(problems)} 个问题")
+        return 1
+
+    print("PASS  公开面完整，无漏网文件")
+    return 0
+
+
+if __name__ == "__main__":
+    sys.exit(main())
