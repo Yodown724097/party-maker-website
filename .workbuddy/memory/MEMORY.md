@@ -25,6 +25,21 @@
 - 与方案呼应: P0首页静态化已见效(展现涨); P2 Wholesale词有展现未转化; P1内容补强是下一步重点
 - 详见 .workbuddy/memory/2026-09-11.md
 
+## 📊 GSC「已编入索引」清单 (2026-09-20 老板导出 G/)
+- **来源**：桌面 `G/Table.csv`（Property=All known pages，字段 Last crawled）→ 解析落盘 `indexed_urls_2026-09-20.json`
+- **总数 256**：产品页 237（干净 229 + 脏 8）/ ramadan 分类 12 / diwali 分类 5 / 首页 1 / 博客 1
+- **趋势**：Chart.csv 显示 58(6-30) → 256(9-05 起持平)，持续上涨后进平台期
+- 🔴 **保护名单应从 86 扩到 245（并集）**：
+  - `indexed_product_skus.json`=86（8-31「有曝光」口径）
+  - 本次「已收录」口径=229 干净 SKU → 净增 160
+  - build_pages.py 对**不在名单**的页会加 `Wholesale` 买家词改 title
+    → 这 160 个**已收录页的 title 正在被改写**（掉排名风险）
+  - ⚠️ 用**并集**不用替换：旧名单有 17 个本次未出现（收录波动），替换会丢保护
+- 🔴 **24 个 TEMP- 占位 SKU**：products.json 里 `TEMP-001`~`TEMP-024`，**全无图 + 薄描述**，
+  其中 8 个已被 Google 爬到（线上 200 有真 title）。真产品，源数据 SKU 未清洗。
+  另 `641391-取消`、`623169原货号是623113`（真货号 623169）两个脏 SKU
+- ⚠️ 待核实：G 口径确认为「已编入索引」（Metadata 写 All known pages）
+
 ## ⚠️ 三仓独立，PM 不在 ERP 的「对齐远端」范围内（2026-09-20 查明并已修）
 - 三个仓**完全独立**，连提交邮箱都不同：ERP `yodown724097@gmail.com` / PM `72409@users.noreply.github.com`
 - 曾长期漏掉：`align-remote` 技能只对齐 ERP + sync，**PM 整段漏** → 9-11～9-20 十次提交无人拉
