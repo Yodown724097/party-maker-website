@@ -25,6 +25,18 @@
 - 与方案呼应: P0首页静态化已见效(展现涨); P2 Wholesale词有展现未转化; P1内容补强是下一步重点
 - 详见 .workbuddy/memory/2026-09-11.md
 
+## 9-17 批次：安全应急 + 询价购物车 (2026-09-20 盘点确认)
+- **线上实测 PASS**（`check_publish_surface.py --online`）：47 内部文件 404、13 对外资源 200、Function 存活
+- **sitemap 937 条 lastmod 全为 2026-08-31** —— 双哈希机制生效，模板改动不再污染 lastmod
+- **安全事故已处置**：R2 密钥明文在 public 仓库躺 5 个月 → 已吊销改读 .env；新增 `r2_credentials.py`（仓库唯一读密钥处）
+- **发布面收口**：`functions/_middleware.js` + `_routes.json` 拦 72 个内部文件（products.json 含 `_costPrice` 成本价）
+  - ⚠️ **`_routes.json` 里 `*` 必须在末尾**，否则 Pages 构建静默失败并保留旧版本（`/*.py` 踩过）
+  - 守门脚本必跑 `--online`：静态检查绿 ≠ 线上拦住
+- **询价购物车**：`cart.js` 单一事实源（localStorage pm_cart_v1），996 详情页可加车；清单可编码进链接换电脑找回；`functions/api/save-list.js` 走 Resend
+- **双哈希（改动必知）**：`compute_product_hash`（含 TEMPLATE_VERSION + cart.js 哈希 → 决定是否重建页面）vs `compute_data_hash`（只看产品数据 → 决定 sitemap lastmod）。混在一起会让全站 lastmod 跳变 = 向 Google 误发大改信号
+- ⚠️ **遗留未处理**：`.workbuddy/` 31 个文件**仍被 git 跟踪**，只做了线上拦截，public 仓库 clone 仍可读（含 MEMORY/HANDOFF/日志/seo_queue.json）
+- ⚠️ 本地无 `.env` → 换机后 R2 上传类脚本需手动填一次凭据
+
 ## R2 Image Issues
 - Some networks (specific Edge/browser configs) cannot access `pub-1fd965ab66464286847edcb540254451.r2.dev` → `ERR_CONNECTION_REFUSED`
 - Chrome works, some Edge instances fail — likely proxy/VPN/DNS routing issue
