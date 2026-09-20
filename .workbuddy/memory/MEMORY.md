@@ -43,6 +43,20 @@
 - 实测验证：996 页全量重建时 **sitemap.xml 逐字节未变**，937 条 lastmod 保持 8-31。
   大改模板时靠这条避免"向 Google 误发全站大改信号"。
 
+## 🆕 hilaldecor.com — 新站（2026-09-20 建站上线）
+
+**定位**：斋月/Eid 装饰垂直站 · **私有仓库** · Cloudflare Pages
+- 仓库 `Yodown724097/hilaldecor`（**private**）→ 本地 `D:\AI\Work Buddy files\hilaldecor`（分支 **main**）
+- SSH 别名 **`github-hilal`**（key `~/.ssh/id_ed25519_hilal`，已加 Deploy key 带 write）
+- CF Pages 项目名 `hilaldecor`，**已绑 hilaldecor.com**
+- 🟢 第 1 步（站点跑起来）**已完成** 2026-09-20；第 2-4 步待做
+- 部署要点见技能 **`cloudflare-pages-deploy`**（含 Retry≠重建、`_routes.json` 致发布失败两个坑）
+- ⚠️ **不要 `_routes.json`**（本项目上会导致 `Failed to publish assets`）；内部脚本放 `_tools/` 由 `_middleware.js` 拦
+- ⚠️ **GA 必须独立**，绝不复用 PM 的 `G-HYERFKYG25`
+- 数据源：飞书 `CetVbrjCDaOXOysj68EcaGFrnfg` / `tblNZmePQa6Hvh0u`（斋月池 680，609 有图）
+- 图片：**复用 PM 同一个 R2 桶**，自己的 `/img/` Function 代理（已实测 200，零搬运）
+- 📅 **硬节点：2026-10 月中必须上线**（2027 斋月 2/8 开始，采购决策期 10-12 月）
+
 ## 📊 GSC「已编入索引」清单 (2026-09-20 老板导出 G/)
 - **来源**：桌面 `G/Table.csv`（Property=All known pages，字段 Last crawled）
   → 解析落盘 `indexed_urls_2026-09-20.json`
