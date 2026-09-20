@@ -25,20 +25,34 @@
 - 与方案呼应: P0首页静态化已见效(展现涨); P2 Wholesale词有展现未转化; P1内容补强是下一步重点
 - 详见 .workbuddy/memory/2026-09-11.md
 
+## 🛑 大改在即：绝不碰 256 个已收录 URL（老板 2026-09-20 明确指令）
+- **老板原话**：「这个站我要大改，你别动这已收录页就行了」
+- **安全名单**：`indexed_urls_2026-09-20.json` —— 244 产品 SKU + 12 ramadan 分类 + 5 diwali 分类 + 首页 + 1 博客
+- 任何大改（换模板/改 title/改结构）都**不碰这批 URL**
+
+### 🔴 两个已查实但未修的真 bug（大改时一起处理）
+1. **CRLF 致全量重建**：`cart_js_version()` 用 `read_bytes()` 算 md5 → Win(CRLF) `ef8cad7816c3`
+   vs Linux(LF) `9393c1d99d57` 不一致，且与 `.build_cache.json` 对不上 →
+   **Windows 上每次构建全量重建 996 页**。修法：`raw.replace(b"\r\n", b"\n")` 后再 md5。
+2. **名单变化不触发重建**：保护名单不在 `HASH_FIELDS` → 改名单缓存判无变化 → 页面不重建 →
+   **线上 title 不变（白改）**。修法：把「是否受保护」并入 `compute_product_hash`。
+
+### ✅ 大改时别破坏的关键保险：双哈希隔离
+- `compute_product_hash`（含 TEMPLATE_VERSION，决定**重建**）
+- `compute_data_hash`（只看产品数据，决定 **sitemap lastmod**）
+- 实测验证：996 页全量重建时 **sitemap.xml 逐字节未变**，937 条 lastmod 保持 8-31。
+  大改模板时靠这条避免"向 Google 误发全站大改信号"。
+
 ## 📊 GSC「已编入索引」清单 (2026-09-20 老板导出 G/)
-- **来源**：桌面 `G/Table.csv`（Property=All known pages，字段 Last crawled）→ 解析落盘 `indexed_urls_2026-09-20.json`
+- **来源**：桌面 `G/Table.csv`（Property=All known pages，字段 Last crawled）
+  → 解析落盘 `indexed_urls_2026-09-20.json`
 - **总数 256**：产品页 237（干净 229 + 脏 8）/ ramadan 分类 12 / diwali 分类 5 / 首页 1 / 博客 1
-- **趋势**：Chart.csv 显示 58(6-30) → 256(9-05 起持平)，持续上涨后进平台期
-- 🔴 **保护名单应从 86 扩到 245（并集）**：
-  - `indexed_product_skus.json`=86（8-31「有曝光」口径）
-  - 本次「已收录」口径=229 干净 SKU → 净增 160
-  - build_pages.py 对**不在名单**的页会加 `Wholesale` 买家词改 title
-    → 这 160 个**已收录页的 title 正在被改写**（掉排名风险）
-  - ⚠️ 用**并集**不用替换：旧名单有 17 个本次未出现（收录波动），替换会丢保护
+- **趋势**：Chart.csv 58(6-30) → 256(9-05 起持平)，持续上涨后进平台期
+- ⚠️ 保护名单 `indexed_product_skus.json` 仍是 **86**（8-31「有曝光」口径），
+  老板决定**暂不改**（大改时统一处理）。它只保护 title，不影响 URL 稳定性。
 - 🔴 **24 个 TEMP- 占位 SKU**：products.json 里 `TEMP-001`~`TEMP-024`，**全无图 + 薄描述**，
   其中 8 个已被 Google 爬到（线上 200 有真 title）。真产品，源数据 SKU 未清洗。
   另 `641391-取消`、`623169原货号是623113`（真货号 623169）两个脏 SKU
-- ⚠️ 待核实：G 口径确认为「已编入索引」（Metadata 写 All known pages）
 
 ## ⚠️ 三仓独立，PM 不在 ERP 的「对齐远端」范围内（2026-09-20 查明并已修）
 - 三个仓**完全独立**，连提交邮箱都不同：ERP `yodown724097@gmail.com` / PM `72409@users.noreply.github.com`
