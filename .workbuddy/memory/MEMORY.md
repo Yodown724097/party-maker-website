@@ -25,6 +25,20 @@
 - 与方案呼应: P0首页静态化已见效(展现涨); P2 Wholesale词有展现未转化; P1内容补强是下一步重点
 - 详见 .workbuddy/memory/2026-09-11.md
 
+## ⚠️ 三仓独立，PM 不在 ERP 的「对齐远端」范围内（2026-09-20 查明并已修）
+- 三个仓**完全独立**，连提交邮箱都不同：ERP `yodown724097@gmail.com` / PM `72409@users.noreply.github.com`
+- 曾长期漏掉：`align-remote` 技能只对齐 ERP + sync，**PM 整段漏** → 9-11～9-20 十次提交无人拉
+- **已修**（workbuddy-sync `2d8de04`）：技能加 PM 章节，口令「对齐远端」= 三仓全对齐
+- **PM 与 ERP 的硬差异（别照抄 ERP 流程）**：
+  | 项 | ERP | PM |
+  |---|---|---|
+  | 分支 | `master` | **`main`** |
+  | 上游别名 | `github-erp` | **`github-pm-site`** |
+  | pull 后收尾 | 要 restart 服务 | **Cloudflare Pages 自动构建，不用管** |
+  | 构建产物 | 无 | pull 后**不用跑** build_pages.py（产物已入库）|
+- **措辞纪律**：写「**我本地落后 X 个提交**」，禁写「少了 X 个提交」（本地落伍 ≠ 项目落伍）
+- **对齐后体检**：`python check_publish_surface.py --online` 需 PASS
+
 ## 9-17 批次：安全应急 + 询价购物车 (2026-09-20 盘点确认)
 - **线上实测 PASS**（`check_publish_surface.py --online`）：47 内部文件 404、13 对外资源 200、Function 存活
 - **sitemap 937 条 lastmod 全为 2026-08-31** —— 双哈希机制生效，模板改动不再污染 lastmod
