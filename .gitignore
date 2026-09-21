@@ -18,3 +18,7 @@ __pycache__/
 *.backup
 *.bak
 *.backup.*
+
+# 内部数据快照（公网不可读；不要提交到 root —— 会被 CF Pages 发布）
+/indexed_urls_*.json
+/pm_select_*.json
