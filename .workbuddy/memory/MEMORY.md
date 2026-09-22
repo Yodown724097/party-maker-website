@@ -43,19 +43,49 @@
 - 实测验证：996 页全量重建时 **sitemap.xml 逐字节未变**，937 条 lastmod 保持 8-31。
   大改模板时靠这条避免"向 Google 误发全站大改信号"。
 
-## 🆕 hilaldecor.com — 新站（2026-09-20 建站上线）
+## 🆕 hilaldecor.com — 新站（2026-09-22 状态）
 
-**定位**：斋月/Eid 装饰垂直站 · **私有仓库** · Cloudflare Pages
-- 仓库 `Yodown724097/hilaldecor`（**private**）→ 本地 `D:\AI\Work Buddy files\hilaldecor`（分支 **main**）
-- SSH 别名 **`github-hilal`**（key `~/.ssh/id_ed25519_hilal`，已加 Deploy key 带 write）
-- CF Pages 项目名 `hilaldecor`，**已绑 hilaldecor.com**
-- 🟢 第 1 步（站点跑起来）**已完成** 2026-09-20；第 2-4 步待做
-- 部署要点见技能 **`cloudflare-pages-deploy`**（含 Retry≠重建、`_routes.json` 致发布失败两个坑）
-- ⚠️ **不要 `_routes.json`**（本项目上会导致 `Failed to publish assets`）；内部脚本放 `_tools/` 由 `_middleware.js` 拦
-- ⚠️ **GA 必须独立**，绝不复用 PM 的 `G-HYERFKYG25`
-- 数据源：飞书 `CetVbrjCDaOXOysj68EcaGFrnfg` / `tblNZmePQa6Hvh0u`（斋月池 680，609 有图）
-- 图片：**复用 PM 同一个 R2 桶**，自己的 `/img/` Function 代理（已实测 200，零搬运）
-- 📅 **硬节点：2026-10 月中必须上线**（2027 斋月 2/8 开始，采购决策期 10-12 月）
+**定位**：斋月/Eid 装饰垂直站 · **私有仓库** · Cloudflare Pages · 面向美/欧/中东
+
+### 坐标
+| 项 | 值 |
+|---|---|
+| 仓库 | `Yodown724097/hilaldecor`（**private**）|
+| 本地 | `D:\AI\Work Buddy files\hilaldecor`（分支 **main**）|
+| SSH 别名 | **`github-hilal`**（key `~/.ssh/id_ed25519_hilal`，Deploy key 带 write）|
+| CF Pages 项目 | `hilaldecor`，已绑 **www.hilaldecor.com**（裸域 301 → www 已配）|
+| CF token | `.env`（两站各一份）；**全功能**（Pages/R2/DNS/Cache/单一重定向）|
+| 数据源 | 飞书 `CetVbrjCDaOXOysj68EcaGFrnfg` / `tblNZmePQa6Hvh0u`；**斋月在用 665，有图 498**（R2 实测口径）|
+| 图片 | **自己的 R2 桶 `hilaldecor`**（`{sku}/` 产品图 + `brand/` 品牌资产，共 1048 对象）|
+
+### ✅ 已完成（截至 2026-09-22）
+- **站点上线**：498 产品页 + **12 分类页**（10 品类 + Hot Sale/New Arrival）+ sitemap 511 条 + llms.txt
+- **GA**：独立属性 `G-1GLSLPNL9T`（紧跟 `<head>`，Tag Assistant 验证 OK）
+- **图片自主**：从 PM 桶 + partyproducts 桶**真复制** 1048 对象到自己的桶，代理回归单桶
+- **邮箱**：飞书 MX ×3 + SPF + 验证码 TXT + DMARC（老板自配）✅
+- **裸域 301 → www**（单一重定向已配，实测 301 且路径保留）
+- **工程**：`_tools/` 内 preflight（7 项，pre-commit hook）/ ga.py / diagnose_online.py / migrate_r2.py / cf_token_probe.py
+- **设计**：配色 **B·Royal Midnight**（Navy+Gold）· 排版 **3·混合** · **全 CSS 逻辑属性（RTL-ready）**
+
+### 📌 关键决策
+- **内容策略**（据 Google 官方政策 + 行业调研）：**不逐页造独特内容**（=article spinner）；产品页只放真实规格，**力气投分类页**（采购指南+FAQ+FAQPage schema）
+- **URL 用永久式**，不用年份（`/ramadan-calendar/` 而非 `/ramadan-2027/`）
+- 策展分类判定 = 飞书字段 **`Hilal HOT`**（HOT/NEW/ON SALE）——⚠️ **老板尚未标记**
+- ⛔ **不展示价格/库存**（schema 里也刻意不写 offers，避免虚假声明）
+
+### ⏭️ 待办（按优先级）
+1. `/certifications/` HTML 页（认证目前只有 jpg，**不可被索引**）
+2. 产品页补**品类级 FAQ** + **图册 PDF**（老板要，需自动重生成）
+3. 博客集群（斋月采购指南 / 日历，永久 URL）
+4. 阿拉伯语 `/ar/`（+ hreflang + **自我 canonical** + 字体子集化）
+5. 老板标记 `Hilal HOT` → 重建策展分类
+
+### ⚠️ 坑与纪律（本项目特有）
+- **不要 `_routes.json`**（会导致 `Failed to publish assets`）；内部脚本放 `_tools/`
+- **GA 独立**，绝不复用 PM 的 `G-HYERFKYG25`
+- 详情见 `hilaldecor/_tools/`：`ARCHITECTURE.md` / `SEO-PLAN.md` / `PM-LESSONS.md` / `README-ops.md`
+- 技能 **`cloudflare-pages-deploy`**（含 Retry≠重建、权限名、301 配置、CF API 读写 R2 无需 S3 凭据）
+- **硬节点：2026-10 月中必须上线**（2027 斋月 2/8；采购决策期 10-12 月）
 
 ## 📊 GSC「已编入索引」清单 (2026-09-20 老板导出 G/)
 - **来源**：桌面 `G/Table.csv`（Property=All known pages，字段 Last crawled）
