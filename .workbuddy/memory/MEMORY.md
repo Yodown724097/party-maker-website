@@ -1,178 +1,33 @@
-# Partymaker-website Memory
+# party-maker-website — 指针表
 
-## SEO Status (as of 2026-08-31, 老板从 Search Console 后台实时确认)
-- **Indexed**: 217（6/8 是 ~106 → 已涨一倍多，15:01 老板当面核对）
-- **Coverage Issues 明细（老板后台截图）**:
-  - 585 "Discovered - currently not indexed" (最大头, Google 知道 URL 但因无内链权重不爬 → 首页断头路根因)
-  - 160 "Crawled - currently not indexed" (Google 爬了但拒收 → 疑似重复/薄内容)
-  - 24 "Alternate page with proper canonical tag"
-  - 17 "Page with redirect"
-  - 6 "Duplicate without user-selected canonical"
-  - 3 "Server error (5xx)" (待查具体URL)
-- **趋势**: 6/8 的 884 Discovered→ 现 585（首页问题可能在改善或统计口径变）；Crawled 62→160 涨（重复内容信号上升）
-- **已配置**: Search Console + Analytics 均已连接生效
-- **On-page SEO**: Product/category pages have proper title, meta description, canonical, h1, robots index/follow
-- **Sitemap**: 1000 URLs submitted, lastmod 2026-04-30 (stale)
-- **robots.txt**: Clean, allows all
+> 本文件只放**坐标 + 去哪找什么**。细节一律在 `PM-DETAIL.md` 或当日 daily log。
+> 别再往这里堆细节（曾超限被注入截断）。
 
-## Performance 快照 (2026-09-11, Search Console 近3月 6/9-9/8)
-- 总展现 2392 / 总点击 21 / CTR 0.88% / 加权排名 21.96
-- 月度展现 430(6)→711(7)→849(8)→402(9前8天) 趋势向上
-- 品牌词占点击 67%/展现 37%（其余为 B2B 买家词获客潜力）
-- 设备: Mobile 排名9.61/CTR2.52% 远优于 Desktop 排名25.16/CTR0.47%
-- 首页占全站展现 83%(1981); 博客内容页排名(8-10)明显优于产品页
-- 英语大市场(美1250/英203/澳71展现)几乎0点击→snippet吸引力短板
-- 与方案呼应: P0首页静态化已见效(展现涨); P2 Wholesale词有展现未转化; P1内容补强是下一步重点
-- 详见 .workbuddy/memory/2026-09-11.md
+## 项目坐标
 
-## 🛑 大改在即：绝不碰 256 个已收录 URL（老板 2026-09-20 明确指令）
-- **老板原话**：「这个站我要大改，你别动这已收录页就行了」
-- **安全名单**：`indexed_urls_2026-09-20.json` —— 244 产品 SKU + 12 ramadan 分类 + 5 diwali 分类 + 首页 + 1 博客
-- 任何大改（换模板/改 title/改结构）都**不碰这批 URL**
-
-### 🔴 两个已查实但未修的真 bug（大改时一起处理）
-1. **CRLF 致全量重建**：`cart_js_version()` 用 `read_bytes()` 算 md5 → Win(CRLF) `ef8cad7816c3`
-   vs Linux(LF) `9393c1d99d57` 不一致，且与 `.build_cache.json` 对不上 →
-   **Windows 上每次构建全量重建 996 页**。修法：`raw.replace(b"\r\n", b"\n")` 后再 md5。
-2. **名单变化不触发重建**：保护名单不在 `HASH_FIELDS` → 改名单缓存判无变化 → 页面不重建 →
-   **线上 title 不变（白改）**。修法：把「是否受保护」并入 `compute_product_hash`。
-
-### ✅ 大改时别破坏的关键保险：双哈希隔离
-- `compute_product_hash`（含 TEMPLATE_VERSION，决定**重建**）
-- `compute_data_hash`（只看产品数据，决定 **sitemap lastmod**）
-- 实测验证：996 页全量重建时 **sitemap.xml 逐字节未变**，937 条 lastmod 保持 8-31。
-  大改模板时靠这条避免"向 Google 误发全站大改信号"。
-
-## 🆕 hilaldecor.com — 新站（2026-09-22 状态）
-
-**定位**：斋月/Eid 装饰垂直站 · **私有仓库** · Cloudflare Pages · 面向美/欧/中东
-
-### 坐标
 | 项 | 值 |
 |---|---|
-| 仓库 | `Yodown724097/hilaldecor`（**private**）|
-| 本地 | `D:\AI\Work Buddy files\hilaldecor`（分支 **main**）|
-| SSH 别名 | **`github-hilal`**（key `~/.ssh/id_ed25519_hilal`，Deploy key 带 write）|
-| CF Pages 项目 | `hilaldecor`，已绑 **www.hilaldecor.com**（裸域 301 → www 已配）|
-| CF token | `.env`（两站各一份）；**全功能**（Pages/R2/DNS/Cache/单一重定向）|
-| 数据源 | 飞书 `CetVbrjCDaOXOysj68EcaGFrnfg` / `tblNZmePQa6Hvh0u`；**斋月在用 665，有图 498**（R2 实测口径）|
-| 图片 | **自己的 R2 桶 `hilaldecor`**（`{sku}/` 产品图 + `brand/` 品牌资产，共 1048 对象）|
+| 本地 | `D:\AI\Work Buddy files\party-maker-website`（分支 **main**）|
+| 仓库 | `Yodown724097/party-maker-website`（**public**）|
+| 上游别名 | `github-pm-site` |
+| 部署 | Cloudflare Pages（**自动构建，pull 后不用跑 build_pages.py**）|
+| 站点 | www.partymaker.cn（图片走 `functions/img/[[path]].js` 代理到 R2）|
 
-### ✅ 已完成（截至 2026-09-22）
-- **站点上线**：498 产品页 + **12 分类页**（10 品类 + Hot Sale/New Arrival）+ sitemap 511 条 + llms.txt
-- **GA**：独立属性 `G-1GLSLPNL9T`（紧跟 `<head>`，Tag Assistant 验证 OK）
-- **图片自主**：从 PM 桶 + partyproducts 桶**真复制** 1048 对象到自己的桶，代理回归单桶
-- **邮箱**：飞书 MX ×3 + SPF + 验证码 TXT + DMARC（老板自配）✅
-- **裸域 301 → www**（单一重定向已配，实测 301 且路径保留）
-- **工程**：`_tools/` 内 preflight（7 项，pre-commit hook）/ ga.py / diagnose_online.py / migrate_r2.py / cf_token_probe.py
-- **设计**：配色 **B·Royal Midnight**（Navy+Gold）· 排版 **3·混合** · **全 CSS 逻辑属性（RTL-ready）**
+## 去哪找什么
 
-### 📌 关键决策
-- **内容策略**（据 Google 官方政策 + 行业调研）：**不逐页造独特内容**（=article spinner）；产品页只放真实规格，**力气投分类页**（采购指南+FAQ+FAQPage schema）
-- **URL 用永久式**，不用年份（`/ramadan-calendar/` 而非 `/ramadan-2027/`）
-- 策展分类判定 = 飞书字段 **`Hilal HOT`**（HOT/NEW/ON SALE）——⚠️ **老板尚未标记**
-- ⛔ **不展示价格/库存**（schema 里也刻意不写 offers，避免虚假声明）
+| 想查什么 | 看哪 |
+|---|---|
+| SEO 现状 / Performance / 四阶段 / 已收录清单 | `PM-DETAIL.md` §1–3 |
+| 大改纪律、双哈希、两个未修 bug | `PM-DETAIL.md` §2 |
+| 发布面拦截、`_routes.json` 坑、cart.js | `PM-DETAIL.md` §4 |
+| 三仓对齐差异、git 规则 | `PM-DETAIL.md` §5–6 |
+| 图片架构 / R2 访问异常 | `PM-DETAIL.md` §7 |
+| 博客覆盖进度 / 飞书流水线 / VPS cron | `PM-DETAIL.md` §8–11 |
+| hilaldecor 姊妹站 | `PM-DETAIL.md` §12 + `hilaldecor/_tools/` 四份文档 |
+| 近期流水 | 本目录 `YYYY-MM-DD.md`（9-20 那份最厚，含 9-20~9-22 连续记录）|
 
-### ⏭️ 待办（按优先级）
-1. `/certifications/` HTML 页（认证目前只有 jpg，**不可被索引**）
-2. 产品页补**品类级 FAQ** + **图册 PDF**（老板要，需自动重生成）
-3. 博客集群（斋月采购指南 / 日历，永久 URL）
-4. 阿拉伯语 `/ar/`（+ hreflang + **自我 canonical** + 字体子集化）
-5. 老板标记 `Hilal HOT` → 重建策展分类
+## 三条不许破的线
 
-### ⚠️ 坑与纪律（本项目特有）
-- **不要 `_routes.json`**（会导致 `Failed to publish assets`）；内部脚本放 `_tools/`
-- **GA 独立**，绝不复用 PM 的 `G-HYERFKYG25`
-- 详情见 `hilaldecor/_tools/`：`ARCHITECTURE.md` / `SEO-PLAN.md` / `PM-LESSONS.md` / `README-ops.md`
-- 技能 **`cloudflare-pages-deploy`**（含 Retry≠重建、权限名、301 配置、CF API 读写 R2 无需 S3 凭据）
-- **硬节点：2026-10 月中必须上线**（2027 斋月 2/8；采购决策期 10-12 月）
-
-## 📊 GSC「已编入索引」清单 (2026-09-20 老板导出 G/)
-- **来源**：桌面 `G/Table.csv`（Property=All known pages，字段 Last crawled）
-  → 解析落盘 `indexed_urls_2026-09-20.json`
-- **总数 256**：产品页 237（干净 229 + 脏 8）/ ramadan 分类 12 / diwali 分类 5 / 首页 1 / 博客 1
-- **趋势**：Chart.csv 58(6-30) → 256(9-05 起持平)，持续上涨后进平台期
-- ⚠️ 保护名单 `indexed_product_skus.json` 仍是 **86**（8-31「有曝光」口径），
-  老板决定**暂不改**（大改时统一处理）。它只保护 title，不影响 URL 稳定性。
-- 🔴 **24 个 TEMP- 占位 SKU**：products.json 里 `TEMP-001`~`TEMP-024`，**全无图 + 薄描述**，
-  其中 8 个已被 Google 爬到（线上 200 有真 title）。真产品，源数据 SKU 未清洗。
-  另 `641391-取消`、`623169原货号是623113`（真货号 623169）两个脏 SKU
-
-## ⚠️ 三仓独立，PM 不在 ERP 的「对齐远端」范围内（2026-09-20 查明并已修）
-- 三个仓**完全独立**，连提交邮箱都不同：ERP `yodown724097@gmail.com` / PM `72409@users.noreply.github.com`
-- 曾长期漏掉：`align-remote` 技能只对齐 ERP + sync，**PM 整段漏** → 9-11～9-20 十次提交无人拉
-- **已修**（workbuddy-sync `2d8de04`）：技能加 PM 章节，口令「对齐远端」= 三仓全对齐
-- **PM 与 ERP 的硬差异（别照抄 ERP 流程）**：
-  | 项 | ERP | PM |
-  |---|---|---|
-  | 分支 | `master` | **`main`** |
-  | 上游别名 | `github-erp` | **`github-pm-site`** |
-  | pull 后收尾 | 要 restart 服务 | **Cloudflare Pages 自动构建，不用管** |
-  | 构建产物 | 无 | pull 后**不用跑** build_pages.py（产物已入库）|
-- **措辞纪律**：写「**我本地落后 X 个提交**」，禁写「少了 X 个提交」（本地落伍 ≠ 项目落伍）
-- **对齐后体检**：`python check_publish_surface.py --online` 需 PASS
-
-## 9-17 批次：安全应急 + 询价购物车 (2026-09-20 盘点确认)
-- **线上实测 PASS**（`check_publish_surface.py --online`）：47 内部文件 404、13 对外资源 200、Function 存活
-- **sitemap 937 条 lastmod 全为 2026-08-31** —— 双哈希机制生效，模板改动不再污染 lastmod
-- **安全事故已处置**：R2 密钥明文在 public 仓库躺 5 个月 → 已吊销改读 .env；新增 `r2_credentials.py`（仓库唯一读密钥处）
-- **发布面收口**：`functions/_middleware.js` + `_routes.json` 拦 72 个内部文件（products.json 含 `_costPrice` 成本价）
-  - ⚠️ **`_routes.json` 里 `*` 必须在末尾**，否则 Pages 构建静默失败并保留旧版本（`/*.py` 踩过）
-  - 守门脚本必跑 `--online`：静态检查绿 ≠ 线上拦住
-- **询价购物车**：`cart.js` 单一事实源（localStorage pm_cart_v1），996 详情页可加车；清单可编码进链接换电脑找回；`functions/api/save-list.js` 走 Resend
-- **双哈希（改动必知）**：`compute_product_hash`（含 TEMPLATE_VERSION + cart.js 哈希 → 决定是否重建页面）vs `compute_data_hash`（只看产品数据 → 决定 sitemap lastmod）。混在一起会让全站 lastmod 跳变 = 向 Google 误发大改信号
-- ⚠️ **遗留未处理**：`.workbuddy/` 31 个文件**仍被 git 跟踪**，只做了线上拦截，public 仓库 clone 仍可读（含 MEMORY/HANDOFF/日志/seo_queue.json）
-- ⚠️ 本地无 `.env` → 换机后 R2 上传类脚本需手动填一次凭据
-
-## R2 Image Issues
-- Some networks (specific Edge/browser configs) cannot access `pub-1fd965ab66464286847edcb540254451.r2.dev` → `ERR_CONNECTION_REFUSED`
-- Chrome works, some Edge instances fail — likely proxy/VPN/DNS routing issue
-- R2 public access domain may be intermittently blocked in China
-
-## Blog Coverage Progress (as of 2026-07-08)
-- 17 total blog posts generated
-- ✅ Bunting (17p) | ✅ Lantern (64p) | ✅ LED Light (184p) | ✅ Deco-Table (73p)
-- ✅ Deco-Wood (111p) | ✅ Deco-Hanging (81p) | ✅ Deco (92p)
-- ✅ Food Storage (64p) | ✅ Bag (45p, 6/24) | ✅ Wrapping (26p, 6/30)
-- ✅ Box (24p, 7/8) | ⬜ Balloon Foil (19p) — next candidate
-- ⬜ Napkin (18p) | ⬜ Backdrop (17p) | ⬜ Picks (15p) | ⬜ Candle (14p)
-- ⬜ Cupcake (13p) | ⬜ Paper Plate (12p) | ⬜ Garland (8p) + 14 more small subcategories
-
-## Build System Notes
-- `build_pages.py` generates: product pages, category pages, sitemap.xml, robots.txt, products-public.json
-- `fp-render` inline script in index.html has JS syntax bug (missing `+` operator between string concatenations) — fixed 2026-06-05
-- Sitemap lastmod is hardcoded to build date, should be updated on each deploy
-
-## 未来方向：飞书→网站 内容流水线 (2026-08-31 老板确认)
-- **老板明确规划**: 后面会用飞书「新品 + 内容推荐」联动本网站，**定时自动更新内容**
-- 影响 SEO 方案设计: 不是一次性补文案, 而是建立 **飞书 Base → build_pages.py → 静态页+sitemap → Cloudflare Pages 定时构建**的持续内容管线
-- 已有基础(复用): JT/PM 产品库 Base、box 箱单、blog 生成机制、VPS sitemap cron(`/root/scripts/sitemap_refresh.sh` 每周一8点)
-- **联动架构已clarify**: 博客数据源=`blog.json`(字段 slug/title/meta_desc/date/category/image/body); 飞书导入可完全复用 `import_diwali.py` 模式(飞书拉数据→写JSON→build_pages.py→push)
-- 设计原则: 一次建管线, 新品/新文/新推荐自动落站+sitemap+ping, 不再手工
-
-## SEO 工程四阶段 (2026-08-31 定案, 老板拍板分级负责)
-- **P0 首页结构打通**: ✅ 已上线 `cbe7fdf`(首页+22静态分类链接, 治585 Discovered)
-- **P1 内容补强**: 飞书联动线(老板+另一对话) - 补800+薄描述, 埋B2B词, 治160 Crawled
-- **P2 关键词卡位**: workbuddy(SZ)负责 - 基于Performance数据抓长尾词, 治曝光/排名低
-- **P3 飞书内容流水线**: 飞书联动线 - 定时新品/推荐自动落站, 持续曝光治本
-- **三条铁律**: ①不碰已收录217页 ②预判Google反应(防AI薄内容/关键词堆砌) ③每步独立commit可回滚
-
-## VPS Sitemap Cron (as of 2026-07-13)
-- Weekly sitemap refresh runs on VPS 49.234.48.68
-- Script: `/root/scripts/sitemap_refresh.sh` (git pull → build_pages.py → ping → git push)
-- Cron: `0 8 * * 1` (every Monday 8:00 AM Beijing)
-- Log: `/root/sitemap_refresh.log`
-- Repo: `/root/party-maker-website/` (shallow clone, git@github-pm-site remote)
-- Local WorkBuddy automation `automation-1781581832976` PAUSED
-
-## Git Rules (DO NOT BREAK)
-- **NEVER `git add -A`** — node_modules 有 11000+ 文件，会卡死 push
-- 提交前确认改动的文件列表，只 add 需要的文件
-- 本项目 .gitignore 缺少 node_modules，已加
-
-## 图片架构 (as of 2026-06-26)
-- 全站图片统一走 `www.partymaker.cn/img/SKU/file.webp`（通过 Cloudflare Pages Function 代理到 R2）
-- `functions/img/[[path]].js` — 图片代理 Function
-- build_pages.py 中 `to_proxy()` + `proxy_images()` 负责 URL 转换
-- app.js 中 `normalizeImageUrls()` 做前端兜底
-- 新增其他 theme 产品时，走 import_diwali.py 的模式：飞书拉数据 → 下载图 → 上传R2 → 写入 products.json → build_pages.py
+1. 🛑 **绝不碰已收录 URL**（名单 `indexed_urls_2026-09-20.json`，256 条）—— 老板 9-20 大改指令
+2. 🔴 **NEVER `git add -A`**（node_modules 11000+ 文件会卡死）
+3. ⚠️ **`_routes.json` 里 `*` 必须放末尾**，否则 Pages 构建静默失败
